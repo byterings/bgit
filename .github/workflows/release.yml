@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(cat version.txt | tr -d '\n')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate changelog
+        if: steps.check_release.outputs.exists == 'false'
+        run: go run scripts/generate-changelog.go
+
+      - name: Build binaries
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-amd64 .
+
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
+
+          # macOS AMD64 (Intel)
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
+
+          # macOS ARM64 (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .
+
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-amd64.exe .
+
+          # Windows ARM64
+          GOOS=windows GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-arm64.exe .
+
+      - name: Extract release notes
+        if: steps.check_release.outputs.exists == 'false'
+        id: release_notes
+        run: |
+          # Extract the release notes for this version from changelog.json
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Create release notes from changelog.json
+          cat > release_notes.md << 'EOF'
+          ## bgit v${{ steps.version.outputs.version }}
+
+          $(cat changelog.json | jq -r '.releases[] | select(.version == "${{ steps.version.outputs.version }}") | .summary')
+
+          ### Installation
+
+          **Linux / macOS:**
+          ```bash
+          curl -sSL https://raw.githubusercontent.com/byterings/bgit/main/install.sh | bash
+          ```
+
+          **Windows:**
+          ```powershell
+          irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
+          ```
+
+          See [CHANGELOG.md](CHANGELOG.md) for full details.
+          EOF
+
+      - name: Create GitHub Release
+        if: steps.check_release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: bgit v${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            bgit-linux-amd64
+            bgit-linux-arm64
+            bgit-darwin-amd64
+            bgit-darwin-arm64
+            bgit-windows-amd64.exe
+            bgit-windows-arm64.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger website rebuild (Cloudflare Pages)
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          curl -d "" "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
+        continue-on-error: true

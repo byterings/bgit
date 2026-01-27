@@ -1,0 +1,53 @@
+{
+  "releases": [
+    {
+      "version": "0.1.0",
+      "date": "2025-01-28",
+      "phase": 1,
+      "summary": "Initial release with core identity management features.",
+      "features": [
+        {
+          "title": "Multi-user identity management",
+          "description": "Add, list, use, and delete Git identities",
+          "command": "bgit add/use/list/delete"
+        },
+        {
+          "title": "SSH key management",
+          "description": "Generate or import SSH keys for each identity",
+          "command": "bgit add"
+        },
+        {
+          "title": "Git config handling",
+          "description": "Automatic user.name and user.email configuration",
+          "command": "bgit use"
+        },
+        {
+          "title": "Clone with identity",
+          "description": "Clone repositories with the correct SSH configuration",
+          "command": "bgit clone"
+        },
+        {
+          "title": "Remote management",
+          "description": "Fix and restore remote URLs for bgit compatibility",
+          "command": "bgit remote fix/restore"
+        },
+        {
+          "title": "Configuration sync",
+          "description": "Validate and sync bgit configuration",
+          "command": "bgit sync"
+        },
+        {
+          "title": "Safe uninstall",
+          "description": "Safely uninstall bgit and restore all repositories",
+          "command": "bgit uninstall"
+        },
+        {
+          "title": "Cross-platform support",
+          "description": "Works on Linux, macOS, and Windows"
+        }
+      ],
+      "fixes": [],
+      "breaking_changes": []
+    }
+  ]
+}

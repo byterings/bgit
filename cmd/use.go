@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/git"
+	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -93,6 +95,23 @@ func runUse(cmd *cobra.Command, args []string) error {
 	}
 
 	ui.Success("Identity switched successfully")
+
+	// Check if current directory has workspace or binding override
+	cwd, err := os.Getwd()
+	if err == nil {
+		resolution, _ := identity.ResolveIdentity(cfg, cwd)
+		if resolution != nil && resolution.Alias != user.Alias {
+			fmt.Println()
+			switch resolution.Source {
+			case identity.SourceWorkspace:
+				ui.Warning(fmt.Sprintf("Note: Current directory is inside workspace '%s'", resolution.Path))
+				ui.Info(fmt.Sprintf("bgit commands here will use '%s' identity", resolution.Alias))
+			case identity.SourceBinding:
+				ui.Warning("Note: Current repository is bound to a different identity")
+				ui.Info(fmt.Sprintf("bgit commands here will use '%s' identity", resolution.Alias))
+			}
+		}
+	}
 
 	if user.SSHKeyPath != "" {
 		fmt.Println("\nClone repos: bgit clone <url>")

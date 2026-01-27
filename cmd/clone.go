@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -54,14 +55,35 @@ func runClone(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Get active user
-	if cfg.ActiveUser == "" {
-		return fmt.Errorf("no active user set\nRun: bgit use <alias>")
+	// Resolve effective identity (workspace > binding > global)
+	resolution, err := identity.GetEffectiveResolution(cfg)
+	if err != nil || resolution == nil || resolution.User == nil {
+		// Fall back to checking global active user
+		if cfg.ActiveUser == "" {
+			return fmt.Errorf("no active user set\nRun: bgit use <alias>")
+		}
+		resolution = &identity.Resolution{
+			User:   cfg.FindUserByAlias(cfg.ActiveUser),
+			Alias:  cfg.ActiveUser,
+			Source: identity.SourceGlobal,
+		}
+		if resolution.User == nil {
+			return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
+		}
 	}
 
-	activeUser := cfg.FindUserByAlias(cfg.ActiveUser)
-	if activeUser == nil {
-		return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
+	activeUser := resolution.User
+
+	// Show identity source if not global
+	if resolution.Source != identity.SourceGlobal {
+		sourceInfo := ""
+		switch resolution.Source {
+		case identity.SourceWorkspace:
+			sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
+		case identity.SourceBinding:
+			sourceInfo = " (bound repo)"
+		}
+		ui.Info(fmt.Sprintf("Using identity from %s%s", resolution.Source, sourceInfo))
 	}
 
 	// Check if SSH key is configured
@@ -129,6 +151,7 @@ func ensureSSHAgentForClone(user *config.User) {
 }
 
 // convertToBgitURL converts any GitHub URL to bgit's SSH format
+// sshHostUser is the GitHub username used for the SSH host (github.com-<sshHostUser>)
 func convertToBgitURL(url string, sshHostUser string) (string, error) {
 	// Pattern for HTTPS: https://github.com/user/repo.git
 	httpsPattern := regexp.MustCompile(`^https?://github\.com/([^/]+)/(.+?)(?:\.git)?$`)
@@ -148,12 +171,16 @@ func convertToBgitURL(url string, sshHostUser string) (string, error) {
 		repoOwner = matches[1]
 		repoName = matches[2]
 	} else if matches := bgitPattern.FindStringSubmatch(url); matches != nil {
+		// Already in bgit format, update host user if different
 		repoOwner = matches[2]
 		repoName = matches[3]
 	} else {
 		return "", fmt.Errorf("unrecognized URL format: %s\nExpected GitHub HTTPS or SSH URL", url)
 	}
 
+	// Remove .git suffix if present
 	repoName = strings.TrimSuffix(repoName, ".git")
+
+	// sshHostUser is the GitHub username that matches SSH config: Host github.com-<sshHostUser>
 	return fmt.Sprintf("git@github.com-%s:%s/%s.git", sshHostUser, repoOwner, repoName), nil
 }

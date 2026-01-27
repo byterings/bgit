@@ -6,6 +6,7 @@ import (
 
 	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/git"
+	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
@@ -19,7 +20,12 @@ var (
 var syncCmd = &cobra.Command{
 	Use:   "sync",
 	Short: "Validate and sync bgit configuration",
-	Long: `Check if Git and SSH configurations match the active bgit user.
+	Long: `Check if Git and SSH configurations match the effective bgit user.
+
+The effective user is determined by:
+1. Workspace (if inside a workspace folder)
+2. Binding (if repo is bound to a user)
+3. Global active user (fallback)
 
 Optionally fix any mismatches found.`,
 	RunE: runSync,
@@ -46,19 +52,32 @@ func runSync(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Check for active user
-	if cfg.ActiveUser == "" {
+	// Get effective identity (respects workspace/binding)
+	resolution, err := identity.GetEffectiveResolution(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to resolve identity: %w", err)
+	}
+
+	if resolution == nil || resolution.User == nil {
 		ui.Info("No active user set")
 		fmt.Println("Set one with: bgit use <alias>")
 		return nil
 	}
 
-	activeUser := cfg.FindUserByAlias(cfg.ActiveUser)
-	if activeUser == nil {
-		return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
+	activeUser := resolution.User
+
+	// Show context info
+	sourceInfo := ""
+	switch resolution.Source {
+	case identity.SourceWorkspace:
+		sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
+	case identity.SourceBinding:
+		sourceInfo = " (bound repo)"
+	case identity.SourceGlobal:
+		sourceInfo = ""
 	}
 
-	fmt.Printf("Validating identity: %s\n", cfg.ActiveUser)
+	fmt.Printf("Validating identity: %s%s\n", resolution.Alias, sourceInfo)
 	fmt.Printf("Checking configuration for: %s (%s)\n\n", activeUser.GitHubUsername, activeUser.Email)
 
 	issues := []string{}

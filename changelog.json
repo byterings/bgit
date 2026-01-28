@@ -1,6 +1,45 @@
 {
   "releases": [
     {
+      "version": "0.2.0",
+      "date": "2025-01-28",
+      "phase": 2,
+      "summary": "Phase 2 release with workspace support and diagnostics.",
+      "features": [
+        {
+          "title": "Workspace management",
+          "description": "Create organized workspace folders with automatic identity binding",
+          "command": "bgit workspace"
+        },
+        {
+          "title": "Repository binding",
+          "description": "Bind individual repositories to specific identities",
+          "command": "bgit bind"
+        },
+        {
+          "title": "Identity status",
+          "description": "Show current identity status and bindings",
+          "command": "bgit status"
+        },
+        {
+          "title": "Diagnostics",
+          "description": "Diagnose and auto-fix configuration issues",
+          "command": "bgit doctor"
+        },
+        {
+          "title": "Active identity",
+          "description": "Show current active identity",
+          "command": "bgit active"
+        },
+        {
+          "title": "Identity resolution",
+          "description": "Automatic identity resolution based on workspace > binding > global priority"
+        }
+      ],
+      "fixes": [],
+      "breaking_changes": []
+    },
+    {
       "version": "0.1.0",
       "date": "2025-01-28",
       "phase": 1,

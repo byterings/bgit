@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -69,14 +70,35 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Check for active user
-	if cfg.ActiveUser == "" {
-		return fmt.Errorf("no active user set\nRun: bgit use <alias>")
+	// Resolve effective identity (workspace > binding > global)
+	resolution, err := identity.GetEffectiveResolution(cfg)
+	if err != nil || resolution == nil || resolution.User == nil {
+		// Fall back to checking global active user
+		if cfg.ActiveUser == "" {
+			return fmt.Errorf("no active user set\nRun: bgit use <alias>")
+		}
+		resolution = &identity.Resolution{
+			User:   cfg.FindUserByAlias(cfg.ActiveUser),
+			Alias:  cfg.ActiveUser,
+			Source: identity.SourceGlobal,
+		}
+		if resolution.User == nil {
+			return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
+		}
 	}
 
-	activeUser := cfg.FindUserByAlias(cfg.ActiveUser)
-	if activeUser == nil {
-		return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
+	activeUser := resolution.User
+
+	// Show identity source if not global
+	if resolution.Source != identity.SourceGlobal {
+		sourceInfo := ""
+		switch resolution.Source {
+		case identity.SourceWorkspace:
+			sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
+		case identity.SourceBinding:
+			sourceInfo = " (bound repo)"
+		}
+		ui.Info(fmt.Sprintf("Using identity from %s%s", resolution.Source, sourceInfo))
 	}
 
 	// Get current remote URL

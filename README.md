@@ -4,7 +4,7 @@
 
 Switch Git identities with one command. Keep using normal `git` commands while bgit handles identity switching.
 
-> **Version 0.1.0** - Initial release with core identity management.
+> **Version 0.2.0** - Phase 2 release with workspace support and diagnostics.
 
 ## Why bgit?
 
@@ -50,17 +50,17 @@ Download the binary for your platform from [Releases](https://github.com/byterin
 
 ```bash
 # Linux (AMD64)
-curl -L https://github.com/byterings/bgit/releases/download/v0.1.0/bgit-linux-amd64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-linux-amd64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 
 # macOS (Apple Silicon)
-curl -L https://github.com/byterings/bgit/releases/download/v0.1.0/bgit-darwin-arm64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-darwin-arm64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 
 # macOS (Intel)
-curl -L https://github.com/byterings/bgit/releases/download/v0.1.0/bgit-darwin-amd64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-darwin-amd64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 ```
@@ -107,11 +107,11 @@ Output:
 ```
 Configured users:
 
--> work                 john@work.com                  John Work
+→ work                 john@work.com                  John Work
   personal             john@personal.com              John Personal
 ```
 
-The `->` shows your active identity.
+The `→` shows your active identity.
 
 ## What bgit Modifies
 
@@ -132,13 +132,13 @@ Updates `~/.gitconfig` (Linux/macOS) or `%USERPROFILE%\.gitconfig` (Windows):
 
 Adds a managed section to `~/.ssh/config`:
 ```
-# ---- BEGIN BGIT MANAGED ----
+# ---- BEGIN BRGIT MANAGED ----
 Host github.com-john-work
   HostName github.com
   User git
   IdentityFile ~/.ssh/bgit_work
   IdentitiesOnly yes
-# ---- END BGIT MANAGED ----
+# ---- END BRGIT MANAGED ----
 ```
 
 **Note:** The SSH host uses your GitHub username (e.g., `github.com-john-work`), not the alias.
@@ -192,7 +192,7 @@ If you prefer manual removal:
 1. **Restore repos**: Run `bgit remote restore` in each repository
 2. **Remove binary**: `sudo rm /usr/local/bin/bgit`
 3. **Remove config**: `rm -rf ~/.bgit`
-4. **Clean SSH config**: Remove the `# ---- BEGIN BGIT MANAGED ----` section from `~/.ssh/config`
+4. **Clean SSH config**: Remove the `# ---- BEGIN BRGIT MANAGED ----` section from `~/.ssh/config`
 5. **Remove SSH keys** (optional): `rm ~/.ssh/bgit_*`
 6. **Restore git config**:
    ```bash
@@ -210,11 +210,18 @@ If you prefer manual removal:
 | `bgit clone <url>` | Clone repo with correct SSH config |
 | `bgit remote fix` | Fix current repo's remote for active user |
 | `bgit remote restore` | Restore remote to standard GitHub format |
+| `bgit workspace` | Create workspace folders with auto-binding |
+| `bgit bind` | Bind current repo to an identity |
+| `bgit status` | Show current identity status and bindings |
+| `bgit doctor` | Diagnose configuration issues |
 | `bgit delete <alias>` | Remove an identity |
 | `bgit update <alias>` | Update an identity's SSH key |
 | `bgit sync [--fix]` | Validate configs match active user |
+| `bgit active` | Show current active identity |
 | `bgit setup-ssh` | (Windows) Start SSH agent and load keys |
 | `bgit uninstall` | Safely uninstall bgit and restore all repos |
+
+See [USAGE.md](USAGE.md) for detailed command documentation.
 
 ## SSH Key Management
 
@@ -255,6 +262,49 @@ cd repo
 bgit remote restore   # Restores to git@github.com:user/repo.git
 ```
 
+## Workspaces (Phase 2)
+
+Create organized workspace directories for automatic identity binding:
+
+```bash
+# Create workspace folders for all identities
+cd ~/projects
+bgit workspace
+
+# Creates:
+#   ~/projects/work/      → bound to "work" identity
+#   ~/projects/personal/  → bound to "personal" identity
+```
+
+Now any repo cloned inside a workspace folder automatically uses the correct identity:
+
+```bash
+cd ~/projects/work
+bgit clone https://github.com/company/repo.git
+# Uses "work" identity automatically!
+
+cd ~/projects/personal
+bgit clone https://github.com/me/hobby.git
+# Uses "personal" identity automatically!
+```
+
+### Manual Binding
+
+Bind individual repositories:
+
+```bash
+cd existing-repo
+bgit bind              # Bind to active user
+bgit bind --user work  # Bind to specific user
+```
+
+### Identity Resolution
+
+bgit resolves identity in this order:
+1. **Workspace** - If inside a workspace folder
+2. **Binding** - If repo has explicit binding
+3. **Global** - Active user from `bgit use`
+
 ## Troubleshooting
 
 ### SSH Permission Issues
@@ -269,11 +319,19 @@ chmod 700 ~/.ssh
 chmod 600 ~/.ssh/bgit_*
 ```
 
+Run `bgit doctor` to automatically check and fix permission issues:
+
+```bash
+bgit doctor        # Check for issues
+bgit doctor --fix  # Auto-fix permission issues
+```
+
 ### Common Issues
 
 **"Permission denied (publickey)"**
-1. Ensure SSH key is added to your GitHub account
-2. Check file permissions
+1. Run `bgit doctor --network` to test connectivity
+2. Ensure SSH key is added to your GitHub account
+3. Check file permissions with `bgit doctor`
 
 **"Could not open a connection to your authentication agent"**
 ```bash
@@ -288,7 +346,7 @@ ssh-add ~/.ssh/bgit_*
 
 ## Roadmap
 
-### Phase 1 (v0.1.0) - Current
+### Phase 1 (v0.1.0) ✓
 - [x] Global user management
 - [x] SSH + Git config handling
 - [x] User switching
@@ -298,13 +356,13 @@ ssh-add ~/.ssh/bgit_*
 - [x] `bgit remote fix/restore` - manage remote URLs
 - [x] `bgit uninstall` - safe uninstallation
 
-### Phase 2 (Planned)
-- [ ] `bgit workspace` - organized folders with auto-binding
-- [ ] `bgit bind` - repo-bound identity (sticky ownership)
-- [ ] `bgit status` - show identity status and bindings
-- [ ] `bgit doctor` - diagnostics and auto-fix
+### Phase 2 (Current - v0.2.0) ✓
+- [x] `bgit workspace` - organized folders with auto-binding
+- [x] `bgit bind` - repo-bound identity (sticky ownership)
+- [x] `bgit status` - show identity status and bindings
+- [x] `bgit doctor` - diagnostics and auto-fix
 
-### Phase 3 (Future)
+### Phase 3 (Planned)
 - [ ] Shell prompt integration
 - [ ] Pre-push safety checks
 
@@ -335,6 +393,10 @@ Run `bgit sync` to see current status without making changes.
 
 Contributions welcome. This is an early-stage project focused on doing one thing well.
 
+## Support bgit Development (Optional)
+
+If you find bgit useful, consider supporting its development. This is entirely optional.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE)
@@ -342,3 +404,4 @@ MIT License - see [LICENSE](LICENSE)
 ---
 
 **One command. Zero mistakes.**
+

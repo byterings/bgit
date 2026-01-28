@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -54,23 +52,19 @@ func init() {
 }
 
 func runRemoteFix(cmd *cobra.Command, args []string) error {
-	// Check if we're in a git repo
 	if !isGitRepo() {
 		return fmt.Errorf("not a git repository\nRun this command inside a git repository")
 	}
 
-	// Auto-initialize if needed
 	if err := autoInit(); err != nil {
 		return err
 	}
 
-	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Resolve effective identity (workspace > binding > global)
 	resolution, err := identity.GetEffectiveResolution(cfg)
 	if err != nil || resolution == nil || resolution.User == nil {
 		// Fall back to checking global active user
@@ -89,7 +83,6 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 
 	activeUser := resolution.User
 
-	// Show identity source if not global
 	if resolution.Source != identity.SourceGlobal {
 		sourceInfo := ""
 		switch resolution.Source {
@@ -101,7 +94,6 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		ui.Info(fmt.Sprintf("Using identity from %s%s", resolution.Source, sourceInfo))
 	}
 
-	// Get current remote URL
 	currentURL, err := getRemoteURL("origin")
 	if err != nil {
 		return fmt.Errorf("failed to get remote URL: %w", err)
@@ -111,24 +103,21 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no 'origin' remote found\nAdd a remote first: git remote add origin <url>")
 	}
 
-	// Check if repo is already configured for a different user
 	existingUsername := extractAliasFromURL(currentURL)
 	if existingUsername != "" && existingUsername != activeUser.GitHubUsername {
 		ui.Warning(fmt.Sprintf("This repo is configured for GitHub user '%s' but effective user is '%s' (%s)", existingUsername, activeUser.Alias, activeUser.GitHubUsername))
-		fmt.Print("Continue anyway? [y/N]: ")
 
-		reader := bufio.NewReader(os.Stdin)
-		response, _ := reader.ReadString('\n')
-		response = strings.TrimSpace(strings.ToLower(response))
-
-		if response != "y" && response != "yes" {
+		confirmed, err := ui.PromptConfirmation("Continue anyway?")
+		if err != nil {
+			return err
+		}
+		if !confirmed {
 			fmt.Println("Operation cancelled.")
 			return nil
 		}
 		fmt.Println()
 	}
 
-	// Convert URL (uses GitHub username for SSH host)
 	newURL, err := convertToBgitURL(currentURL, activeUser.GitHubUsername)
 	if err != nil {
 		return err
@@ -139,7 +128,6 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Update remote
 	if err := setRemoteURL("origin", newURL); err != nil {
 		return fmt.Errorf("failed to update remote: %w", err)
 	}
@@ -154,12 +142,10 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 }
 
 func runRemoteRestore(cmd *cobra.Command, args []string) error {
-	// Check if we're in a git repo
 	if !isGitRepo() {
 		return fmt.Errorf("not a git repository\nRun this command inside a git repository")
 	}
 
-	// Get current remote URL
 	currentURL, err := getRemoteURL("origin")
 	if err != nil {
 		return fmt.Errorf("failed to get remote URL: %w", err)
@@ -169,7 +155,6 @@ func runRemoteRestore(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no 'origin' remote found")
 	}
 
-	// Convert back to standard GitHub URL
 	newURL, err := convertToStandardURL(currentURL)
 	if err != nil {
 		return err
@@ -180,7 +165,6 @@ func runRemoteRestore(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Update remote
 	if err := setRemoteURL("origin", newURL); err != nil {
 		return fmt.Errorf("failed to update remote: %w", err)
 	}

@@ -58,7 +58,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	warnings := 0
 	fixed := 0
 
-	// 1. Config checks
 	fmt.Println("Config")
 	fmt.Println("──────")
 
@@ -70,7 +69,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Load config for remaining checks
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		fmt.Println()
@@ -78,7 +76,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// 2. SSH directory and file checks
 	fmt.Println()
 	fmt.Println("SSH Setup")
 	fmt.Println("─────────")
@@ -94,7 +91,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 	fixed += sshFixed
 
-	// 3. SSH agent checks
 	fmt.Println()
 	fmt.Println("SSH Agent")
 	fmt.Println("─────────")
@@ -109,7 +105,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 4. Git config checks
 	fmt.Println()
 	fmt.Println("Git Config")
 	fmt.Println("──────────")
@@ -124,7 +119,6 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 5. Network checks (optional)
 	if doctorNetwork {
 		fmt.Println()
 		fmt.Println("GitHub Connectivity")
@@ -172,7 +166,6 @@ func printCheckResult(r checkResult) {
 func checkConfig() []checkResult {
 	var results []checkResult
 
-	// Check if config exists
 	exists, err := config.ConfigExists()
 	if err != nil {
 		results = append(results, checkResult{
@@ -196,7 +189,6 @@ func checkConfig() []checkResult {
 		message: "Config file exists",
 	})
 
-	// Try to load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		results = append(results, checkResult{
@@ -211,7 +203,6 @@ func checkConfig() []checkResult {
 		message: "Config file valid",
 	})
 
-	// Check users configured
 	if len(cfg.Users) == 0 {
 		results = append(results, checkResult{
 			passed:  false,
@@ -225,7 +216,6 @@ func checkConfig() []checkResult {
 		})
 	}
 
-	// Check active user
 	if cfg.ActiveUser == "" {
 		results = append(results, checkResult{
 			passed:  false,
@@ -254,7 +244,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 	var results []checkResult
 	fixed := 0
 
-	// Check .ssh directory
 	sshDir, err := platform.GetSSHDir()
 	if err != nil {
 		results = append(results, checkResult{
@@ -264,7 +253,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 		return results, fixed
 	}
 
-	// Check if .ssh exists
 	info, err := os.Stat(sshDir)
 	if os.IsNotExist(err) {
 		results = append(results, checkResult{
@@ -275,7 +263,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 		return results, fixed
 	}
 
-	// Check .ssh permissions (Unix only)
 	if runtime.GOOS != "windows" {
 		mode := info.Mode().Perm()
 		if mode != 0700 {
@@ -308,7 +295,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 		}
 	}
 
-	// Check SSH keys for each user
 	for _, user := range cfg.Users {
 		if user.SSHKeyPath == "" {
 			results = append(results, checkResult{
@@ -321,7 +307,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 
 		keyPath := user.SSHKeyPath
 
-		// Check key exists
 		keyInfo, err := os.Stat(keyPath)
 		if os.IsNotExist(err) {
 			results = append(results, checkResult{
@@ -332,7 +317,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 			continue
 		}
 
-		// Check key permissions (Unix only)
 		if runtime.GOOS != "windows" {
 			mode := keyInfo.Mode().Perm()
 			if mode != 0600 {
@@ -371,7 +355,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 		}
 	}
 
-	// Check SSH config
 	sshConfigPath, _ := platform.GetSSHConfigPath()
 	if _, err := os.Stat(sshConfigPath); os.IsNotExist(err) {
 		results = append(results, checkResult{
@@ -380,7 +363,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 			fix:     "Run: bgit sync --fix",
 		})
 	} else {
-		// Read and check for bgit entries
 		content, err := os.ReadFile(sshConfigPath)
 		if err == nil {
 			if strings.Contains(string(content), "BEGIN BRGIT MANAGED") {
@@ -404,7 +386,6 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 func checkSSHAgent() []checkResult {
 	var results []checkResult
 
-	// Check if SSH agent is running
 	authSock := os.Getenv("SSH_AUTH_SOCK")
 	if authSock == "" {
 		results = append(results, checkResult{
@@ -415,7 +396,6 @@ func checkSSHAgent() []checkResult {
 		return results
 	}
 
-	// Verify socket exists
 	if _, err := os.Stat(authSock); os.IsNotExist(err) {
 		results = append(results, checkResult{
 			passed:  false,
@@ -430,7 +410,6 @@ func checkSSHAgent() []checkResult {
 		message: "SSH agent running",
 	})
 
-	// Try to list keys
 	cmd := exec.Command("ssh-add", "-l")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -469,7 +448,6 @@ func checkGitConfig(cfg *config.Config) []checkResult {
 		return results
 	}
 
-	// Check git user.name
 	cmd := exec.Command("git", "config", "--global", "user.name")
 	output, err := cmd.Output()
 	if err != nil {
@@ -493,7 +471,6 @@ func checkGitConfig(cfg *config.Config) []checkResult {
 		}
 	}
 
-	// Check git user.email
 	cmd = exec.Command("git", "config", "--global", "user.email")
 	output, err = cmd.Output()
 	if err != nil {
@@ -528,13 +505,9 @@ func checkGitHubConnectivity(cfg *config.Config) []checkResult {
 			continue
 		}
 
-		// Test SSH connection to GitHub with this identity
 		host := fmt.Sprintf("github.com-%s", user.GitHubUsername)
-
 		cmd := exec.Command("ssh", "-T", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", fmt.Sprintf("git@%s", host))
 		output, _ := cmd.CombinedOutput()
-
-		// GitHub returns exit code 1 even on success, check output
 		outputStr := string(output)
 		if strings.Contains(outputStr, "successfully authenticated") || strings.Contains(outputStr, "Hi ") {
 			results = append(results, checkResult{

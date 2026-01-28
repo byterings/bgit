@@ -46,30 +46,25 @@ func runBind(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Get current directory
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	// Find git root
 	repoRoot := identity.FindGitRoot(cwd)
 	if repoRoot == "" {
 		return fmt.Errorf("not in a git repository. Run this command from inside a git repo.")
 	}
 
-	// Convert to absolute path
 	repoRoot, err = filepath.Abs(repoRoot)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Handle --remove
 	if bindRemove {
 		return removeBind(cfg, repoRoot)
 	}
 
-	// Determine which user to bind to
 	userAlias := bindUser
 	if userAlias == "" {
 		userAlias = cfg.ActiveUser
@@ -79,17 +74,15 @@ func runBind(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no active user set. Use --user flag or run 'bgit use <alias>' first")
 	}
 
-	// Verify user exists
 	user := cfg.FindUserByAlias(userAlias)
 	if user == nil {
 		return fmt.Errorf("user '%s' not found", userAlias)
 	}
 
-	// Check for existing binding
 	existingBinding := cfg.FindBindingByPath(repoRoot)
 	if existingBinding != nil {
 		if existingBinding.User == userAlias {
-			ui.Info(fmt.Sprintf("Repository already bound to '%s'", userAlias))
+			ui.Info(fmt.Sprintf("Repository already bound to '%s'. No changes needed.", userAlias))
 			return nil
 		}
 
@@ -100,7 +93,6 @@ func runBind(cmd *cobra.Command, args []string) error {
 		ui.Warning(fmt.Sprintf("Overriding existing binding from '%s' to '%s'", existingBinding.User, userAlias))
 	}
 
-	// Check if inside a workspace
 	if identity.IsInsideWorkspace(cfg, repoRoot) {
 		ws := cfg.FindWorkspaceByPath(repoRoot)
 		if ws != nil && ws.User != userAlias {
@@ -109,12 +101,10 @@ func runBind(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Add binding
 	if err := cfg.AddBinding(repoRoot, userAlias); err != nil {
 		return fmt.Errorf("failed to add binding: %w", err)
 	}
 
-	// Save config
 	if err := config.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
@@ -129,7 +119,7 @@ func runBind(cmd *cobra.Command, args []string) error {
 func removeBind(cfg *config.Config, repoRoot string) error {
 	binding := cfg.FindBindingByPath(repoRoot)
 	if binding == nil {
-		ui.Info("No binding found for this repository")
+		ui.Info("No binding found for this repository. Using global active user.")
 		return nil
 	}
 

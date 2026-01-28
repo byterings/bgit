@@ -40,30 +40,25 @@ func init() {
 func runUse(cmd *cobra.Command, args []string) error {
 	identifier := args[0]
 
-	// Check if git is installed
 	if !git.IsGitInstalled() {
 		return fmt.Errorf("git is not installed")
 	}
 
-	// Auto-initialize if needed
 	if err := autoInit(); err != nil {
 		return err
 	}
 
-	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Find user based on flags
 	var user *config.User
 	if useByUsername {
 		user = cfg.FindUserByUsername(identifier)
 	} else if useByEmail {
 		user = cfg.FindUserByEmail(identifier)
 	} else {
-		// Default: find by alias, username, or email
 		user = cfg.FindUser(identifier)
 	}
 
@@ -71,32 +66,25 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user '%s' not found\nRun: bgit list", identifier)
 	}
 
-	fmt.Printf("Switching to: %s (%s)\n", user.Alias, user.Email)
-
-	// Update Git global config
 	if err := git.SetGlobalUser(user.Name, user.Email); err != nil {
 		return fmt.Errorf("failed to update git config: %w", err)
 	}
 
-	// Update SSH config
 	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
 		return fmt.Errorf("failed to update SSH config: %w", err)
 	}
 
-	// Update active user in bgit config (store alias)
 	cfg.ActiveUser = user.Alias
 	if err := config.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Auto-setup SSH agent on Windows
 	if user.SSHKeyPath != "" {
 		ensureSSHAgent(user)
 	}
 
-	ui.Success("Identity switched successfully")
+	ui.Success(fmt.Sprintf("Switched to identity: %s (%s)", user.Alias, user.Email))
 
-	// Check if current directory has workspace or binding override
 	cwd, err := os.Getwd()
 	if err == nil {
 		resolution, _ := identity.ResolveIdentity(cfg, cwd)

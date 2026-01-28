@@ -42,12 +42,10 @@ func init() {
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	// Auto-initialize if needed
 	if err := autoInit(); err != nil {
 		return err
 	}
 
-	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
@@ -55,7 +53,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	var alias, name, email, githubUsername, sshKeyPath string
 
-	// Get user info (interactive or from flags)
 	if addFlagAlias == "" || addFlagName == "" || addFlagEmail == "" || addFlagGitHub == "" {
 		// Interactive mode
 		fmt.Println("Adding new user identity")
@@ -73,7 +70,6 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		githubUsername = addFlagGitHub
 	}
 
-	// Handle SSH key
 	if addFlagSSHKey != "" && addFlagSSHKey != "skip" {
 		// Validate provided key path
 		if err := user.ValidateSSHKeyPath(addFlagSSHKey); err != nil {
@@ -137,21 +133,18 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Create user
 	newUser := config.User{
-		Alias:       alias,
+		Alias:          alias,
 		Name:           name,
 		Email:          email,
 		GitHubUsername: githubUsername,
 		SSHKeyPath:     sshKeyPath,
 	}
 
-	// Add user to config
 	if err := cfg.AddUser(newUser); err != nil {
 		return fmt.Errorf("failed to add user: %w", err)
 	}
 
-	// Save config
 	if err := config.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}

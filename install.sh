@@ -4,9 +4,21 @@
 
 set -e
 
-VERSION="0.1.0"
 GITHUB_REPO="byterings/bgit"
 INSTALL_DIR="/usr/local/bin"
+
+# Fetch latest version from GitHub API
+echo "Fetching latest version..."
+if command -v curl &> /dev/null; then
+    VERSION=$(curl -sSL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+elif command -v wget &> /dev/null; then
+    VERSION=$(wget -qO- "https://api.github.com/repos/$GITHUB_REPO/releases/latest" | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+fi
+
+if [ -z "$VERSION" ]; then
+    echo "Error: Could not fetch latest version"
+    exit 1
+fi
 
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')

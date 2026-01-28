@@ -6,9 +6,19 @@
 
 $ErrorActionPreference = "Stop"
 
-$Version = "0.1.0"
 $GithubRepo = "byterings/bgit"
 $InstallDir = "$env:LOCALAPPDATA\bgit"
+
+Write-Host ""
+Write-Host "Fetching latest version..." -ForegroundColor Cyan
+
+try {
+    $Release = Invoke-RestMethod -Uri "https://api.github.com/repos/$GithubRepo/releases/latest" -UseBasicParsing
+    $Version = $Release.tag_name -replace '^v', ''
+} catch {
+    Write-Host "Error: Could not fetch latest version" -ForegroundColor Red
+    exit 1
+}
 
 # Detect architecture
 $Arch = if ([Environment]::Is64BitOperatingSystem) { "amd64" } else { "386" }

@@ -49,17 +49,14 @@ func runWorkspace(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Handle --list
 	if workspaceList {
 		return listWorkspaces(cfg)
 	}
 
-	// Handle --remove
 	if workspaceRemove != "" {
 		return removeWorkspace(cfg, workspaceRemove)
 	}
 
-	// Create workspaces
 	return createWorkspaces(cfg)
 }
 
@@ -96,7 +93,6 @@ func listWorkspaces(cfg *config.Config) error {
 }
 
 func removeWorkspace(cfg *config.Config, userAlias string) error {
-	// Find workspace for this user
 	var found *config.Workspace
 	for _, ws := range cfg.GetWorkspaces() {
 		if ws.User == userAlias {
@@ -121,7 +117,6 @@ func removeWorkspace(cfg *config.Config, userAlias string) error {
 }
 
 func createWorkspaces(cfg *config.Config) error {
-	// Determine base path
 	basePath := workspacePath
 	if basePath == "" {
 		var err error
@@ -131,21 +126,17 @@ func createWorkspaces(cfg *config.Config) error {
 		}
 	}
 
-	// Convert to absolute path
 	basePath, err := filepath.Abs(basePath)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Verify base path exists
 	if _, err := os.Stat(basePath); os.IsNotExist(err) {
 		return fmt.Errorf("path does not exist: %s", basePath)
 	}
 
-	// Determine which users to create folders for
 	var users []config.User
 	if workspaceUsers != "" {
-		// Parse comma-separated list
 		aliases := strings.Split(workspaceUsers, ",")
 		for _, alias := range aliases {
 			alias = strings.TrimSpace(alias)
@@ -156,7 +147,6 @@ func createWorkspaces(cfg *config.Config) error {
 			users = append(users, *user)
 		}
 	} else {
-		// All users
 		users = cfg.Users
 	}
 
@@ -171,7 +161,6 @@ func createWorkspaces(cfg *config.Config) error {
 	for _, user := range users {
 		folderPath := filepath.Join(basePath, user.Alias)
 
-		// Create directory if it doesn't exist
 		if _, err := os.Stat(folderPath); os.IsNotExist(err) {
 			if err := os.MkdirAll(folderPath, 0755); err != nil {
 				ui.Error(fmt.Sprintf("Failed to create %s: %v", folderPath, err))
@@ -182,9 +171,7 @@ func createWorkspaces(cfg *config.Config) error {
 			ui.Info(fmt.Sprintf("Exists: %s/", user.Alias))
 		}
 
-		// Add workspace binding
 		if err := cfg.AddWorkspace(folderPath, user.Alias); err != nil {
-			// Already exists is fine
 			if !strings.Contains(err.Error(), "already exists") {
 				ui.Warning(fmt.Sprintf("Failed to bind %s: %v", user.Alias, err))
 				continue
@@ -193,7 +180,6 @@ func createWorkspaces(cfg *config.Config) error {
 		created++
 	}
 
-	// Save config
 	if err := config.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}

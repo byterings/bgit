@@ -34,7 +34,6 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Auto-cleanup invalid paths
 	removed := cfg.CleanupInvalidPaths()
 	if removed > 0 {
 		if err := config.SaveConfig(cfg); err != nil {
@@ -47,22 +46,14 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		cwd = ""
 	}
 
-	// Get resolution for current path
 	var resolution *identity.Resolution
 	if cwd != "" {
 		resolution, _ = identity.ResolveIdentity(cfg, cwd)
 	}
 
-	// Print active identity section
 	printActiveIdentity(cfg, resolution)
-
-	// Print current repository section (if in a git repo)
 	printCurrentRepo(cfg, cwd, resolution)
-
-	// Print workspaces
 	printWorkspaces(cfg)
-
-	// Print bindings
 	printBindings(cfg)
 
 	return nil
@@ -111,7 +102,6 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 		return
 	}
 
-	// Find git root
 	repoRoot := identity.FindGitRoot(cwd)
 
 	if repoRoot == "" {
@@ -119,12 +109,8 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 		fmt.Println("  Not inside a git repository")
 	} else {
 		fmt.Printf("  Path: %s\n", repoRoot)
-
-		// Check for remote
-		// We can't easily get remote URL without shelling out, so just show binding info
 	}
 
-	// Show effective identity
 	if resolution != nil {
 		fmt.Println()
 		fmt.Println("Effective Identity")
@@ -147,7 +133,6 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 			fmt.Printf("  GitHub: %s\n", resolution.User.GitHubUsername)
 		}
 
-		// Check for mismatch
 		if cfg.ActiveUser != "" && resolution.Alias != cfg.ActiveUser && resolution.Source != identity.SourceGlobal {
 			fmt.Println()
 			ui.Warning("Identity mismatch!")

@@ -27,35 +27,30 @@ func init() {
 func runDelete(cmd *cobra.Command, args []string) error {
 	identifier := args[0]
 
-	// Auto-initialize if needed
 	if err := autoInit(); err != nil {
 		return err
 	}
 
-	// Load config
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Find user
 	user := cfg.FindUser(identifier)
 	if user == nil {
 		return fmt.Errorf("user '%s' not found", identifier)
 	}
 
-	// Confirm deletion
 	confirmed, err := ui.PromptConfirmation(fmt.Sprintf("Delete user '%s' (%s)?", user.Alias, user.Email))
 	if err != nil {
 		return err
 	}
 
 	if !confirmed {
-		fmt.Println("Cancelled")
+		fmt.Println("Operation cancelled.")
 		return nil
 	}
 
-	// Ask if user wants to delete SSH keys too
 	deleteKeys := false
 	if user.SSHKeyPath != "" {
 		deleteKeys, err = ui.PromptConfirmation(fmt.Sprintf("Also delete SSH key files (%s)?", user.SSHKeyPath))
@@ -64,7 +59,6 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Remove user from list
 	newUsers := []config.User{}
 	for _, u := range cfg.Users {
 		if u.Alias != user.Alias {
@@ -73,36 +67,30 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	}
 	cfg.Users = newUsers
 
-	// Clear active user if it was the deleted one
 	if cfg.ActiveUser == user.Alias {
 		cfg.ActiveUser = ""
 		ui.Info("Active user cleared")
 	}
 
-	// Delete SSH keys if requested
 	if deleteKeys && user.SSHKeyPath != "" {
-		// Delete private key
 		if err := os.Remove(user.SSHKeyPath); err != nil {
-			ui.Info(fmt.Sprintf("Warning: Could not delete private key: %v", err))
+			ui.Warning(fmt.Sprintf("Could not delete private key: %v", err))
 		} else {
 			ui.Success(fmt.Sprintf("Deleted: %s", user.SSHKeyPath))
 		}
 
-		// Delete public key
 		pubKeyPath := user.SSHKeyPath + ".pub"
 		if err := os.Remove(pubKeyPath); err != nil {
-			ui.Info(fmt.Sprintf("Warning: Could not delete public key: %v", err))
+			ui.Warning(fmt.Sprintf("Could not delete public key: %v", err))
 		} else {
 			ui.Success(fmt.Sprintf("Deleted: %s", pubKeyPath))
 		}
 	}
 
-	// Save config
 	if err := config.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	// Update SSH config
 	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
 		ui.Info("Warning: Failed to update SSH config")
 	}

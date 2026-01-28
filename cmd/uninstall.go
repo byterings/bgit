@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,10 +9,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
+	"github.com/spf13/cobra"
 )
 
 var uninstallCmd = &cobra.Command{
@@ -51,7 +50,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	fmt.Println("==============")
 	fmt.Println()
 
-	// Confirmation
 	if !uninstallForce {
 		fmt.Println("This will:")
 		fmt.Println("  1. Scan for repositories with bgit remote URLs")
@@ -59,14 +57,13 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		fmt.Println("  3. Remove bgit SSH config entries")
 		fmt.Println("  4. Remove bgit configuration (~/.bgit)")
 		fmt.Println()
-		fmt.Print("Continue? [y/N]: ")
 
-		reader := bufio.NewReader(os.Stdin)
-		response, _ := reader.ReadString('\n')
-		response = strings.TrimSpace(strings.ToLower(response))
-
-		if response != "y" && response != "yes" {
-			fmt.Println("Uninstall cancelled.")
+		confirmed, err := ui.PromptConfirmation("Continue?")
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			fmt.Println("Operation cancelled.")
 			return nil
 		}
 		fmt.Println()
@@ -75,7 +72,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	var fixedRepos []string
 	var failedRepos []string
 
-	// Step 1: Find and fix repositories
 	if !uninstallSkipRepos {
 		fmt.Println("Step 1: Scanning for repositories...")
 		homeDir, err := os.UserHomeDir()
@@ -90,7 +86,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	}
 
-	// Step 2: Remove SSH config entries
 	fmt.Println("Step 2: Removing SSH config entries...")
 	if err := removeSSHConfigEntries(); err != nil {
 		ui.Error(fmt.Sprintf("Failed to remove SSH config: %v", err))
@@ -99,7 +94,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
-	// Step 3: Remove bgit config
 	fmt.Println("Step 3: Removing bgit configuration...")
 	configDir, err := config.GetConfigDir()
 	if err == nil {
@@ -111,7 +105,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
-	// Summary
 	fmt.Println("==============")
 	fmt.Println("Summary")
 	fmt.Println("==============")
@@ -145,14 +138,9 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// scanAndFixRepos scans for git repos with bgit URLs and fixes them
 func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
-	// Common directories to scan
-	scanDirs := []string{
-		startPath,
-	}
+	scanDirs := []string{startPath}
 
-	// Add common project directories
 	commonDirs := []string{"Documents", "Projects", "repos", "src", "code", "work", "dev", "git"}
 	for _, dir := range commonDirs {
 		fullPath := filepath.Join(startPath, dir)
@@ -161,23 +149,19 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 		}
 	}
 
-	// Track visited directories to avoid duplicates
 	visited := make(map[string]bool)
-
 	bgitPattern := regexp.MustCompile(`github\.com-`)
 
 	for _, scanDir := range scanDirs {
 		filepath.Walk(scanDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return nil // Skip errors
+				return nil
 			}
 
-			// Skip hidden directories (except .git)
 			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != ".git" {
 				return filepath.SkipDir
 			}
 
-			// Skip common non-project directories
 			skipDirs := []string{"node_modules", "vendor", ".cache", ".local", "snap", ".npm", ".cargo"}
 			for _, skip := range skipDirs {
 				if info.Name() == skip {
@@ -185,24 +169,20 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 				}
 			}
 
-			// Look for .git directories
 			if info.IsDir() && info.Name() == ".git" {
 				repoPath := filepath.Dir(path)
 
-				// Skip if already visited
 				if visited[repoPath] {
 					return filepath.SkipDir
 				}
 				visited[repoPath] = true
 
-				// Check if remote uses bgit format
 				url, err := getRepoRemoteURL(repoPath)
 				if err != nil || url == "" {
 					return filepath.SkipDir
 				}
 
 				if bgitPattern.MatchString(url) {
-					// Fix this repo
 					newURL, err := convertToStandardURL(url)
 					if err != nil {
 						failed = append(failed, repoPath)
@@ -226,7 +206,6 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 	return fixed, failed
 }
 
-// getRepoRemoteURL gets remote URL for a specific repo
 func getRepoRemoteURL(repoPath string) (string, error) {
 	cmd := exec.Command("git", "-C", repoPath, "remote", "get-url", "origin")
 	output, err := cmd.Output()
@@ -236,13 +215,11 @@ func getRepoRemoteURL(repoPath string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// setRepoRemoteURL sets remote URL for a specific repo
 func setRepoRemoteURL(repoPath, remote, url string) error {
 	cmd := exec.Command("git", "-C", repoPath, "remote", "set-url", remote, url)
 	return cmd.Run()
 }
 
-// removeSSHConfigEntries removes bgit-managed SSH config entries
 func removeSSHConfigEntries() error {
 	sshConfigPath, err := platform.GetSSHConfigPath()
 	if err != nil {
@@ -252,12 +229,11 @@ func removeSSHConfigEntries() error {
 	content, err := os.ReadFile(sshConfigPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil // No SSH config, nothing to do
+			return nil
 		}
 		return err
 	}
 
-	// Remove the bgit-managed section
 	lines := strings.Split(string(content), "\n")
 	var newLines []string
 	inBgitSection := false
@@ -276,9 +252,7 @@ func removeSSHConfigEntries() error {
 		}
 	}
 
-	// Write back
 	newContent := strings.Join(newLines, "\n")
-	// Remove extra blank lines at the end
 	newContent = strings.TrimRight(newContent, "\n") + "\n"
 
 	return os.WriteFile(sshConfigPath, []byte(newContent), 0600)

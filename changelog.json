@@ -1,6 +1,29 @@
 {
   "releases": [
     {
+      "version": "0.2.1",
+      "date": "2025-01-28",
+      "phase": 2,
+      "summary": "Code cleanup and improved installation experience.",
+      "features": [
+        {
+          "title": "Dynamic version fetching",
+          "description": "Install scripts now automatically fetch the latest version from GitHub"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Standardized user prompts",
+          "description": "All confirmation prompts now use consistent UI patterns"
+        },
+        {
+          "title": "Code cleanup",
+          "description": "Removed unnecessary comments and improved code readability"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.2.0",
       "date": "2025-01-28",
       "phase": 2,

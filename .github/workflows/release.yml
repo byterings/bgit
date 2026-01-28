@@ -115,5 +115,7 @@ jobs:
       - name: Trigger website rebuild (Cloudflare Pages)
         if: steps.check_release.outputs.exists == 'false'
         run: |
+          echo "Waiting 5 minutes for GitHub CDN cache to update..."
+          sleep 300
           curl -d "" "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
         continue-on-error: true

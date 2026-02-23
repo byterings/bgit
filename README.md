@@ -4,7 +4,7 @@
 
 Switch Git identities with one command. Keep using normal `git` commands while bgit handles identity switching.
 
-> **Version 0.2.0** - Phase 2 release with workspace support and diagnostics.
+> **Version 0.2.1** - Phase 2 release with workspace support and diagnostics.
 
 ## Why bgit?
 
@@ -50,27 +50,34 @@ Download the binary for your platform from [Releases](https://github.com/byterin
 
 ```bash
 # Linux (AMD64)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-linux-amd64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-linux-amd64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 
 # macOS (Apple Silicon)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-darwin-arm64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-darwin-arm64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 
 # macOS (Intel)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.0/bgit-darwin-amd64 -o bgit
+curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-darwin-amd64 -o bgit
 chmod +x bgit
 sudo mv bgit /usr/local/bin/
 ```
 
-## Quick Start
+## Quick Start (Phase 3 Direction)
 
-### 1. Add your identities
+### 1. Run one-time setup
 
 ```bash
-# Interactive mode (recommended)
+bgit setup
+```
+
+`bgit setup` is the new one-time bootstrap command (planned for Phase 3). It will initialize config, prepare SSH setup, install safety checks, and set up defaults.
+
+### 2. Add your identities
+
+```bash
 bgit add
 
 # Or use flags
@@ -80,12 +87,12 @@ bgit add \
   --github "john-work"
 ```
 
-During setup, bgit can:
+During identity setup, bgit can:
 - Generate new SSH keys (Ed25519)
 - Import existing SSH keys
 - Skip SSH setup (add later)
 
-### 2. Switch between identities
+### 3. Switch between identities
 
 ```bash
 # Switch to work account
@@ -95,23 +102,18 @@ bgit use work
 bgit use personal
 ```
 
-That's it. All `git` commands now use the active identity.
+All `git` commands use the effective identity for your location (workspace > binding > global active).
 
-### 3. List your identities
+### 4. Clone and push safely
 
 ```bash
-bgit list
+bgit clone https://github.com/company/repo.git
 ```
 
-Output:
-```
-Configured users:
-
-→ work                 john@work.com                  John Work
-  personal             john@personal.com              John Personal
-```
-
-The `→` shows your active identity.
+Phase 3 plan:
+- Repos cloned with `bgit clone` auto-bind to the effective identity by default
+- Pre-push safety checks run automatically
+- If active user and repo owner differ, bgit warns and asks confirmation before push
 
 ## What bgit Modifies
 
@@ -202,26 +204,38 @@ If you prefer manual removal:
 
 ## Commands
 
+### Core Commands (Simple Mode)
 | Command | Description |
 |---------|-------------|
+| `bgit setup` | One-time setup (initialize + safety checks + defaults) |
 | `bgit add` | Add a new Git identity |
-| `bgit list` | List all configured identities |
 | `bgit use <alias>` | Switch to a different identity |
 | `bgit clone <url>` | Clone repo with correct SSH config |
-| `bgit remote fix` | Fix current repo's remote for active user |
-| `bgit remote restore` | Restore remote to standard GitHub format |
-| `bgit workspace` | Create workspace folders with auto-binding |
-| `bgit bind` | Bind current repo to an identity |
 | `bgit status` | Show current identity status and bindings |
 | `bgit doctor` | Diagnose configuration issues |
+| `bgit list` | List all configured identities |
+| `bgit uninstall` | Safely uninstall bgit and restore all repos |
+
+### Advanced / Legacy Commands
+| Command | Description |
+|---------|-------------|
+| `bgit workspace` | Create workspace folders with auto-binding |
+| `bgit bind` | Bind current repo to an identity |
+| `bgit remote fix` | Manually fix current repo remote (legacy/advanced) |
+| `bgit remote restore` | Restore remote to standard GitHub format |
 | `bgit delete <alias>` | Remove an identity |
 | `bgit update <alias>` | Update an identity's SSH key |
 | `bgit sync [--fix]` | Validate configs match active user |
 | `bgit active` | Show current active identity |
-| `bgit setup-ssh` | (Windows) Start SSH agent and load keys |
-| `bgit uninstall` | Safely uninstall bgit and restore all repos |
+| `bgit setup-ssh` | Legacy Windows SSH helper (deprecated in Phase 3 flow) |
+| `bgit init` | Legacy init command (deprecated in Phase 3 flow) |
 
 See [USAGE.md](USAGE.md) for detailed command documentation.
+
+### Deprecated in Phase 3 Flow
+- `bgit init` (replaced by `bgit setup`)
+- `bgit setup-ssh` (covered by `bgit setup`)
+- `bgit remote fix` for regular usage (auto-checks should prompt/handle this)
 
 ## SSH Key Management
 
@@ -242,7 +256,9 @@ bgit clone https://github.com/company/repo.git
 
 This works with any GitHub URL (HTTPS or SSH) and converts it automatically.
 
-### Fixing Existing Repositories
+Phase 3 plan: successful clones will auto-bind the repository owner identity (with an optional `--no-bind` escape hatch for advanced users).
+
+### Fixing Existing Repositories (Advanced / Legacy)
 
 If you have an existing repo, fix its remote:
 
@@ -252,6 +268,8 @@ bgit use work
 bgit remote fix
 git push   # Now works with the correct identity
 ```
+
+Phase 3 plan: pre-push checks will detect mismatches and offer guided fixes automatically.
 
 ### Restoring Remotes
 
@@ -356,15 +374,20 @@ ssh-add ~/.ssh/bgit_*
 - [x] `bgit remote fix/restore` - manage remote URLs
 - [x] `bgit uninstall` - safe uninstallation
 
-### Phase 2 (Current - v0.2.0) ✓
+### Phase 2 (Current - v0.2.1) ✓
 - [x] `bgit workspace` - organized folders with auto-binding
 - [x] `bgit bind` - repo-bound identity (sticky ownership)
 - [x] `bgit status` - show identity status and bindings
 - [x] `bgit doctor` - diagnostics and auto-fix
 
 ### Phase 3 (Planned)
-- [ ] Shell prompt integration
-- [ ] Pre-push safety checks
+- [ ] `bgit setup` - single one-time setup entrypoint
+- [ ] Auto-setup behavior for first-time users
+- [ ] Shell prompt integration (show effective identity)
+- [ ] Auto-bind repos cloned via `bgit clone` (default)
+- [ ] Automatic pre-push safety checks
+- [ ] Active user vs repo owner warning with confirmation prompt
+- [ ] Deprecation flow for `bgit init` and `bgit setup-ssh`
 
 ### Phase 4 (Future)
 - [ ] UI for all operations
@@ -404,4 +427,3 @@ MIT License - see [LICENSE](LICENSE)
 ---
 
 **One command. Zero mistakes.**
-

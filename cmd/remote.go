@@ -52,6 +52,8 @@ func init() {
 }
 
 func runRemoteFix(cmd *cobra.Command, args []string) error {
+	ui.Warning("'bgit remote fix' is legacy/advanced. Automatic safety checks should handle this during push.")
+
 	if !isGitRepo() {
 		return fmt.Errorf("not a git repository\nRun this command inside a git repository")
 	}

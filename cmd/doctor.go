@@ -50,6 +50,10 @@ type checkResult struct {
 }
 
 func runDoctor(cmd *cobra.Command, args []string) error {
+	if err := autoInit(); err != nil {
+		return err
+	}
+
 	fmt.Println()
 	fmt.Println("Checking bgit configuration...")
 	fmt.Println()

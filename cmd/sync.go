@@ -37,13 +37,8 @@ func init() {
 }
 
 func runSync(cmd *cobra.Command, args []string) error {
-	// Check if bgit is initialized
-	exists, err := config.ConfigExists()
-	if err != nil {
+	if err := autoInit(); err != nil {
 		return err
-	}
-	if !exists {
-		return fmt.Errorf("bgit not initialized. Run 'bgit init' first")
 	}
 
 	// Load config

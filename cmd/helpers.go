@@ -1,29 +1,19 @@
 package cmd
 
 import (
-	"github.com/byterings/bgit/internal/config"
+	"fmt"
 )
 
-// autoInit initializes bgit automatically if not already initialized
+// autoInit initializes bgit automatically and runs first-time setup.
 func autoInit() error {
-	exists, err := config.ConfigExists()
+	cfg, _, err := ensureConfigInitialized()
 	if err != nil {
 		return err
 	}
 
-	if !exists {
-		// Silently initialize
-		if err := config.CreateConfigDir(); err != nil {
-			return err
-		}
-
-		if err := config.CreateBackupDir(); err != nil {
-			return err
-		}
-
-		cfg := config.NewConfig()
-		if err := config.SaveConfig(cfg); err != nil {
-			return err
+	if !cfg.SetupCompleted {
+		if err := applySetup(cfg, true); err != nil {
+			return fmt.Errorf("automatic setup failed: %w\nRun: bgit setup", err)
 		}
 	}
 

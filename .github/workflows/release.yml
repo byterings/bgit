@@ -18,7 +18,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.24.11'
 
       - name: Read version
         id: version
@@ -69,14 +69,16 @@ jobs:
         if: steps.check_release.outputs.exists == 'false'
         id: release_notes
         run: |
-          # Extract the release notes for this version from changelog.json
           VERSION=${{ steps.version.outputs.version }}
+          SUMMARY=$(jq -r --arg v "$VERSION" '.releases[] | select(.version == $v) | .summary' changelog.json)
+          if [ -z "$SUMMARY" ] || [ "$SUMMARY" = "null" ]; then
+            SUMMARY="Release $VERSION"
+          fi
 
-          # Create release notes from changelog.json
-          cat > release_notes.md << 'EOF'
-          ## bgit v${{ steps.version.outputs.version }}
+          cat > release_notes.md << EOF
+          ## bgit v$VERSION
 
-          $(cat changelog.json | jq -r '.releases[] | select(.version == "${{ steps.version.outputs.version }}") | .summary')
+          $SUMMARY
 
           ### Installation
 
@@ -90,7 +92,7 @@ jobs:
           irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
           ```
 
-          See [CHANGELOG.md](CHANGELOG.md) for full details.
+          See [changelog.json](changelog.json) for full details.
           EOF
 
       - name: Create GitHub Release

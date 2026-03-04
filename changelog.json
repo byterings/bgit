@@ -2,7 +2,7 @@
   "releases": [
     {
       "version": "0.3.0",
-      "date": "",
+      "date": "2026-03-04",
       "phase": 3,
       "summary": "Phase 3 usability and safety release focused on one-time setup and automatic push protection.",
       "features": [

@@ -82,9 +82,9 @@ try {
 
 Write-Host ""
 Write-Host "Get started:" -ForegroundColor Cyan
+Write-Host "  bgit setup         # One-time setup (hooks + defaults)"
 Write-Host "  bgit add           # Add your first identity"
 Write-Host "  bgit use <alias>   # Switch identity"
-Write-Host "  bgit list          # List all identities"
 Write-Host ""
 Write-Host "Note: You may need to restart your terminal for PATH changes to take effect." -ForegroundColor Yellow
 Write-Host ""

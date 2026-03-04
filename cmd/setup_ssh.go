@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/ui"
+	"github.com/spf13/cobra"
 )
 
 var setupSSHCmd = &cobra.Command{
@@ -16,7 +16,8 @@ var setupSSHCmd = &cobra.Command{
 	Short: "Setup SSH agent (Windows helper)",
 	Long: `Setup SSH agent and add SSH keys.
 This is especially useful on Windows where SSH agent needs to be started manually.`,
-	RunE: runSetupSSH,
+	Deprecated: "use 'bgit setup' instead",
+	RunE:       runSetupSSH,
 }
 
 func init() {
@@ -24,6 +25,8 @@ func init() {
 }
 
 func runSetupSSH(cmd *cobra.Command, args []string) error {
+	ui.Warning("'bgit setup-ssh' is deprecated. Use 'bgit setup' for full setup.")
+
 	// Auto-initialize if needed
 	if err := autoInit(); err != nil {
 		return err

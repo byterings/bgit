@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
+
+var cloneNoBind bool
 
 var cloneCmd = &cobra.Command{
 	Use:   "clone <url> [directory]",
@@ -35,6 +38,7 @@ to use the correct SSH host alias for the active user.`,
 
 func init() {
 	rootCmd.AddCommand(cloneCmd)
+	cloneCmd.Flags().BoolVar(&cloneNoBind, "no-bind", false, "Skip automatic repository binding after clone")
 }
 
 func runClone(cmd *cobra.Command, args []string) error {
@@ -124,6 +128,15 @@ func runClone(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	ui.Success("Repository cloned successfully!")
 
+	if !cloneNoBind {
+		if err := bindClonedRepository(cfg, url, directory, resolution.Alias); err != nil {
+			ui.Warning(fmt.Sprintf("Clone succeeded, but auto-bind failed: %v", err))
+			ui.Info("You can bind manually with: bgit bind --user " + resolution.Alias)
+		} else {
+			ui.Success(fmt.Sprintf("Repository bound to '%s'", resolution.Alias))
+		}
+	}
+
 	return nil
 }
 
@@ -183,4 +196,61 @@ func convertToBgitURL(url string, sshHostUser string) (string, error) {
 
 	// sshHostUser is the GitHub username that matches SSH config: Host github.com-<sshHostUser>
 	return fmt.Sprintf("git@github.com-%s:%s/%s.git", sshHostUser, repoOwner, repoName), nil
+}
+
+func bindClonedRepository(cfg *config.Config, cloneURL, directory, userAlias string) error {
+	clonePath := directory
+	if clonePath == "" {
+		inferred, err := inferCloneDirectory(cloneURL)
+		if err != nil {
+			return err
+		}
+		clonePath = inferred
+	}
+
+	absPath, err := filepath.Abs(clonePath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve clone path: %w", err)
+	}
+
+	repoRoot := identity.FindGitRoot(absPath)
+	if repoRoot == "" {
+		return fmt.Errorf("could not locate cloned git repository at %s", absPath)
+	}
+
+	if err := cfg.AddBinding(repoRoot, userAlias); err != nil {
+		return fmt.Errorf("failed to add binding: %w", err)
+	}
+
+	if err := config.SaveConfig(cfg); err != nil {
+		return fmt.Errorf("failed to save binding: %w", err)
+	}
+
+	return nil
+}
+
+func inferCloneDirectory(url string) (string, error) {
+	httpsPattern := regexp.MustCompile(`^https?://github\.com/[^/]+/(.+?)(?:\.git)?$`)
+	sshPattern := regexp.MustCompile(`^git@github\.com:[^/]+/(.+?)(?:\.git)?$`)
+	bgitPattern := regexp.MustCompile(`^git@github\.com-[^:]+:[^/]+/(.+?)(?:\.git)?$`)
+
+	var repoName string
+
+	switch {
+	case httpsPattern.MatchString(url):
+		repoName = httpsPattern.FindStringSubmatch(url)[1]
+	case sshPattern.MatchString(url):
+		repoName = sshPattern.FindStringSubmatch(url)[1]
+	case bgitPattern.MatchString(url):
+		repoName = bgitPattern.FindStringSubmatch(url)[1]
+	default:
+		return "", fmt.Errorf("cannot infer clone directory from URL: %s", url)
+	}
+
+	repoName = strings.TrimSuffix(repoName, ".git")
+	if repoName == "" {
+		return "", fmt.Errorf("cannot infer clone directory from URL: %s", url)
+	}
+
+	return repoName, nil
 }

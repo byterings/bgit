@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	ConfigFileName    = "config.toml"
-	BackupDirName     = "backups"
-	LegacyConfigDir   = ".bgit" // Old config directory name for migration
+	ConfigFileName  = "config.toml"
+	BackupDirName   = "backups"
+	LegacyConfigDir = ".bgit" // Old config directory name for migration
 )
 
 // GetConfigDirName returns the config directory name
@@ -182,9 +182,10 @@ func CreateBackupDir() error {
 // NewConfig creates a new empty config
 func NewConfig() *Config {
 	return &Config{
-		Version:    "1.0",
-		ActiveUser: "",
-		Users:      []User{},
+		Version:        "1.0",
+		SetupCompleted: false,
+		ActiveUser:     "",
+		Users:          []User{},
 	}
 }
 

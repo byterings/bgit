@@ -94,7 +94,15 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
-	fmt.Println("Step 3: Removing bgit configuration...")
+	fmt.Println("Step 3: Removing global hook configuration...")
+	if err := clearManagedHooksPath(); err != nil {
+		ui.Warning(fmt.Sprintf("Could not clear global hooks path: %v", err))
+	} else {
+		ui.Success("Global hooks path restored")
+	}
+	fmt.Println()
+
+	fmt.Println("Step 4: Removing bgit configuration...")
 	configDir, err := config.GetConfigDir()
 	if err == nil {
 		if err := os.RemoveAll(configDir); err != nil {
@@ -239,11 +247,11 @@ func removeSSHConfigEntries() error {
 	inBgitSection := false
 
 	for _, line := range lines {
-		if strings.Contains(line, "BEGIN BRGIT MANAGED") {
+		if strings.Contains(line, "BEGIN BGIT MANAGED") || strings.Contains(line, "BEGIN BRGIT MANAGED") {
 			inBgitSection = true
 			continue
 		}
-		if strings.Contains(line, "END BRGIT MANAGED") {
+		if strings.Contains(line, "END BGIT MANAGED") || strings.Contains(line, "END BRGIT MANAGED") {
 			inBgitSection = false
 			continue
 		}

@@ -1,6 +1,50 @@
 {
   "releases": [
     {
+      "version": "0.3.0",
+      "date": "",
+      "phase": 3,
+      "summary": "Phase 3 usability and safety release focused on one-time setup and automatic push protection.",
+      "features": [
+        {
+          "title": "One-time setup command",
+          "description": "Added bgit setup to initialize configuration, install global pre-push safety checks, and prepare defaults",
+          "command": "bgit setup"
+        },
+        {
+          "title": "Automatic push safety checks",
+          "description": "Added bgit check and managed pre-push hook integration to validate identity and remote alignment",
+          "command": "bgit check"
+        },
+        {
+          "title": "Shell prompt integration",
+          "description": "Added prompt-friendly identity output for shell integrations",
+          "command": "bgit prompt --plain"
+        },
+        {
+          "title": "Clone auto-bind by default",
+          "description": "Repositories cloned with bgit clone are automatically bound to the effective identity by default",
+          "command": "bgit clone <url> [directory]"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Consistent first-run behavior",
+          "description": "Commands now trigger setup flow automatically when bgit has not been initialized"
+        },
+        {
+          "title": "Uninstall cleanup",
+          "description": "Uninstall now clears managed global hooks path and removes managed SSH config entries"
+        }
+      ],
+      "breaking_changes": [
+        {
+          "title": "Legacy command deprecations",
+          "description": "bgit init and bgit setup-ssh are deprecated in favor of bgit setup; bgit remote fix is now legacy/advanced guidance"
+        }
+      ]
+    },
+    {
       "version": "0.2.1",
       "date": "2025-01-28",
       "phase": 2,

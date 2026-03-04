@@ -84,9 +84,9 @@ if command -v bgit &> /dev/null; then
     bgit --version
     echo ""
     echo "Get started:"
+    echo "  bgit setup         # One-time setup (hooks + defaults)"
     echo "  bgit add           # Add your first identity"
     echo "  bgit use <alias>   # Switch identity"
-    echo "  bgit list          # List all identities"
     echo ""
 else
     echo "Installation failed. Please check $INSTALL_DIR is in your PATH"

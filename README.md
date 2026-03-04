@@ -73,7 +73,7 @@ sudo mv bgit /usr/local/bin/
 bgit setup
 ```
 
-`bgit setup` is the new one-time bootstrap command (planned for Phase 3). It will initialize config, prepare SSH setup, install safety checks, and set up defaults.
+`bgit setup` is the one-time bootstrap command. It initializes config, prepares SSH setup, installs safety checks, and sets up defaults.
 
 ### 2. Add your identities
 
@@ -110,7 +110,7 @@ All `git` commands use the effective identity for your location (workspace > bin
 bgit clone https://github.com/company/repo.git
 ```
 
-Phase 3 plan:
+Current behavior:
 - Repos cloned with `bgit clone` auto-bind to the effective identity by default
 - Pre-push safety checks run automatically
 - If active user and repo owner differ, bgit warns and asks confirmation before push
@@ -134,13 +134,13 @@ Updates `~/.gitconfig` (Linux/macOS) or `%USERPROFILE%\.gitconfig` (Windows):
 
 Adds a managed section to `~/.ssh/config`:
 ```
-# ---- BEGIN BRGIT MANAGED ----
+# ---- BEGIN BGIT MANAGED ----
 Host github.com-john-work
   HostName github.com
   User git
   IdentityFile ~/.ssh/bgit_work
   IdentitiesOnly yes
-# ---- END BRGIT MANAGED ----
+# ---- END BGIT MANAGED ----
 ```
 
 **Note:** The SSH host uses your GitHub username (e.g., `github.com-john-work`), not the alias.
@@ -176,7 +176,8 @@ This will:
 1. Find all repositories with bgit remote URLs
 2. Restore them to standard GitHub format
 3. Remove bgit SSH config entries
-4. Remove bgit configuration
+4. Remove bgit-managed global hooks path (`core.hooksPath`)
+5. Remove bgit configuration
 
 Then manually delete the binary:
 ```bash
@@ -194,7 +195,7 @@ If you prefer manual removal:
 1. **Restore repos**: Run `bgit remote restore` in each repository
 2. **Remove binary**: `sudo rm /usr/local/bin/bgit`
 3. **Remove config**: `rm -rf ~/.bgit`
-4. **Clean SSH config**: Remove the `# ---- BEGIN BRGIT MANAGED ----` section from `~/.ssh/config`
+4. **Clean SSH config**: Remove the `# ---- BEGIN BGIT MANAGED ----` section from `~/.ssh/config`
 5. **Remove SSH keys** (optional): `rm ~/.ssh/bgit_*`
 6. **Restore git config**:
    ```bash
@@ -211,6 +212,8 @@ If you prefer manual removal:
 | `bgit add` | Add a new Git identity |
 | `bgit use <alias>` | Switch to a different identity |
 | `bgit clone <url>` | Clone repo with correct SSH config |
+| `bgit check` | Run pre-push safety checks manually |
+| `bgit prompt` | Output effective identity for shell prompt integration |
 | `bgit status` | Show current identity status and bindings |
 | `bgit doctor` | Diagnose configuration issues |
 | `bgit list` | List all configured identities |
@@ -230,7 +233,7 @@ If you prefer manual removal:
 | `bgit setup-ssh` | Legacy Windows SSH helper (deprecated in Phase 3 flow) |
 | `bgit init` | Legacy init command (deprecated in Phase 3 flow) |
 
-See [USAGE.md](USAGE.md) for detailed command documentation.
+Run `bgit --help` and `bgit <command> --help` for command usage.
 
 ### Deprecated in Phase 3 Flow
 - `bgit init` (replaced by `bgit setup`)
@@ -252,11 +255,12 @@ Use `bgit clone` to automatically use the correct SSH configuration:
 ```bash
 bgit use work
 bgit clone https://github.com/company/repo.git
+bgit clone https://github.com/company/repo.git --no-bind   # optional
 ```
 
 This works with any GitHub URL (HTTPS or SSH) and converts it automatically.
 
-Phase 3 plan: successful clones will auto-bind the repository owner identity (with an optional `--no-bind` escape hatch for advanced users).
+Current behavior: successful clones auto-bind the repository owner identity by default (use `--no-bind` to skip).
 
 ### Fixing Existing Repositories (Advanced / Legacy)
 
@@ -269,7 +273,7 @@ bgit remote fix
 git push   # Now works with the correct identity
 ```
 
-Phase 3 plan: pre-push checks will detect mismatches and offer guided fixes automatically.
+Current behavior: pre-push checks detect mismatches and offer guided fixes automatically.
 
 ### Restoring Remotes
 
@@ -380,14 +384,14 @@ ssh-add ~/.ssh/bgit_*
 - [x] `bgit status` - show identity status and bindings
 - [x] `bgit doctor` - diagnostics and auto-fix
 
-### Phase 3 (Planned)
-- [ ] `bgit setup` - single one-time setup entrypoint
-- [ ] Auto-setup behavior for first-time users
-- [ ] Shell prompt integration (show effective identity)
-- [ ] Auto-bind repos cloned via `bgit clone` (default)
-- [ ] Automatic pre-push safety checks
-- [ ] Active user vs repo owner warning with confirmation prompt
-- [ ] Deprecation flow for `bgit init` and `bgit setup-ssh`
+### Phase 3 (In Progress - Unreleased)
+- [x] `bgit setup` - single one-time setup entrypoint
+- [x] Auto-setup behavior for first-time users
+- [x] Shell prompt integration (show effective identity)
+- [x] Auto-bind repos cloned via `bgit clone` (default)
+- [x] Automatic pre-push safety checks
+- [x] Active user vs repo owner warning with confirmation prompt
+- [x] Deprecation flow for `bgit init` and `bgit setup-ssh`
 
 ### Phase 4 (Future)
 - [ ] UI for all operations

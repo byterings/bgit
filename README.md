@@ -1,38 +1,17 @@
-# bgit - Multi-Git Identity Manager
+# bgit — Multi Git Identity Manager
 
-**bgit** is a CLI tool for managing multiple Git identities on one system. Works on **Linux, macOS, and Windows**.
+Never commit with the wrong Git identity again.
 
-Switch Git identities with one command. Keep using normal `git` commands while bgit handles identity switching.
+## Description
 
-> **Version 0.2.1** - Phase 2 release with workspace support and diagnostics.
+bgit is a CLI tool that helps developers manage multiple Git identities (work, personal, client) without manually editing `.gitconfig` or SSH configuration.
 
-## Why bgit?
-
-If you have multiple GitHub accounts (work, personal, side projects), you know the pain:
-- Manually editing `.gitconfig` and `.ssh/config`
-- Accidentally pushing with the wrong identity
-- Complex SSH host configurations
-- Forgetting which account you're using
-
-**bgit solves this:**
-- One command to switch identities: `bgit use work`
-- Automatic Git and SSH config management
-- Keep using normal `git` commands
-- Clear indication of active identity
-
-## Installation
-
-**Note**: Users do **NOT** need Go installed. Download pre-built binaries from [Releases](https://github.com/byterings/bgit/releases).
+## Install
 
 ### Linux / macOS
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/byterings/bgit/main/install.sh | bash
-```
-
-Before running, you can inspect the script:
-```bash
-curl -sSL https://raw.githubusercontent.com/byterings/bgit/main/install.sh | less
+curl -fsSL https://bgitcli.com/install.sh | bash
 ```
 
 ### Windows
@@ -41,393 +20,33 @@ curl -sSL https://raw.githubusercontent.com/byterings/bgit/main/install.sh | les
 irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
 ```
 
-Before running, you can inspect the script at:
-https://github.com/byterings/bgit/blob/main/install.ps1
-
-### Manual Installation
-
-Download the binary for your platform from [Releases](https://github.com/byterings/bgit/releases):
+## Quick Start
 
 ```bash
-# Linux (AMD64)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-linux-amd64 -o bgit
-chmod +x bgit
-sudo mv bgit /usr/local/bin/
-
-# macOS (Apple Silicon)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-darwin-arm64 -o bgit
-chmod +x bgit
-sudo mv bgit /usr/local/bin/
-
-# macOS (Intel)
-curl -L https://github.com/byterings/bgit/releases/download/v0.2.1/bgit-darwin-amd64 -o bgit
-chmod +x bgit
-sudo mv bgit /usr/local/bin/
+bgit add work
+bgit use work
+git commit
 ```
 
-## Quick Start (Phase 3 Direction)
-
-### 1. Run one-time setup
+## Example Workflow
 
 ```bash
-bgit setup
-```
+git config user.email
+personal@gmail.com
 
-`bgit setup` is the one-time bootstrap command. It initializes config, prepares SSH setup, installs safety checks, and sets up defaults.
-
-### 2. Add your identities
-
-```bash
-bgit add
-
-# Or use flags
-bgit add \
-  --name "John Doe" \
-  --email "john@work.com" \
-  --github "john-work"
-```
-
-During identity setup, bgit can:
-- Generate new SSH keys (Ed25519)
-- Import existing SSH keys
-- Skip SSH setup (add later)
-
-### 3. Switch between identities
-
-```bash
-# Switch to work account
 bgit use work
 
-# Switch to personal account
-bgit use personal
+✔ switched to work identity
 ```
 
-All `git` commands use the effective identity for your location (workspace > binding > global active).
+## Features
 
-### 4. Clone and push safely
+- Manage multiple git identities
+- Repo binding for identity
+- Workspace-based identity
+- SSH key management
+- Diagnostics with `bgit doctor`
 
-```bash
-bgit clone https://github.com/company/repo.git
-```
+## Documentation
 
-Current behavior:
-- Repos cloned with `bgit clone` auto-bind to the effective identity by default
-- Pre-push safety checks run automatically
-- If active user and repo owner differ, bgit warns and asks confirmation before push
-
-## What bgit Modifies
-
-bgit manages two configuration areas:
-
-### 1. Git Global Config
-
-Updates `~/.gitconfig` (Linux/macOS) or `%USERPROFILE%\.gitconfig` (Windows):
-```ini
-[user]
-    name = John Work
-    email = john@work.com
-```
-
-**Only `user.name` and `user.email` are modified.** Other settings are untouched.
-
-### 2. SSH Config
-
-Adds a managed section to `~/.ssh/config`:
-```
-# ---- BEGIN BGIT MANAGED ----
-Host github.com-john-work
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/bgit_work
-  IdentitiesOnly yes
-# ---- END BGIT MANAGED ----
-```
-
-**Note:** The SSH host uses your GitHub username (e.g., `github.com-john-work`), not the alias.
-
-**bgit only modifies content between these markers.** Your existing SSH config entries are preserved.
-
-### 3. bgit Config
-
-Stores its own configuration in `~/.bgit/config.toml`:
-```toml
-version = "1.0"
-active_user = "work"
-
-[[users]]
-  alias = "work"
-  name = "John Work"
-  email = "john@work.com"
-  github_username = "john-work"
-  ssh_key_path = "/home/user/.ssh/bgit_work"
-```
-
-## Uninstall / Rollback
-
-### Safe Uninstall (Recommended)
-
-Use `bgit uninstall` to safely remove bgit:
-
-```bash
-bgit uninstall
-```
-
-This will:
-1. Find all repositories with bgit remote URLs
-2. Restore them to standard GitHub format
-3. Remove bgit SSH config entries
-4. Remove bgit-managed global hooks path (`core.hooksPath`)
-5. Remove bgit configuration
-
-Then manually delete the binary:
-```bash
-# Linux/macOS
-sudo rm /usr/local/bin/bgit
-
-# Windows
-# Use Add/Remove Programs or: Remove-Item "$env:LOCALAPPDATA\bgit" -Recurse -Force
-```
-
-### Manual Uninstall
-
-If you prefer manual removal:
-
-1. **Restore repos**: Run `bgit remote restore` in each repository
-2. **Remove binary**: `sudo rm /usr/local/bin/bgit`
-3. **Remove config**: `rm -rf ~/.bgit`
-4. **Clean SSH config**: Remove the `# ---- BEGIN BGIT MANAGED ----` section from `~/.ssh/config`
-5. **Remove SSH keys** (optional): `rm ~/.ssh/bgit_*`
-6. **Restore git config**:
-   ```bash
-   git config --global user.name "Your Name"
-   git config --global user.email "your@email.com"
-   ```
-
-## Commands
-
-### Core Commands (Simple Mode)
-| Command | Description |
-|---------|-------------|
-| `bgit setup` | One-time setup (initialize + safety checks + defaults) |
-| `bgit add` | Add a new Git identity |
-| `bgit use <alias>` | Switch to a different identity |
-| `bgit clone <url>` | Clone repo with correct SSH config |
-| `bgit check` | Run pre-push safety checks manually |
-| `bgit prompt` | Output effective identity for shell prompt integration |
-| `bgit status` | Show current identity status and bindings |
-| `bgit doctor` | Diagnose configuration issues |
-| `bgit list` | List all configured identities |
-| `bgit uninstall` | Safely uninstall bgit and restore all repos |
-
-### Advanced / Legacy Commands
-| Command | Description |
-|---------|-------------|
-| `bgit workspace` | Create workspace folders with auto-binding |
-| `bgit bind` | Bind current repo to an identity |
-| `bgit remote fix` | Manually fix current repo remote (legacy/advanced) |
-| `bgit remote restore` | Restore remote to standard GitHub format |
-| `bgit delete <alias>` | Remove an identity |
-| `bgit update <alias>` | Update an identity's SSH key |
-| `bgit sync [--fix]` | Validate configs match active user |
-| `bgit active` | Show current active identity |
-| `bgit setup-ssh` | Legacy Windows SSH helper (deprecated in Phase 3 flow) |
-| `bgit init` | Legacy init command (deprecated in Phase 3 flow) |
-
-Run `bgit --help` and `bgit <command> --help` for command usage.
-
-### Deprecated in Phase 3 Flow
-- `bgit init` (replaced by `bgit setup`)
-- `bgit setup-ssh` (covered by `bgit setup`)
-- `bgit remote fix` for regular usage (auto-checks should prompt/handle this)
-
-## SSH Key Management
-
-When you add a user, bgit can:
-
-1. **Generate new SSH key** - Creates Ed25519 key pair at `~/.ssh/bgit_<alias>`
-2. **Import existing key** - Use your current SSH key
-3. **Skip for now** - Add SSH key manually later
-
-### Cloning Repositories
-
-Use `bgit clone` to automatically use the correct SSH configuration:
-
-```bash
-bgit use work
-bgit clone https://github.com/company/repo.git
-bgit clone https://github.com/company/repo.git --no-bind   # optional
-```
-
-This works with any GitHub URL (HTTPS or SSH) and converts it automatically.
-
-Current behavior: successful clones auto-bind the repository owner identity by default (use `--no-bind` to skip).
-
-### Fixing Existing Repositories (Advanced / Legacy)
-
-If you have an existing repo, fix its remote:
-
-```bash
-cd existing-repo
-bgit use work
-bgit remote fix
-git push   # Now works with the correct identity
-```
-
-Current behavior: pre-push checks detect mismatches and offer guided fixes automatically.
-
-### Restoring Remotes
-
-Before uninstalling bgit or to use standard git:
-
-```bash
-cd repo
-bgit remote restore   # Restores to git@github.com:user/repo.git
-```
-
-## Workspaces (Phase 2)
-
-Create organized workspace directories for automatic identity binding:
-
-```bash
-# Create workspace folders for all identities
-cd ~/projects
-bgit workspace
-
-# Creates:
-#   ~/projects/work/      → bound to "work" identity
-#   ~/projects/personal/  → bound to "personal" identity
-```
-
-Now any repo cloned inside a workspace folder automatically uses the correct identity:
-
-```bash
-cd ~/projects/work
-bgit clone https://github.com/company/repo.git
-# Uses "work" identity automatically!
-
-cd ~/projects/personal
-bgit clone https://github.com/me/hobby.git
-# Uses "personal" identity automatically!
-```
-
-### Manual Binding
-
-Bind individual repositories:
-
-```bash
-cd existing-repo
-bgit bind              # Bind to active user
-bgit bind --user work  # Bind to specific user
-```
-
-### Identity Resolution
-
-bgit resolves identity in this order:
-1. **Workspace** - If inside a workspace folder
-2. **Binding** - If repo has explicit binding
-3. **Global** - Active user from `bgit use`
-
-## Troubleshooting
-
-### SSH Permission Issues
-
-SSH requires specific file permissions to work correctly:
-
-```bash
-# Fix SSH directory permissions (must be 700)
-chmod 700 ~/.ssh
-
-# Fix SSH key permissions (must be 600)
-chmod 600 ~/.ssh/bgit_*
-```
-
-Run `bgit doctor` to automatically check and fix permission issues:
-
-```bash
-bgit doctor        # Check for issues
-bgit doctor --fix  # Auto-fix permission issues
-```
-
-### Common Issues
-
-**"Permission denied (publickey)"**
-1. Run `bgit doctor --network` to test connectivity
-2. Ensure SSH key is added to your GitHub account
-3. Check file permissions with `bgit doctor`
-
-**"Could not open a connection to your authentication agent"**
-```bash
-eval $(ssh-agent)
-ssh-add ~/.ssh/bgit_*
-```
-
-## Limitations
-
-- **GitHub-focused**: SSH config uses `github.com` hosts. GitLab/Bitbucket may require manual SSH config.
-- **Config format may change**: The `~/.bgit/config.toml` format may change in future versions.
-
-## Roadmap
-
-### Phase 1 (v0.1.0) ✓
-- [x] Global user management
-- [x] SSH + Git config handling
-- [x] User switching
-- [x] Sync/validation
-- [x] Cross-platform support
-- [x] `bgit clone` - clone with correct SSH config
-- [x] `bgit remote fix/restore` - manage remote URLs
-- [x] `bgit uninstall` - safe uninstallation
-
-### Phase 2 (Current - v0.2.1) ✓
-- [x] `bgit workspace` - organized folders with auto-binding
-- [x] `bgit bind` - repo-bound identity (sticky ownership)
-- [x] `bgit status` - show identity status and bindings
-- [x] `bgit doctor` - diagnostics and auto-fix
-
-### Phase 3 (In Progress - Unreleased)
-- [x] `bgit setup` - single one-time setup entrypoint
-- [x] Auto-setup behavior for first-time users
-- [x] Shell prompt integration (show effective identity)
-- [x] Auto-bind repos cloned via `bgit clone` (default)
-- [x] Automatic pre-push safety checks
-- [x] Active user vs repo owner warning with confirmation prompt
-- [x] Deprecation flow for `bgit init` and `bgit setup-ssh`
-
-### Phase 4 (Future)
-- [ ] UI for all operations
-
-## FAQ
-
-**Q: Does bgit wrap git commands?**
-No. bgit only manages configuration. You use normal `git` commands.
-
-**Q: What if I already have SSH keys?**
-bgit can import existing keys. Provide the path when adding a user.
-
-**Q: Is my existing .gitconfig safe?**
-Yes. bgit only modifies `user.name` and `user.email`.
-
-**Q: Is my existing SSH config safe?**
-Yes. bgit only modifies content within its managed section markers.
-
-**Q: Can I use bgit with GitLab/Bitbucket?**
-Git config changes work anywhere. SSH config currently uses `github.com` hosts, so other providers may need manual SSH config adjustments.
-
-**Q: How do I see what bgit will change?**
-Run `bgit sync` to see current status without making changes.
-
-## Contributing
-
-Contributions welcome. This is an early-stage project focused on doing one thing well.
-
-## Support bgit Development (Optional)
-
-If you find bgit useful, consider supporting its development. This is entirely optional.
-
-## License
-
-MIT License - see [LICENSE](LICENSE)
-
----
-
-**One command. Zero mistakes.**
+https://bgitcli.com/docs

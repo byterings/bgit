@@ -66,6 +66,16 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user '%s' not found\nRun: bgit list", identifier)
 	}
 
+	if !cfg.GitIdentityBackedUp {
+		currentName, currentEmail, err := git.GetGlobalUser()
+		if err != nil {
+			return fmt.Errorf("failed to read existing git config: %w", err)
+		}
+		cfg.PreviousGitName = currentName
+		cfg.PreviousGitEmail = currentEmail
+		cfg.GitIdentityBackedUp = true
+	}
+
 	if err := git.SetGlobalUser(user.Name, user.Email); err != nil {
 		return fmt.Errorf("failed to update git config: %w", err)
 	}

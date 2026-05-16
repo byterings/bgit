@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
 	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
+	"github.com/spf13/cobra"
+)
+
+var (
+	deleteForce bool
+	deleteKeys  bool
 )
 
 var deleteCmd = &cobra.Command{
@@ -22,6 +27,8 @@ var deleteCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
+	deleteCmd.Flags().BoolVar(&deleteForce, "force", false, "Delete without confirmation")
+	deleteCmd.Flags().BoolVar(&deleteKeys, "delete-keys", false, "Also delete SSH key files")
 }
 
 func runDelete(cmd *cobra.Command, args []string) error {
@@ -41,19 +48,22 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user '%s' not found", identifier)
 	}
 
-	confirmed, err := ui.PromptConfirmation(fmt.Sprintf("Delete user '%s' (%s)?", user.Alias, user.Email))
-	if err != nil {
-		return err
+	confirmed := deleteForce
+	if !deleteForce {
+		confirmed, err = ui.PromptConfirmation(fmt.Sprintf("Delete user '%s' (%s)?", user.Alias, user.Email))
+		if err != nil {
+			return err
+		}
+
+		if !confirmed {
+			fmt.Println("Operation cancelled.")
+			return nil
+		}
 	}
 
-	if !confirmed {
-		fmt.Println("Operation cancelled.")
-		return nil
-	}
-
-	deleteKeys := false
-	if user.SSHKeyPath != "" {
-		deleteKeys, err = ui.PromptConfirmation(fmt.Sprintf("Also delete SSH key files (%s)?", user.SSHKeyPath))
+	shouldDeleteKeys := deleteKeys
+	if !deleteForce && user.SSHKeyPath != "" && !deleteKeys {
+		shouldDeleteKeys, err = ui.PromptConfirmation(fmt.Sprintf("Also delete SSH key files (%s)?", user.SSHKeyPath))
 		if err != nil {
 			return err
 		}
@@ -72,7 +82,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		ui.Info("Active user cleared")
 	}
 
-	if deleteKeys && user.SSHKeyPath != "" {
+	if shouldDeleteKeys && user.SSHKeyPath != "" {
 		if err := os.Remove(user.SSHKeyPath); err != nil {
 			ui.Warning(fmt.Sprintf("Could not delete private key: %v", err))
 		} else {

@@ -68,6 +68,33 @@ func UpdateSSHConfig(users []config.User) error {
 	return nil
 }
 
+// RemoveManagedConfig removes only bgit-owned SSH config sections.
+func RemoveManagedConfig() error {
+	configPath, err := GetSSHConfigPath()
+	if err != nil {
+		return err
+	}
+
+	existingContent, err := readSSHConfig(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to read SSH config: %w", err)
+	}
+
+	cleanedContent := removeBgitSection(existingContent)
+	if cleanedContent != "" {
+		cleanedContent += "\n"
+	}
+
+	if err := platform.CreateFileSecure(configPath, []byte(cleanedContent)); err != nil {
+		return fmt.Errorf("failed to write SSH config: %w", err)
+	}
+
+	return nil
+}
+
 // readSSHConfig reads the SSH config file
 func readSSHConfig(path string) (string, error) {
 	content, err := os.ReadFile(path)

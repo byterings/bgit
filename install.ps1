@@ -58,9 +58,25 @@ Write-Host "Installed to: $DestPath" -ForegroundColor Green
 
 # Add to PATH if not already present
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($UserPath -notlike "*$InstallDir*") {
+$PathEntries = @()
+if ($UserPath) {
+    $PathEntries = $UserPath -split ';' | Where-Object { $_ -ne "" }
+}
+$AlreadyInPath = $false
+foreach ($Entry in $PathEntries) {
+    try {
+        if ([IO.Path]::GetFullPath($Entry.Trim('"')) -ieq [IO.Path]::GetFullPath($InstallDir)) {
+            $AlreadyInPath = $true
+            break
+        }
+    } catch {
+        # Keep malformed PATH entries untouched.
+    }
+}
+
+if (-not $AlreadyInPath) {
     Write-Host "Adding bgit to PATH..."
-    $NewPath = "$UserPath;$InstallDir"
+    $NewPath = (@($PathEntries) + $InstallDir) -join ';'
     [Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
     $env:Path = "$env:Path;$InstallDir"
     Write-Host "Added to PATH" -ForegroundColor Green

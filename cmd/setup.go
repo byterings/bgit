@@ -108,6 +108,11 @@ func applySetup(cfg *config.Config, silent bool) error {
 		ui.Warning(fmt.Sprintf("Replacing existing global hooks path: %s", existingHooksPath))
 	}
 
+	if !cfg.HooksPathBackedUp && filepath.Clean(existingHooksPath) != filepath.Clean(hooksDir) {
+		cfg.PreviousHooksPath = existingHooksPath
+		cfg.HooksPathBackedUp = true
+	}
+
 	if err := installManagedPrePushHook(hooksDir); err != nil {
 		return err
 	}
@@ -189,6 +194,10 @@ func setGlobalHooksPath(path string) error {
 }
 
 func clearManagedHooksPath() error {
+	return restoreManagedHooksPath(nil, false)
+}
+
+func restoreManagedHooksPath(cfg *config.Config, dryRun bool) error {
 	hooksDir, err := getManagedHooksDir()
 	if err != nil {
 		return err
@@ -200,6 +209,19 @@ func clearManagedHooksPath() error {
 	}
 
 	if currentPath == "" || filepath.Clean(currentPath) != filepath.Clean(hooksDir) {
+		return nil
+	}
+
+	if dryRun {
+		return nil
+	}
+
+	if cfg != nil && cfg.HooksPathBackedUp && cfg.PreviousHooksPath != "" {
+		cmd := exec.Command("git", "config", "--global", "core.hooksPath", cfg.PreviousHooksPath)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to restore core.hooksPath: %s: %w", string(output), err)
+		}
 		return nil
 	}
 

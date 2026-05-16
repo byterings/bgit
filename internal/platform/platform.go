@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // GetSSHDir returns the SSH directory path for the current platform
@@ -187,4 +188,37 @@ func GetConfigFilePath() string {
 		return "~/.bgit/config.toml"
 	}
 	return filepath.Join(home, GetConfigDirName(), "config.toml")
+}
+
+// RemovePathEntry removes exact PATH entries without matching substrings.
+// It preserves the order of all unrelated entries and removes duplicate matches.
+func RemovePathEntry(pathValue, entry string) string {
+	if entry == "" {
+		return pathValue
+	}
+
+	parts := strings.Split(pathValue, string(os.PathListSeparator))
+	kept := make([]string, 0, len(parts))
+	normalizedEntry := normalizePathListEntry(entry)
+
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		if normalizePathListEntry(part) == normalizedEntry {
+			continue
+		}
+		kept = append(kept, part)
+	}
+
+	return strings.Join(kept, string(os.PathListSeparator))
+}
+
+func normalizePathListEntry(entry string) string {
+	trimmed := strings.Trim(strings.TrimSpace(entry), `"`)
+	cleaned := filepath.Clean(trimmed)
+	if runtime.GOOS == "windows" {
+		return strings.ToLower(cleaned)
+	}
+	return cleaned
 }

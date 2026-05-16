@@ -35,13 +35,17 @@ const EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environ
 procedure EnvAddPath(Path: string);
 var
     Paths: string;
+    PathWithDelimiters: string;
 begin
     if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
         Paths := '';
 
-    if Pos(';' + Uppercase(Path) + ';', ';' + Uppercase(Paths) + ';') > 0 then exit;
+    PathWithDelimiters := ';' + Uppercase(Paths) + ';';
+    if Pos(';' + Uppercase(Path) + ';', PathWithDelimiters) > 0 then exit;
 
-    Paths := Paths + ';'+ Path +';'
+    if (Paths <> '') and (Copy(Paths, Length(Paths), 1) <> ';') then
+        Paths := Paths + ';';
+    Paths := Paths + Path;
 
     if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
         Log(Format('Added [%s] to PATH', [Path]))
@@ -52,17 +56,37 @@ end;
 procedure EnvRemovePath(Path: string);
 var
     Paths: string;
-    P: Integer;
+    NewPaths: string;
+    Entry: string;
+    I: Integer;
 begin
     if not RegQueryStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
         exit;
 
-    P := Pos(';' + Uppercase(Path) + ';', ';' + Uppercase(Paths) + ';');
-    if P = 0 then exit;
+    NewPaths := '';
+    while Paths <> '' do
+    begin
+        I := Pos(';', Paths);
+        if I > 0 then
+        begin
+            Entry := Copy(Paths, 1, I - 1);
+            Delete(Paths, 1, I);
+        end
+        else
+        begin
+            Entry := Paths;
+            Paths := '';
+        end;
 
-    Delete(Paths, P - 1, Length(Path) + 1);
+        if (Entry <> '') and (Uppercase(Entry) <> Uppercase(Path)) then
+        begin
+            if NewPaths <> '' then
+                NewPaths := NewPaths + ';';
+            NewPaths := NewPaths + Entry;
+        end;
+    end;
 
-    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', Paths) then
+    if RegWriteStringValue(HKEY_LOCAL_MACHINE, EnvironmentKey, 'Path', NewPaths) then
         Log(Format('Removed [%s] from PATH', [Path]))
     else
         Log(Format('Error removing [%s] from PATH', [Path]));

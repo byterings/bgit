@@ -50,10 +50,6 @@ type checkResult struct {
 }
 
 func runDoctor(cmd *cobra.Command, args []string) error {
-	if err := autoInit(); err != nil {
-		return err
-	}
-
 	fmt.Println()
 	fmt.Println("Checking bgit configuration...")
 	fmt.Println()
@@ -73,10 +69,15 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	cfg, err := config.LoadConfig()
+	cfg, exists, err := loadConfigReadOnly()
 	if err != nil {
 		fmt.Println()
 		ui.Error(fmt.Sprintf("Cannot continue: %v", err))
+		return nil
+	}
+	if !exists {
+		fmt.Println()
+		ui.Warning("bgit is not configured. Run: bgit setup")
 		return nil
 	}
 
@@ -183,7 +184,7 @@ func checkConfig() []checkResult {
 		results = append(results, checkResult{
 			passed:  false,
 			message: "Config file not found",
-			fix:     "Run: bgit add",
+			fix:     "Run: bgit setup",
 		})
 		return results
 	}

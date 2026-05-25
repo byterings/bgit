@@ -66,6 +66,10 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user '%s' not found\nRun: bgit list", identifier)
 	}
 
+	if err := capturePreviousGitIdentity(cfg); err != nil {
+		ui.Warning(fmt.Sprintf("Could not back up current Git identity: %v", err))
+	}
+
 	if err := git.SetGlobalUser(user.Name, user.Email); err != nil {
 		return fmt.Errorf("failed to update git config: %w", err)
 	}
@@ -106,6 +110,22 @@ func runUse(cmd *cobra.Command, args []string) error {
 		fmt.Println("Fix existing: bgit remote fix")
 	}
 
+	return nil
+}
+
+func capturePreviousGitIdentity(cfg *config.Config) error {
+	if cfg.PreviousGitIdentitySet || cfg.ActiveUser != "" {
+		return nil
+	}
+
+	name, email, err := git.GetGlobalUser()
+	if err != nil {
+		return err
+	}
+
+	cfg.PreviousGitName = name
+	cfg.PreviousGitEmail = email
+	cfg.PreviousGitIdentitySet = true
 	return nil
 }
 

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/identity"
 	"github.com/spf13/cobra"
 )
@@ -23,15 +22,13 @@ func init() {
 }
 
 func runActive(cmd *cobra.Command, args []string) error {
-	// Auto-initialize if needed
-	if err := autoInit(); err != nil {
-		return err
-	}
-
-	// Load config
-	cfg, err := config.LoadConfig()
+	cfg, exists, err := loadConfigReadOnly()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
+	}
+	if !exists {
+		printNotConfigured()
+		return nil
 	}
 
 	// Get effective identity (respects workspace/binding)

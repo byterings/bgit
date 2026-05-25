@@ -108,6 +108,11 @@ func applySetup(cfg *config.Config, silent bool) error {
 		ui.Warning(fmt.Sprintf("Replacing existing global hooks path: %s", existingHooksPath))
 	}
 
+	if !cfg.PreviousHooksPathSet && filepath.Clean(existingHooksPath) != filepath.Clean(hooksDir) {
+		cfg.PreviousHooksPath = existingHooksPath
+		cfg.PreviousHooksPathSet = true
+	}
+
 	if err := installManagedPrePushHook(hooksDir); err != nil {
 		return err
 	}

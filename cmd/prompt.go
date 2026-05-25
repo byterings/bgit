@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/byterings/bgit/internal/config"
 	"github.com/byterings/bgit/internal/identity"
 	"github.com/spf13/cobra"
 )
@@ -25,22 +24,18 @@ func init() {
 }
 
 func runPrompt(cmd *cobra.Command, args []string) error {
-	if err := autoInit(); err != nil {
-		return err
-	}
-
-	cfg, err := config.LoadConfig()
+	cfg, exists, err := loadConfigReadOnly()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
+	}
+	if !exists {
+		printPromptNone()
+		return nil
 	}
 
 	resolution, err := identity.GetEffectiveResolution(cfg)
 	if err != nil || resolution == nil || resolution.User == nil {
-		if promptPlain {
-			fmt.Print("none")
-		} else {
-			fmt.Print("[bgit:none]")
-		}
+		printPromptNone()
 		return nil
 	}
 
@@ -51,4 +46,12 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("[bgit:%s]", resolution.Alias)
 	return nil
+}
+
+func printPromptNone() {
+	if promptPlain {
+		fmt.Print("none")
+	} else {
+		fmt.Print("[bgit:none]")
+	}
 }

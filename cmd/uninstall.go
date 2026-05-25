@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
@@ -19,14 +18,18 @@ var uninstallCmd = &cobra.Command{
 	Use:   "uninstall",
 	Short: "Safely uninstall bgit and restore all repositories",
 	Long: `Safely uninstall bgit by:
-1. Finding all git repositories with bgit remote URLs
-2. Restoring them to standard GitHub format
-3. Removing bgit SSH config entries
-4. Removing bgit configuration
+1. Restoring repositories with bgit remote URLs to standard GitHub format
+2. Removing bgit SSH config entries
+3. Restoring or clearing bgit-managed global hook configuration
+4. Restoring backed-up Git identity when available
+5. Removing bgit configuration
 
 This ensures your repositories continue to work after bgit is removed.`,
 	Example: `  # Uninstall bgit safely
   bgit uninstall
+
+  # Also remove bgit-generated SSH keys referenced in config
+  bgit uninstall --remove-keys
 
   # After running this command, manually delete:
   # Linux/macOS: sudo rm /usr/local/bin/bgit
@@ -35,14 +38,16 @@ This ensures your repositories continue to work after bgit is removed.`,
 }
 
 var (
-	uninstallSkipRepos bool
-	uninstallForce     bool
+	uninstallSkipRepos  bool
+	uninstallForce      bool
+	uninstallRemoveKeys bool
 )
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	uninstallCmd.Flags().BoolVar(&uninstallSkipRepos, "skip-repos", false, "Skip scanning and fixing repositories")
 	uninstallCmd.Flags().BoolVar(&uninstallForce, "force", false, "Skip confirmation prompt")
+	uninstallCmd.Flags().BoolVar(&uninstallRemoveKeys, "remove-keys", false, "Delete bgit-generated SSH keys referenced in config")
 }
 
 func runUninstall(cmd *cobra.Command, args []string) error {
@@ -52,10 +57,11 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 
 	if !uninstallForce {
 		fmt.Println("This will:")
-		fmt.Println("  1. Scan for repositories with bgit remote URLs")
+		fmt.Println("  1. Restore repositories with bgit remote URLs")
 		fmt.Println("  2. Restore them to standard GitHub format")
 		fmt.Println("  3. Remove bgit SSH config entries")
-		fmt.Println("  4. Remove bgit configuration (~/.bgit)")
+		fmt.Println("  4. Restore or report global Git identity")
+		fmt.Println("  5. Remove bgit configuration (~/.bgit)")
 		fmt.Println()
 
 		confirmed, err := ui.PromptConfirmation("Continue?")
@@ -71,14 +77,30 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 
 	var fixedRepos []string
 	var failedRepos []string
+	var cfg *config.Config
+
+	loadedCfg, err := config.LoadConfig()
+	if err == nil {
+		cfg = loadedCfg
+	} else {
+		ui.Warning(fmt.Sprintf("Could not load bgit config before uninstall: %v", err))
+	}
 
 	if !uninstallSkipRepos {
-		fmt.Println("Step 1: Scanning for repositories...")
+		fmt.Println("Step 1: Restoring repository remotes...")
+		if cfg != nil {
+			configFixed, configFailed := restoreConfiguredRepos(cfg)
+			fixedRepos = append(fixedRepos, configFixed...)
+			failedRepos = append(failedRepos, configFailed...)
+		}
+
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			ui.Error("Failed to get home directory")
 		} else {
-			fixedRepos, failedRepos = scanAndFixRepos(homeDir)
+			scanFixed, scanFailed := scanAndFixRepos(homeDir)
+			fixedRepos = appendUnique(fixedRepos, scanFixed...)
+			failedRepos = appendUnique(failedRepos, scanFailed...)
 		}
 		fmt.Println()
 	} else {
@@ -95,14 +117,28 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	fmt.Println("Step 3: Removing global hook configuration...")
-	if err := clearManagedHooksPath(); err != nil {
+	if err := restoreGlobalHooksPath(cfg); err != nil {
 		ui.Warning(fmt.Sprintf("Could not clear global hooks path: %v", err))
 	} else {
 		ui.Success("Global hooks path restored")
 	}
 	fmt.Println()
 
-	fmt.Println("Step 4: Removing bgit configuration...")
+	fmt.Println("Step 4: Restoring Git identity...")
+	restoreGitIdentity(cfg)
+	fmt.Println()
+
+	if uninstallRemoveKeys {
+		fmt.Println("Step 5: Removing bgit-generated SSH keys...")
+		removeGeneratedSSHKeys(cfg)
+		fmt.Println()
+	} else {
+		fmt.Println("Step 5: Skipping SSH key removal")
+		ui.Info("Use --remove-keys to delete bgit-generated SSH keys referenced in config.")
+		fmt.Println()
+	}
+
+	fmt.Println("Step 6: Removing bgit configuration...")
 	configDir, err := config.GetConfigDir()
 	if err == nil {
 		if err := os.RemoveAll(configDir); err != nil {
@@ -146,6 +182,22 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func restoreConfiguredRepos(cfg *config.Config) (fixed []string, failed []string) {
+	seen := make(map[string]bool)
+
+	for _, binding := range cfg.GetBindings() {
+		restoreRepoRemote(binding.Path, seen, &fixed, &failed)
+	}
+
+	for _, workspace := range cfg.GetWorkspaces() {
+		workspaceFixed, workspaceFailed := scanAndFixRepos(workspace.Path)
+		fixed = appendUnique(fixed, workspaceFixed...)
+		failed = appendUnique(failed, workspaceFailed...)
+	}
+
+	return fixed, failed
+}
+
 func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 	scanDirs := []string{startPath}
 
@@ -158,7 +210,6 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 	}
 
 	visited := make(map[string]bool)
-	bgitPattern := regexp.MustCompile(`github\.com-`)
 
 	for _, scanDir := range scanDirs {
 		filepath.Walk(scanDir, func(path string, info os.FileInfo, err error) error {
@@ -183,26 +234,8 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 				if visited[repoPath] {
 					return filepath.SkipDir
 				}
-				visited[repoPath] = true
 
-				url, err := getRepoRemoteURL(repoPath)
-				if err != nil || url == "" {
-					return filepath.SkipDir
-				}
-
-				if bgitPattern.MatchString(url) {
-					newURL, err := convertToStandardURL(url)
-					if err != nil {
-						failed = append(failed, repoPath)
-						return filepath.SkipDir
-					}
-
-					if err := setRepoRemoteURL(repoPath, "origin", newURL); err != nil {
-						failed = append(failed, repoPath)
-					} else {
-						fixed = append(fixed, repoPath)
-					}
-				}
+				restoreRepoRemote(repoPath, visited, &fixed, &failed)
 
 				return filepath.SkipDir // Don't descend into .git
 			}
@@ -212,6 +245,30 @@ func scanAndFixRepos(startPath string) (fixed []string, failed []string) {
 	}
 
 	return fixed, failed
+}
+
+func restoreRepoRemote(repoPath string, visited map[string]bool, fixed, failed *[]string) {
+	if visited[repoPath] {
+		return
+	}
+	visited[repoPath] = true
+
+	url, err := getRepoRemoteURL(repoPath)
+	if err != nil || url == "" || !strings.Contains(url, "github.com-") {
+		return
+	}
+
+	newURL, err := convertToStandardURL(url)
+	if err != nil {
+		*failed = appendUnique(*failed, repoPath)
+		return
+	}
+
+	if err := setRepoRemoteURL(repoPath, "origin", newURL); err != nil {
+		*failed = appendUnique(*failed, repoPath)
+	} else {
+		*fixed = appendUnique(*fixed, repoPath)
+	}
 }
 
 func getRepoRemoteURL(repoPath string) (string, error) {
@@ -264,4 +321,181 @@ func removeSSHConfigEntries() error {
 	newContent = strings.TrimRight(newContent, "\n") + "\n"
 
 	return os.WriteFile(sshConfigPath, []byte(newContent), 0600)
+}
+
+func restoreGlobalHooksPath(cfg *config.Config) error {
+	currentPath, err := getGlobalHooksPath()
+	if err != nil {
+		return err
+	}
+
+	if currentPath == "" {
+		return nil
+	}
+
+	if !isBgitHooksPath(currentPath) {
+		return nil
+	}
+
+	if cfg != nil && cfg.PreviousHooksPathSet {
+		if cfg.PreviousHooksPath == "" {
+			return unsetGlobalConfig("core.hooksPath")
+		}
+		return setGlobalHooksPath(cfg.PreviousHooksPath)
+	}
+
+	return unsetGlobalConfig("core.hooksPath")
+}
+
+func isBgitHooksPath(path string) bool {
+	cleaned := filepath.ToSlash(filepath.Clean(path))
+	if strings.Contains(cleaned, "/.bgit/hooks") || strings.HasSuffix(cleaned, ".bgit/hooks") {
+		return true
+	}
+
+	hookPath := filepath.Join(path, prePushHookName)
+	content, err := os.ReadFile(hookPath)
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(string(content), "BEGIN BGIT MANAGED") ||
+		strings.Contains(string(content), "BEGIN BRGIT MANAGED")
+}
+
+func restoreGitIdentity(cfg *config.Config) {
+	if cfg == nil {
+		ui.Warning("bgit config was unavailable; cannot determine previous Git identity.")
+		return
+	}
+
+	if cfg.PreviousGitIdentitySet {
+		if err := restoreGitConfigValue("user.name", cfg.PreviousGitName); err != nil {
+			ui.Warning(fmt.Sprintf("Could not restore git user.name: %v", err))
+		}
+		if err := restoreGitConfigValue("user.email", cfg.PreviousGitEmail); err != nil {
+			ui.Warning(fmt.Sprintf("Could not restore git user.email: %v", err))
+		}
+		ui.Success("Git identity restored")
+		return
+	}
+
+	name, email, err := getGlobalGitIdentity()
+	if err != nil {
+		ui.Warning(fmt.Sprintf("Could not inspect Git identity: %v", err))
+		return
+	}
+
+	for _, user := range cfg.Users {
+		if name == user.Name && email == user.Email {
+			ui.Warning(fmt.Sprintf("Global Git identity still matches bgit user '%s'.", user.Alias))
+			fmt.Println("bgit cannot know the previous identity because this older config did not store it.")
+			fmt.Println("Set it manually, for example:")
+			fmt.Println(`  git config --global user.name "Your Name"`)
+			fmt.Println(`  git config --global user.email "you@example.com"`)
+			return
+		}
+	}
+
+	ui.Info("No previous Git identity backup found; current Git identity was left unchanged.")
+}
+
+func restoreGitConfigValue(key, value string) error {
+	if value == "" {
+		return unsetGlobalConfig(key)
+	}
+
+	cmd := exec.Command("git", "config", "--global", key, value)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s: %w", string(output), err)
+	}
+	return nil
+}
+
+func unsetGlobalConfig(key string) error {
+	cmd := exec.Command("git", "config", "--global", "--unset", key)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 5 {
+			return nil
+		}
+		return fmt.Errorf("%s: %w", string(output), err)
+	}
+	return nil
+}
+
+func getGlobalGitIdentity() (name, email string, err error) {
+	name, err = getGlobalConfigValue("user.name")
+	if err != nil {
+		return "", "", err
+	}
+
+	email, err = getGlobalConfigValue("user.email")
+	if err != nil {
+		return "", "", err
+	}
+
+	return name, email, nil
+}
+
+func getGlobalConfigValue(key string) (string, error) {
+	cmd := exec.Command("git", "config", "--global", "--get", key)
+	output, err := cmd.Output()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
+			return "", nil
+		}
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func removeGeneratedSSHKeys(cfg *config.Config) {
+	if cfg == nil {
+		ui.Warning("bgit config was unavailable; cannot determine generated SSH keys.")
+		return
+	}
+
+	removed := 0
+	for _, user := range cfg.Users {
+		if user.SSHKeyPath == "" || !isBgitGeneratedKey(user.SSHKeyPath) {
+			continue
+		}
+
+		for _, path := range []string{user.SSHKeyPath, user.SSHKeyPath + ".pub"} {
+			if err := os.Remove(path); err != nil {
+				if !os.IsNotExist(err) {
+					ui.Warning(fmt.Sprintf("Could not remove %s: %v", path, err))
+				}
+				continue
+			}
+			removed++
+			ui.Success(fmt.Sprintf("Removed %s", path))
+		}
+	}
+
+	if removed == 0 {
+		ui.Info("No bgit-generated SSH keys found.")
+	}
+}
+
+func isBgitGeneratedKey(path string) bool {
+	base := filepath.Base(path)
+	return strings.HasPrefix(base, "bgit_") || strings.HasPrefix(base, "brgit_")
+}
+
+func appendUnique(items []string, more ...string) []string {
+	seen := make(map[string]bool, len(items)+len(more))
+	for _, item := range items {
+		seen[item] = true
+	}
+	for _, item := range more {
+		if item == "" || seen[item] {
+			continue
+		}
+		items = append(items, item)
+		seen[item] = true
+	}
+	return items
 }

@@ -29,13 +29,13 @@ func init() {
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
-	if err := autoInit(); err != nil {
-		return err
-	}
-
-	cfg, err := config.LoadConfig()
+	cfg, exists, err := loadConfigReadOnly()
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
+	}
+	if !exists {
+		printNotConfigured()
+		return nil
 	}
 
 	removed := cfg.CleanupInvalidPaths()

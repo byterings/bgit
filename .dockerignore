@@ -1,0 +1,8 @@
+.git
+release
+dist
+build
+tmp
+*.test
+*.out
+windows-installer/*.exe

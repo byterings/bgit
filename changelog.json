@@ -1,6 +1,39 @@
 {
   "releases": [
     {
+      "version": "0.3.1",
+      "date": "2026-05-25",
+      "phase": 3,
+      "summary": "Bugfix release focused on uninstall recovery, post-uninstall safety, and repeatable integration testing.",
+      "features": [
+        {
+          "title": "Docker-backed integration test harness",
+          "description": "Added repeatable host and Docker integration tests covering setup, identity flows, remote fixes, safety checks, and uninstall cleanup",
+          "command": "make test-docker"
+        },
+        {
+          "title": "Real-account acceptance test harness",
+          "description": "Added an opt-in real-account test flow that backs up and restores real bgit, SSH, and Git state while validating selected identities and repositories",
+          "command": "make test-real"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Uninstall recovery for existing users",
+          "description": "Uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available"
+        },
+        {
+          "title": "Post-uninstall read-only safety",
+          "description": "Read-only commands such as list, status, active, prompt, and doctor no longer recreate ~/.bgit or reinstall hooks after uninstall"
+        },
+        {
+          "title": "Optional SSH key cleanup",
+          "description": "Added bgit uninstall --remove-keys so SSH key deletion is explicit instead of implicit"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.3.0",
       "date": "2026-03-04",
       "phase": 3,

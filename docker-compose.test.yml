@@ -1,0 +1,7 @@
+services:
+  bgit-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      CGO_ENABLED: "0"

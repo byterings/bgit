@@ -42,18 +42,21 @@ Go to: https://github.com/settings/keys
 - Paste the key
 - Click "Add SSH key"
 
-### 3. Setup SSH (Important!)
+### 3. Run Setup (Important!)
 
 ```cmd
-bgit setup-ssh
+bgit setup
 ```
 
-This starts SSH agent and loads your keys.
+This initializes bgit, installs the managed safety checks, and prepares SSH configuration.
 
 **Run this after:**
 - First setup
-- Windows restart
-- "Permission denied" errors
+
+**If Windows loses SSH agent state after a restart or you hit SSH key loading problems, use:**
+```cmd
+bgit setup-ssh
+```
 
 ---
 
@@ -127,7 +130,7 @@ bgit workspace        # Create organized workspace folders
 bgit bind             # Bind current repo to identity
 bgit doctor           # Diagnose configuration issues
 bgit doctor --fix     # Auto-fix permission issues
-bgit setup-ssh        # Fix SSH issues (Windows)
+bgit setup            # One-time setup for hooks and SSH config
 bgit delete work      # Remove account
 bgit --help           # Full help
 ```
@@ -162,7 +165,7 @@ Should show: `Hi john-work! You've successfully authenticated`
 ## Quick Tips
 
 - Always use `bgit clone` for new repos
-- Run `bgit setup-ssh` after Windows restart
+- Run `bgit setup-ssh` only if Windows loses SSH agent state after restart
 - Use `bgit status` to check current identity
 - Use `bgit doctor` to diagnose issues
 - Use workspaces for automatic identity switching
@@ -170,6 +173,11 @@ Should show: `Hi john-work! You've successfully authenticated`
 ---
 
 ## Uninstall
+
+**Recommended first:**
+```powershell
+bgit uninstall
+```
 
 **PowerShell install:**
 ```powershell

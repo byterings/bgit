@@ -6,10 +6,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -97,7 +97,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	} else {
 		// Ensure SSH agent has the key loaded
-		ensureSSHAgentForClone(activeUser)
+		coressh.EnsureKeyLoaded(activeUser)
 	}
 
 	// Convert URL to bgit format (uses GitHub username for SSH host)
@@ -138,29 +138,6 @@ func runClone(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-// ensureSSHAgentForClone ensures SSH key is loaded for cloning
-func ensureSSHAgentForClone(user *config.User) {
-	if runtime.GOOS == "windows" {
-		// Start ssh-agent service silently
-		startCmd := exec.Command("powershell", "-Command", "Start-Service ssh-agent")
-		startCmd.Run()
-
-		// Set to automatic startup
-		autoCmd := exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic")
-		autoCmd.Run()
-	}
-
-	// Check if key is already loaded
-	listCmd := exec.Command("ssh-add", "-l")
-	output, _ := listCmd.Output()
-
-	// If key not in agent, add it
-	if user.SSHKeyPath != "" && !strings.Contains(string(output), user.SSHKeyPath) {
-		addCmd := exec.Command("ssh-add", user.SSHKeyPath)
-		addCmd.Run()
-	}
 }
 
 // convertToBgitURL converts any GitHub URL to bgit's SSH format

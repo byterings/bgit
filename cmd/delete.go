@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/byterings/bgit/core/config"
-	"github.com/byterings/bgit/internal/ssh"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -91,7 +91,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
+	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		ui.Info("Warning: Failed to update SSH config")
 	}
 

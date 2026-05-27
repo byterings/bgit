@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -71,46 +71,25 @@ func setupWindowsSSH(cfg *config.Config) error {
 	fmt.Println("Windows SSH Setup:")
 	fmt.Println()
 
-	// Check if ssh-agent service is running
 	fmt.Println("1. Starting ssh-agent service...")
-
-	// Start ssh-agent service
-	startCmd := exec.Command("powershell", "-Command", "Start-Service ssh-agent")
-	if err := startCmd.Run(); err != nil {
-		ui.Info("Could not start ssh-agent service automatically")
-		fmt.Println("   Please run as Administrator:")
-		fmt.Println("   Set-Service -Name ssh-agent -StartupType Automatic")
-		fmt.Println("   Start-Service ssh-agent")
-		fmt.Println()
-	} else {
-		ui.Success("ssh-agent service started")
-	}
-
-	// Set ssh-agent to automatic startup
-	autoCmd := exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic")
-	autoCmd.Run() // Ignore errors
+	coressh.StartSSHAgent()
+	ui.Success("ssh-agent service start attempted")
 
 	// Add keys to ssh-agent
 	fmt.Println()
 	fmt.Println("2. Adding SSH keys to agent...")
 
+	report := coressh.SetupAgentForUsers(cfg.Users)
 	addedCount := 0
-	for _, user := range cfg.Users {
-		if user.SSHKeyPath == "" {
-			continue
-		}
-
-		fmt.Printf("   Adding key: %s\n", user.SSHKeyPath)
-
-		addCmd := exec.Command("ssh-add", user.SSHKeyPath)
-		output, err := addCmd.CombinedOutput()
-
-		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to add key for %s", user.Alias))
-			fmt.Printf("   Error: %s\n", string(output))
-		} else {
-			ui.Success(fmt.Sprintf("Added key for %s", user.Alias))
-			addedCount++
+	for alias, keyPath := range report.Added {
+		fmt.Printf("   Added key: %s\n", keyPath)
+		ui.Success(fmt.Sprintf("Added key for %s", alias))
+		addedCount++
+	}
+	for alias, output := range report.Failed {
+		ui.Error(fmt.Sprintf("Failed to add key for %s", alias))
+		if output != "" {
+			fmt.Printf("   Error: %s\n", strings.TrimSpace(output))
 		}
 	}
 
@@ -120,12 +99,11 @@ func setupWindowsSSH(cfg *config.Config) error {
 	// List loaded keys
 	fmt.Println()
 	fmt.Println("3. Verifying loaded keys...")
-	listCmd := exec.Command("ssh-add", "-l")
-	output, err := listCmd.Output()
+	output, err := coressh.ListAgentKeys()
 	if err != nil {
 		ui.Info("No keys currently loaded in ssh-agent")
 	} else {
-		fmt.Println(string(output))
+		fmt.Println(output)
 	}
 
 	return nil
@@ -136,8 +114,7 @@ func setupUnixSSH(cfg *config.Config) error {
 	fmt.Println()
 
 	// Check if ssh-agent is running
-	agentCheck := exec.Command("pgrep", "ssh-agent")
-	if err := agentCheck.Run(); err != nil {
+	if !coressh.IsSSHAgentRunning() {
 		fmt.Println("1. Starting ssh-agent...")
 		fmt.Println("   Run: eval $(ssh-agent)")
 		fmt.Println()
@@ -149,23 +126,17 @@ func setupUnixSSH(cfg *config.Config) error {
 	// Add keys
 	fmt.Println("2. Adding SSH keys to agent...")
 
+	report := coressh.SetupAgentForUsers(cfg.Users)
 	addedCount := 0
-	for _, user := range cfg.Users {
-		if user.SSHKeyPath == "" {
-			continue
-		}
-
-		fmt.Printf("   Adding key: %s\n", user.SSHKeyPath)
-
-		addCmd := exec.Command("ssh-add", user.SSHKeyPath)
-		output, err := addCmd.CombinedOutput()
-
-		if err != nil {
-			ui.Error(fmt.Sprintf("Failed to add key for %s", user.Alias))
-			fmt.Printf("   Error: %s\n", string(output))
-		} else {
-			ui.Success(fmt.Sprintf("Added key for %s", user.Alias))
-			addedCount++
+	for alias, keyPath := range report.Added {
+		fmt.Printf("   Added key: %s\n", keyPath)
+		ui.Success(fmt.Sprintf("Added key for %s", alias))
+		addedCount++
+	}
+	for alias, output := range report.Failed {
+		ui.Error(fmt.Sprintf("Failed to add key for %s", alias))
+		if output != "" {
+			fmt.Printf("   Error: %s\n", strings.TrimSpace(output))
 		}
 	}
 
@@ -175,12 +146,11 @@ func setupUnixSSH(cfg *config.Config) error {
 	// List loaded keys
 	fmt.Println()
 	fmt.Println("3. Verifying loaded keys...")
-	listCmd := exec.Command("ssh-add", "-l")
-	output, err := listCmd.Output()
+	output, err := coressh.ListAgentKeys()
 	if err != nil {
 		ui.Info("No keys currently loaded in ssh-agent")
 	} else {
-		lines := strings.Split(string(output), "\n")
+		lines := strings.Split(output, "\n")
 		for _, line := range lines {
 			if line != "" {
 				fmt.Println("  ", line)

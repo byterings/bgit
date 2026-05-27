@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/platform"
-	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -178,7 +178,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// Update SSH config
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
+	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		ui.Error(fmt.Sprintf("Failed to update SSH config: %v", err))
 	} else {
 		ui.Success("Updated SSH config")

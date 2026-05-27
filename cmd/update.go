@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/byterings/bgit/core/config"
-	"github.com/byterings/bgit/internal/ssh"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
-	"github.com/byterings/bgit/internal/user"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +50,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Validate SSH key path
-	if err := user.ValidateSSHKeyPath(updateSSHKey); err != nil {
+	if err := coressh.ValidateSSHKeyPath(updateSSHKey); err != nil {
 		return err
 	}
 
@@ -69,14 +68,14 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Update SSH config
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
+	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		return fmt.Errorf("failed to update SSH config: %w", err)
 	}
 
 	ui.Success(fmt.Sprintf("SSH key updated for '%s'", foundUser.Alias))
 
 	// Show public key to add to GitHub
-	pubKeyContent, err := user.GetPublicKeyContent(updateSSHKey)
+	pubKeyContent, err := coressh.GetPublicKeyContent(updateSSHKey)
 	if err == nil {
 		fmt.Println("\nAdd this public key to your GitHub account:")
 		fmt.Println("https://github.com/settings/keys")

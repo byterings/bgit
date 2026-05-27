@@ -3,14 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/identity"
-	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -74,7 +71,7 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to update git config: %w", err)
 	}
 
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
+	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		return fmt.Errorf("failed to update SSH config: %w", err)
 	}
 
@@ -84,7 +81,9 @@ func runUse(cmd *cobra.Command, args []string) error {
 	}
 
 	if user.SSHKeyPath != "" {
-		ensureSSHAgent(user)
+		if coressh.EnsureKeyLoaded(user) {
+			ui.Info("SSH key loaded into agent")
+		}
 	}
 
 	ui.Success(fmt.Sprintf("Switched to identity: %s (%s)", user.Alias, user.Email))
@@ -127,30 +126,4 @@ func capturePreviousGitIdentity(cfg *config.Config) error {
 	cfg.PreviousGitEmail = email
 	cfg.PreviousGitIdentitySet = true
 	return nil
-}
-
-// ensureSSHAgent checks if SSH agent is running and adds the user's key
-// This runs silently - only shows messages if there's an issue
-func ensureSSHAgent(user *config.User) {
-	if runtime.GOOS == "windows" {
-		// Start ssh-agent service silently
-		startCmd := exec.Command("powershell", "-Command", "Start-Service ssh-agent")
-		startCmd.Run() // Ignore errors - may already be running
-
-		// Set to automatic startup
-		autoCmd := exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic")
-		autoCmd.Run() // Ignore errors - may require admin
-	}
-
-	// Check if key is already loaded
-	listCmd := exec.Command("ssh-add", "-l")
-	output, _ := listCmd.Output()
-
-	// If key not in agent, add it
-	if user.SSHKeyPath != "" && !strings.Contains(string(output), user.SSHKeyPath) {
-		addCmd := exec.Command("ssh-add", user.SSHKeyPath)
-		if err := addCmd.Run(); err == nil {
-			ui.Info("SSH key loaded into agent")
-		}
-	}
 }

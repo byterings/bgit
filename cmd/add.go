@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
-	"github.com/byterings/bgit/internal/user"
 	"github.com/spf13/cobra"
 )
 
@@ -72,7 +72,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	if addFlagSSHKey != "" && addFlagSSHKey != "skip" {
 		// Validate provided key path
-		if err := user.ValidateSSHKeyPath(addFlagSSHKey); err != nil {
+		if err := coressh.ValidateSSHKeyPath(addFlagSSHKey); err != nil {
 			return err
 		}
 		sshKeyPath = addFlagSSHKey
@@ -89,7 +89,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 		if strings.Contains(choice, "Generate new") {
 			// Generate new key using system ssh-keygen (more reliable)
-			privateKey, _, err := user.GenerateSSHKeySystem(githubUsername)
+			privateKey, _, err := coressh.GenerateSSHKeySystem(githubUsername)
 			if err != nil {
 				return fmt.Errorf("failed to generate SSH key: %w", err)
 			}
@@ -98,7 +98,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			ui.Success(fmt.Sprintf("SSH key generated: %s", privateKey))
 
 			// Show public key content
-			pubKeyContent, err := user.GetPublicKeyContent(privateKey)
+			pubKeyContent, err := coressh.GetPublicKeyContent(privateKey)
 			if err == nil {
 				fmt.Println("\n" + strings.Repeat("-", 70))
 				fmt.Println("Add this public key to your GitHub account:")
@@ -115,7 +115,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to get key path: %w", err)
 			}
 
-			if err := user.ValidateSSHKeyPath(keyPath); err != nil {
+			if err := coressh.ValidateSSHKeyPath(keyPath); err != nil {
 				return err
 			}
 			sshKeyPath = keyPath

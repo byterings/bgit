@@ -41,6 +41,3 @@ bgit-windows-installer-package/
 # Temporary files
 *.tmp
 tmp/
-
-# Windows installer binaries (build fresh for each release)
-windows-installer/*.exe

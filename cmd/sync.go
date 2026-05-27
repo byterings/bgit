@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/platform"

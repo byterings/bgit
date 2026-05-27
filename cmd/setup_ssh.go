@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )

@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/byterings/bgit/internal/user"
+	"github.com/spf13/cobra"
 )
 
 var (

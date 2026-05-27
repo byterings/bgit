@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/byterings/bgit/internal/user"
+	"github.com/spf13/cobra"
 )
 
 var (
-	addFlagAlias   string
-	addFlagName    string
-	addFlagEmail   string
-	addFlagGitHub  string
-	addFlagSSHKey  string
+	addFlagAlias  string
+	addFlagName   string
+	addFlagEmail  string
+	addFlagGitHub string
+	addFlagSSHKey string
 )
 
 var addCmd = &cobra.Command{

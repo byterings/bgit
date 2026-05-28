@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
@@ -141,12 +142,8 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		SSHKeyPath:     sshKeyPath,
 	}
 
-	if err := cfg.AddUser(newUser); err != nil {
+	if err := coreidentity.AddUser(cfg, newUser); err != nil {
 		return fmt.Errorf("failed to add user: %w", err)
-	}
-
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
 	}
 
 	fmt.Println()

@@ -5,9 +5,8 @@ import (
 	"os"
 
 	"github.com/byterings/bgit/core/config"
-	coressh "github.com/byterings/bgit/core/ssh"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	"github.com/byterings/bgit/internal/git"
-	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -50,54 +49,34 @@ func runUse(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	var user *config.User
+	mode := coreidentity.LookupByAlias
 	if useByUsername {
-		user = cfg.FindUserByUsername(identifier)
+		mode = coreidentity.LookupByUsername
 	} else if useByEmail {
-		user = cfg.FindUserByEmail(identifier)
-	} else {
-		user = cfg.FindUser(identifier)
+		mode = coreidentity.LookupByEmail
 	}
 
-	if user == nil {
-		return fmt.Errorf("user '%s' not found\nRun: bgit list", identifier)
+	result, err := coreidentity.ActivateUser(cfg, identifier, mode)
+	if err != nil {
+		return fmt.Errorf("%w\nRun: bgit list", err)
 	}
-
-	if err := capturePreviousGitIdentity(cfg); err != nil {
-		ui.Warning(fmt.Sprintf("Could not back up current Git identity: %v", err))
-	}
-
-	if err := git.SetGlobalUser(user.Name, user.Email); err != nil {
-		return fmt.Errorf("failed to update git config: %w", err)
-	}
-
-	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
-		return fmt.Errorf("failed to update SSH config: %w", err)
-	}
-
-	cfg.ActiveUser = user.Alias
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
-	if user.SSHKeyPath != "" {
-		if coressh.EnsureKeyLoaded(user) {
-			ui.Info("SSH key loaded into agent")
-		}
+	user := result.User
+	if result.KeyLoaded {
+		ui.Info("SSH key loaded into agent")
 	}
 
 	ui.Success(fmt.Sprintf("Switched to identity: %s (%s)", user.Alias, user.Email))
 
 	cwd, err := os.Getwd()
 	if err == nil {
-		resolution, _ := identity.ResolveIdentity(cfg, cwd)
+		resolution, _ := coreidentity.ResolveIdentity(cfg, cwd)
 		if resolution != nil && resolution.Alias != user.Alias {
 			fmt.Println()
 			switch resolution.Source {
-			case identity.SourceWorkspace:
+			case coreidentity.SourceWorkspace:
 				ui.Warning(fmt.Sprintf("Note: Current directory is inside workspace '%s'", resolution.Path))
 				ui.Info(fmt.Sprintf("bgit commands here will use '%s' identity", resolution.Alias))
-			case identity.SourceBinding:
+			case coreidentity.SourceBinding:
 				ui.Warning("Note: Current repository is bound to a different identity")
 				ui.Info(fmt.Sprintf("bgit commands here will use '%s' identity", resolution.Alias))
 			}
@@ -109,21 +88,5 @@ func runUse(cmd *cobra.Command, args []string) error {
 		fmt.Println("Fix existing: bgit remote fix")
 	}
 
-	return nil
-}
-
-func capturePreviousGitIdentity(cfg *config.Config) error {
-	if cfg.PreviousGitIdentitySet || cfg.ActiveUser != "" {
-		return nil
-	}
-
-	name, email, err := git.GetGlobalUser()
-	if err != nil {
-		return err
-	}
-
-	cfg.PreviousGitName = name
-	cfg.PreviousGitEmail = email
-	cfg.PreviousGitIdentitySet = true
 	return nil
 }

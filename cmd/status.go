@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/byterings/bgit/core/config"
-	"github.com/byterings/bgit/internal/identity"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -50,9 +50,9 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		cwd = ""
 	}
 
-	var resolution *identity.Resolution
+	var resolution *coreidentity.Resolution
 	if cwd != "" {
-		resolution, _ = identity.ResolveIdentity(cfg, cwd)
+		resolution, _ = coreidentity.ResolveIdentity(cfg, cwd)
 	}
 
 	printActiveIdentity(cfg, resolution)
@@ -63,7 +63,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func printActiveIdentity(cfg *config.Config, resolution *identity.Resolution) {
+func printActiveIdentity(cfg *config.Config, resolution *coreidentity.Resolution) {
 	fmt.Println()
 	fmt.Println("Active Identity")
 	fmt.Println("───────────────")
@@ -96,7 +96,7 @@ func printActiveIdentity(cfg *config.Config, resolution *identity.Resolution) {
 	fmt.Printf("  SSH Key:  %s %s\n", user.SSHKeyPath, sshStatus)
 }
 
-func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resolution) {
+func printCurrentRepo(cfg *config.Config, cwd string, resolution *coreidentity.Resolution) {
 	fmt.Println()
 	fmt.Println("Current Location")
 	fmt.Println("────────────────")
@@ -106,7 +106,7 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 		return
 	}
 
-	repoRoot := identity.FindGitRoot(cwd)
+	repoRoot := coreidentity.FindGitRoot(cwd)
 
 	if repoRoot == "" {
 		fmt.Printf("  Path: %s\n", cwd)
@@ -122,11 +122,11 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 
 		sourceStr := ""
 		switch resolution.Source {
-		case identity.SourceWorkspace:
+		case coreidentity.SourceWorkspace:
 			sourceStr = fmt.Sprintf("(workspace: %s)", resolution.Path)
-		case identity.SourceBinding:
+		case coreidentity.SourceBinding:
 			sourceStr = fmt.Sprintf("(bound repo)")
-		case identity.SourceGlobal:
+		case coreidentity.SourceGlobal:
 			sourceStr = "(global)"
 		}
 
@@ -137,7 +137,7 @@ func printCurrentRepo(cfg *config.Config, cwd string, resolution *identity.Resol
 			fmt.Printf("  GitHub: %s\n", resolution.User.GitHubUsername)
 		}
 
-		if cfg.ActiveUser != "" && resolution.Alias != cfg.ActiveUser && resolution.Source != identity.SourceGlobal {
+		if cfg.ActiveUser != "" && resolution.Alias != cfg.ActiveUser && resolution.Source != coreidentity.SourceGlobal {
 			fmt.Println()
 			ui.Warning("Identity mismatch!")
 			fmt.Printf("  Global active: %s\n", cfg.ActiveUser)

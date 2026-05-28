@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
-	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get effective identity (respects workspace/binding)
-	resolution, err := identity.GetEffectiveResolution(cfg)
+	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to resolve identity: %w", err)
 	}
@@ -64,11 +64,11 @@ func runSync(cmd *cobra.Command, args []string) error {
 	// Show context info
 	sourceInfo := ""
 	switch resolution.Source {
-	case identity.SourceWorkspace:
+	case coreidentity.SourceWorkspace:
 		sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
-	case identity.SourceBinding:
+	case coreidentity.SourceBinding:
 		sourceInfo = " (bound repo)"
-	case identity.SourceGlobal:
+	case coreidentity.SourceGlobal:
 		sourceInfo = ""
 	}
 

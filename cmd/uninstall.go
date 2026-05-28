@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	corerepo "github.com/byterings/bgit/core/repo"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -258,7 +259,7 @@ func restoreRepoRemote(repoPath string, visited map[string]bool, fixed, failed *
 		return
 	}
 
-	newURL, err := convertToStandardURL(url)
+	newURL, err := corerepo.ConvertToStandardURL(url)
 	if err != nil {
 		*failed = appendUnique(*failed, repoPath)
 		return

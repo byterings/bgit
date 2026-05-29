@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/byterings/bgit/internal/identity"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +33,7 @@ func runPrompt(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	resolution, err := identity.GetEffectiveResolution(cfg)
+	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil || resolution == nil || resolution.User == nil {
 		printPromptNone()
 		return nil

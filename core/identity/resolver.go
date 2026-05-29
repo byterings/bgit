@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 )
 
-// ResolutionSource indicates how the identity was resolved
+// ResolutionSource indicates how the identity was resolved.
 type ResolutionSource string
 
 const (
@@ -17,24 +17,21 @@ const (
 	SourceGlobal    ResolutionSource = "global"
 )
 
-// Resolution contains the resolved identity and its source
+// Resolution contains the resolved identity and its source.
 type Resolution struct {
 	User   *config.User
 	Alias  string
 	Source ResolutionSource
-	Path   string // The workspace or binding path that matched (empty for global)
+	Path   string
 }
 
-// ResolveIdentity resolves the effective identity for the given path
-// Priority: 1. Workspace (if path is inside) 2. Binding (exact match) 3. Global active user
+// ResolveIdentity resolves the effective identity for the given path.
 func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error) {
-	// Get absolute path
 	absPath, err := filepath.Abs(currentPath)
 	if err != nil {
 		absPath = currentPath
 	}
 
-	// 1. Check if inside a workspace
 	workspace := cfg.FindWorkspaceByPath(absPath)
 	if workspace != nil {
 		user := cfg.FindUserByAlias(workspace.User)
@@ -48,7 +45,6 @@ func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error
 		}
 	}
 
-	// 2. Check for repo binding (walk up to find git root, then check binding)
 	repoRoot := findGitRoot(absPath)
 	if repoRoot != "" {
 		binding := cfg.FindBindingByPath(repoRoot)
@@ -65,7 +61,6 @@ func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error
 		}
 	}
 
-	// 3. Fall back to global active user
 	if cfg.ActiveUser != "" {
 		user := cfg.FindUserByAlias(cfg.ActiveUser)
 		if user != nil {
@@ -73,7 +68,6 @@ func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error
 				User:   user,
 				Alias:  cfg.ActiveUser,
 				Source: SourceGlobal,
-				Path:   "",
 			}, nil
 		}
 	}
@@ -81,11 +75,10 @@ func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error
 	return nil, nil
 }
 
-// GetEffectiveUser returns the effective user for the current directory
+// GetEffectiveUser returns the effective user for the current directory.
 func GetEffectiveUser(cfg *config.Config) (*config.User, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		// Fall back to global active user
 		if cfg.ActiveUser != "" {
 			return cfg.FindUserByAlias(cfg.ActiveUser), nil
 		}
@@ -102,11 +95,10 @@ func GetEffectiveUser(cfg *config.Config) (*config.User, error) {
 	return resolution.User, nil
 }
 
-// GetEffectiveResolution returns the full resolution for the current directory
+// GetEffectiveResolution returns the full resolution for the current directory.
 func GetEffectiveResolution(cfg *config.Config) (*Resolution, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		// Fall back to global active user
 		if cfg.ActiveUser != "" {
 			user := cfg.FindUserByAlias(cfg.ActiveUser)
 			if user != nil {
@@ -114,7 +106,6 @@ func GetEffectiveResolution(cfg *config.Config) (*Resolution, error) {
 					User:   user,
 					Alias:  cfg.ActiveUser,
 					Source: SourceGlobal,
-					Path:   "",
 				}, nil
 			}
 		}
@@ -124,7 +115,7 @@ func GetEffectiveResolution(cfg *config.Config) (*Resolution, error) {
 	return ResolveIdentity(cfg, cwd)
 }
 
-// IsInsideWorkspace checks if the current directory is inside any workspace
+// IsInsideWorkspace checks if the path is inside any configured workspace.
 func IsInsideWorkspace(cfg *config.Config, path string) bool {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -133,7 +124,7 @@ func IsInsideWorkspace(cfg *config.Config, path string) bool {
 	return cfg.FindWorkspaceByPath(absPath) != nil
 }
 
-// IsRepoBound checks if the current directory's repo is bound
+// IsRepoBound checks if the current directory's repo is bound.
 func IsRepoBound(cfg *config.Config, path string) bool {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -146,7 +137,6 @@ func IsRepoBound(cfg *config.Config, path string) bool {
 	return cfg.FindBindingByPath(repoRoot) != nil
 }
 
-// findGitRoot walks up from path to find the git repository root
 func findGitRoot(path string) string {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -162,14 +152,13 @@ func findGitRoot(path string) string {
 
 		parent := filepath.Dir(current)
 		if parent == current {
-			// Reached root
 			return ""
 		}
 		current = parent
 	}
 }
 
-// IsInsidePath checks if childPath is inside parentPath
+// IsInsidePath checks if childPath is inside parentPath.
 func IsInsidePath(childPath, parentPath string) bool {
 	child, err := filepath.Abs(childPath)
 	if err != nil {
@@ -181,13 +170,13 @@ func IsInsidePath(childPath, parentPath string) bool {
 	}
 
 	if !strings.HasSuffix(parent, string(filepath.Separator)) {
-		parent = parent + string(filepath.Separator)
+		parent += string(filepath.Separator)
 	}
 
 	return strings.HasPrefix(child+string(filepath.Separator), parent) || child == strings.TrimSuffix(parent, string(filepath.Separator))
 }
 
-// FindGitRoot is exported version of findGitRoot
+// FindGitRoot is the exported version of findGitRoot.
 func FindGitRoot(path string) string {
 	return findGitRoot(path)
 }

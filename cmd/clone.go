@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strings"
 
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/identity"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	corerepo "github.com/byterings/bgit/core/repo"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -60,16 +58,16 @@ func runClone(cmd *cobra.Command, args []string) error {
 	}
 
 	// Resolve effective identity (workspace > binding > global)
-	resolution, err := identity.GetEffectiveResolution(cfg)
+	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil || resolution == nil || resolution.User == nil {
 		// Fall back to checking global active user
 		if cfg.ActiveUser == "" {
 			return fmt.Errorf("no active user set\nRun: bgit use <alias>")
 		}
-		resolution = &identity.Resolution{
+		resolution = &coreidentity.Resolution{
 			User:   cfg.FindUserByAlias(cfg.ActiveUser),
 			Alias:  cfg.ActiveUser,
-			Source: identity.SourceGlobal,
+			Source: coreidentity.SourceGlobal,
 		}
 		if resolution.User == nil {
 			return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
@@ -79,12 +77,12 @@ func runClone(cmd *cobra.Command, args []string) error {
 	activeUser := resolution.User
 
 	// Show identity source if not global
-	if resolution.Source != identity.SourceGlobal {
+	if resolution.Source != coreidentity.SourceGlobal {
 		sourceInfo := ""
 		switch resolution.Source {
-		case identity.SourceWorkspace:
+		case coreidentity.SourceWorkspace:
 			sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
-		case identity.SourceBinding:
+		case coreidentity.SourceBinding:
 			sourceInfo = " (bound repo)"
 		}
 		ui.Info(fmt.Sprintf("Using identity from %s%s", resolution.Source, sourceInfo))
@@ -97,11 +95,11 @@ func runClone(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	} else {
 		// Ensure SSH agent has the key loaded
-		ensureSSHAgentForClone(activeUser)
+		coressh.EnsureKeyLoaded(activeUser)
 	}
 
 	// Convert URL to bgit format (uses GitHub username for SSH host)
-	convertedURL, err := convertToBgitURL(url, activeUser.GitHubUsername)
+	convertedURL, err := corerepo.ConvertToBgitURL(url, activeUser.GitHubUsername)
 	if err != nil {
 		return err
 	}
@@ -129,7 +127,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 	ui.Success("Repository cloned successfully!")
 
 	if !cloneNoBind {
-		if err := bindClonedRepository(cfg, url, directory, resolution.Alias); err != nil {
+		if err := corerepo.BindClonedRepository(cfg, url, directory, resolution.Alias); err != nil {
 			ui.Warning(fmt.Sprintf("Clone succeeded, but auto-bind failed: %v", err))
 			ui.Info("You can bind manually with: bgit bind --user " + resolution.Alias)
 		} else {
@@ -138,119 +136,4 @@ func runClone(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-// ensureSSHAgentForClone ensures SSH key is loaded for cloning
-func ensureSSHAgentForClone(user *config.User) {
-	if runtime.GOOS == "windows" {
-		// Start ssh-agent service silently
-		startCmd := exec.Command("powershell", "-Command", "Start-Service ssh-agent")
-		startCmd.Run()
-
-		// Set to automatic startup
-		autoCmd := exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic")
-		autoCmd.Run()
-	}
-
-	// Check if key is already loaded
-	listCmd := exec.Command("ssh-add", "-l")
-	output, _ := listCmd.Output()
-
-	// If key not in agent, add it
-	if user.SSHKeyPath != "" && !strings.Contains(string(output), user.SSHKeyPath) {
-		addCmd := exec.Command("ssh-add", user.SSHKeyPath)
-		addCmd.Run()
-	}
-}
-
-// convertToBgitURL converts any GitHub URL to bgit's SSH format
-// sshHostUser is the GitHub username used for the SSH host (github.com-<sshHostUser>)
-func convertToBgitURL(url string, sshHostUser string) (string, error) {
-	// Pattern for HTTPS: https://github.com/user/repo.git
-	httpsPattern := regexp.MustCompile(`^https?://github\.com/([^/]+)/(.+?)(?:\.git)?$`)
-
-	// Pattern for SSH: git@github.com:user/repo.git
-	sshPattern := regexp.MustCompile(`^git@github\.com:([^/]+)/(.+?)(?:\.git)?$`)
-
-	// Pattern for already converted: git@github.com-user:user/repo.git
-	bgitPattern := regexp.MustCompile(`^git@github\.com-([^:]+):([^/]+)/(.+?)(?:\.git)?$`)
-
-	var repoOwner, repoName string
-
-	if matches := httpsPattern.FindStringSubmatch(url); matches != nil {
-		repoOwner = matches[1]
-		repoName = matches[2]
-	} else if matches := sshPattern.FindStringSubmatch(url); matches != nil {
-		repoOwner = matches[1]
-		repoName = matches[2]
-	} else if matches := bgitPattern.FindStringSubmatch(url); matches != nil {
-		// Already in bgit format, update host user if different
-		repoOwner = matches[2]
-		repoName = matches[3]
-	} else {
-		return "", fmt.Errorf("unrecognized URL format: %s\nExpected GitHub HTTPS or SSH URL", url)
-	}
-
-	// Remove .git suffix if present
-	repoName = strings.TrimSuffix(repoName, ".git")
-
-	// sshHostUser is the GitHub username that matches SSH config: Host github.com-<sshHostUser>
-	return fmt.Sprintf("git@github.com-%s:%s/%s.git", sshHostUser, repoOwner, repoName), nil
-}
-
-func bindClonedRepository(cfg *config.Config, cloneURL, directory, userAlias string) error {
-	clonePath := directory
-	if clonePath == "" {
-		inferred, err := inferCloneDirectory(cloneURL)
-		if err != nil {
-			return err
-		}
-		clonePath = inferred
-	}
-
-	absPath, err := filepath.Abs(clonePath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve clone path: %w", err)
-	}
-
-	repoRoot := identity.FindGitRoot(absPath)
-	if repoRoot == "" {
-		return fmt.Errorf("could not locate cloned git repository at %s", absPath)
-	}
-
-	if err := cfg.AddBinding(repoRoot, userAlias); err != nil {
-		return fmt.Errorf("failed to add binding: %w", err)
-	}
-
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save binding: %w", err)
-	}
-
-	return nil
-}
-
-func inferCloneDirectory(url string) (string, error) {
-	httpsPattern := regexp.MustCompile(`^https?://github\.com/[^/]+/(.+?)(?:\.git)?$`)
-	sshPattern := regexp.MustCompile(`^git@github\.com:[^/]+/(.+?)(?:\.git)?$`)
-	bgitPattern := regexp.MustCompile(`^git@github\.com-[^:]+:[^/]+/(.+?)(?:\.git)?$`)
-
-	var repoName string
-
-	switch {
-	case httpsPattern.MatchString(url):
-		repoName = httpsPattern.FindStringSubmatch(url)[1]
-	case sshPattern.MatchString(url):
-		repoName = sshPattern.FindStringSubmatch(url)[1]
-	case bgitPattern.MatchString(url):
-		repoName = bgitPattern.FindStringSubmatch(url)[1]
-	default:
-		return "", fmt.Errorf("cannot infer clone directory from URL: %s", url)
-	}
-
-	repoName = strings.TrimSuffix(repoName, ".git")
-	if repoName == "" {
-		return "", fmt.Errorf("cannot infer clone directory from URL: %s", url)
-	}
-
-	return repoName, nil
 }

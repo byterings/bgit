@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/platform"
-	"github.com/byterings/bgit/internal/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -121,7 +121,7 @@ func applySetup(cfg *config.Config, silent bool) error {
 		return err
 	}
 
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
+	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		return fmt.Errorf("failed to update SSH config: %w", err)
 	}
 

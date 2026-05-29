@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/ssh"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
-	"github.com/byterings/bgit/internal/user"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -44,39 +44,20 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Find user
-	foundUser := cfg.FindUser(identifier)
-	if foundUser == nil {
-		return fmt.Errorf("user '%s' not found\nRun: bgit list", identifier)
-	}
-
 	// Validate SSH key path
-	if err := user.ValidateSSHKeyPath(updateSSHKey); err != nil {
+	if err := coressh.ValidateSSHKeyPath(updateSSHKey); err != nil {
 		return err
 	}
 
-	// Update user's SSH key
-	for i := range cfg.Users {
-		if cfg.Users[i].Alias == foundUser.Alias {
-			cfg.Users[i].SSHKeyPath = updateSSHKey
-			break
-		}
-	}
-
-	// Save config
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
-	// Update SSH config
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
-		return fmt.Errorf("failed to update SSH config: %w", err)
+	foundUser, err := coreidentity.UpdateUserSSHKey(cfg, identifier, updateSSHKey)
+	if err != nil {
+		return fmt.Errorf("%w\nRun: bgit list", err)
 	}
 
 	ui.Success(fmt.Sprintf("SSH key updated for '%s'", foundUser.Alias))
 
 	// Show public key to add to GitHub
-	pubKeyContent, err := user.GetPublicKeyContent(updateSSHKey)
+	pubKeyContent, err := coressh.GetPublicKeyContent(updateSSHKey)
 	if err == nil {
 		fmt.Println("\nAdd this public key to your GitHub account:")
 		fmt.Println("https://github.com/settings/keys")

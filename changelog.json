@@ -1,6 +1,41 @@
 {
   "releases": [
     {
+      "version": "0.4.0",
+      "date": "2026-05-29",
+      "phase": 4,
+      "summary": "Milestone release that finishes the core extraction and CLI integration work for config, SSH, identity, and repository flows.",
+      "features": [
+        {
+          "title": "Core config module",
+          "description": "Moved config loading, persistence, migration, and active identity state into core/config as the shared config boundary"
+        },
+        {
+          "title": "Core SSH module",
+          "description": "Moved SSH key generation, SSH config management, agent helpers, and connectivity checks into core/ssh"
+        },
+        {
+          "title": "Core identity module",
+          "description": "Moved identity resolution and identity lifecycle operations into core/identity"
+        },
+        {
+          "title": "Core repository module",
+          "description": "Added core/repo for workspace registration, repository binding, remote URL conversion, clone auto-bind support, and repository owner resolution"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Thinner CLI command layer",
+          "description": "Commands now route their core behavior through extracted modules instead of duplicating repo, identity, and remote logic directly"
+        },
+        {
+          "title": "Consistent repository safety decisions",
+          "description": "Repository owner detection, remote conversion, and clone binding now use shared core logic across check, remote, clone, bind, and uninstall flows"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.3.1",
       "date": "2026-05-25",
       "phase": 3,

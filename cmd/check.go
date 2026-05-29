@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	corerepo "github.com/byterings/bgit/core/repo"
 	"github.com/byterings/bgit/internal/git"
-	"github.com/byterings/bgit/internal/identity"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -44,7 +45,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to determine current directory: %w", err)
 	}
 
-	repoRoot := identity.FindGitRoot(cwd)
+	repoRoot := coreidentity.FindGitRoot(cwd)
 	if repoRoot == "" {
 		if checkFromHook {
 			return fmt.Errorf("not in a git repository")
@@ -53,7 +54,13 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	ownerAlias, ownerSource, ownerUser := resolveRepoOwner(cfg, repoRoot)
+	remoteURL, _ := getRemoteURL("origin")
+	owner := corerepo.ResolveRepoOwner(cfg, repoRoot, remoteURL)
+	ownerAlias, ownerSource := "", ""
+	var ownerUser *config.User
+	if owner != nil {
+		ownerAlias, ownerSource, ownerUser = owner.Alias, owner.Source, owner.User
+	}
 
 	if cfg.ActiveUser == "" && ownerAlias == "" {
 		return fmt.Errorf("no active user set. Run: bgit use <alias>")
@@ -123,37 +130,6 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func resolveRepoOwner(cfg *config.Config, repoRoot string) (alias, source string, user *config.User) {
-	if binding := cfg.FindBindingByPath(repoRoot); binding != nil {
-		if bindingUser := cfg.FindUserByAlias(binding.User); bindingUser != nil {
-			return binding.User, "binding", bindingUser
-		}
-	}
-
-	if workspace := cfg.FindWorkspaceByPath(repoRoot); workspace != nil {
-		if workspaceUser := cfg.FindUserByAlias(workspace.User); workspaceUser != nil {
-			return workspace.User, "workspace", workspaceUser
-		}
-	}
-
-	remoteURL, err := getRemoteURL("origin")
-	if err != nil || remoteURL == "" {
-		return "", "", nil
-	}
-
-	remoteUsername := extractAliasFromURL(remoteURL)
-	if remoteUsername == "" {
-		return "", "", nil
-	}
-
-	remoteUser := cfg.FindUserByUsername(remoteUsername)
-	if remoteUser == nil {
-		return "", "", nil
-	}
-
-	return remoteUser.Alias, "remote", remoteUser
-}
-
 func handleActiveOwnerMismatch(activeAlias, ownerAlias string) (bool, error) {
 	if os.Getenv("BGIT_ALLOW_MISMATCH") == "1" {
 		ui.Warning(fmt.Sprintf("Mismatch bypassed by BGIT_ALLOW_MISMATCH=1 (active: %s, owner: %s)", activeAlias, ownerAlias))
@@ -209,7 +185,7 @@ func checkOriginRemoteMatches(expectedUser *config.User, expectedAlias string) e
 		return fmt.Errorf("origin remote is empty")
 	}
 
-	expectedURL, err := convertToBgitURL(remoteURL, expectedUser.GitHubUsername)
+	expectedURL, err := corerepo.ConvertToBgitURL(remoteURL, expectedUser.GitHubUsername)
 	if err != nil {
 		return fmt.Errorf("unsupported origin URL format: %w", err)
 	}

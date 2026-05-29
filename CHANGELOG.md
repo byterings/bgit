@@ -1,0 +1,76 @@
+# Changelog
+
+All notable changes to bgit will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.3.1] - 2026-05-25 (Phase 3)
+
+Bugfix release focused on uninstall recovery, post-uninstall safety, and repeatable integration testing.
+
+### Added
+- **Docker-backed integration test harness** - Added repeatable host and Docker integration tests covering setup, identity flows, remote fixes, safety checks, and uninstall cleanup (`make test-docker`)
+- **Real-account acceptance test harness** - Added an opt-in real-account test flow that backs up and restores real bgit, SSH, and Git state while validating selected identities and repositories (`make test-real`)
+
+### Fixed
+- **Uninstall recovery for existing users** - Uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available
+- **Post-uninstall read-only safety** - Read-only commands such as list, status, active, prompt, and doctor no longer recreate ~/.bgit or reinstall hooks after uninstall
+- **Optional SSH key cleanup** - Added bgit uninstall --remove-keys so SSH key deletion is explicit instead of implicit
+
+## [0.3.0] - 2026-03-04 (Phase 3)
+
+Phase 3 usability and safety release focused on one-time setup and automatic push protection.
+
+### Added
+- **One-time setup command** - Added bgit setup to initialize configuration, install global pre-push safety checks, and prepare defaults (`bgit setup`)
+- **Automatic push safety checks** - Added bgit check and managed pre-push hook integration to validate identity and remote alignment (`bgit check`)
+- **Shell prompt integration** - Added prompt-friendly identity output for shell integrations (`bgit prompt --plain`)
+- **Clone auto-bind by default** - Repositories cloned with bgit clone are automatically bound to the effective identity by default (`bgit clone <url> [directory]`)
+
+### Fixed
+- **Consistent first-run behavior** - Commands now trigger setup flow automatically when bgit has not been initialized
+- **Uninstall cleanup** - Uninstall now clears managed global hooks path and removes managed SSH config entries
+
+### Breaking Changes
+- **Legacy command deprecations** - bgit init and bgit setup-ssh are deprecated in favor of bgit setup; bgit remote fix is now legacy/advanced guidance
+
+## [0.2.1] - 2025-01-28 (Phase 2)
+
+Code cleanup and improved installation experience.
+
+### Added
+- **Dynamic version fetching** - Install scripts now automatically fetch the latest version from GitHub
+
+### Fixed
+- **Standardized user prompts** - All confirmation prompts now use consistent UI patterns
+- **Code cleanup** - Removed unnecessary comments and improved code readability
+
+## [0.2.0] - 2025-01-28 (Phase 2)
+
+Phase 2 release with workspace support and diagnostics.
+
+### Added
+- **Workspace management** - Create organized workspace folders with automatic identity binding (`bgit workspace`)
+- **Repository binding** - Bind individual repositories to specific identities (`bgit bind`)
+- **Identity status** - Show current identity status and bindings (`bgit status`)
+- **Diagnostics** - Diagnose and auto-fix configuration issues (`bgit doctor`)
+- **Active identity** - Show current active identity (`bgit active`)
+- **Identity resolution** - Automatic identity resolution based on workspace > binding > global priority
+
+## [0.1.0] - 2025-01-28 (Phase 1)
+
+Initial release with core identity management features.
+
+### Added
+- **Multi-user identity management** - Add, list, use, and delete Git identities (`bgit add/use/list/delete`)
+- **SSH key management** - Generate or import SSH keys for each identity (`bgit add`)
+- **Git config handling** - Automatic user.name and user.email configuration (`bgit use`)
+- **Clone with identity** - Clone repositories with the correct SSH configuration (`bgit clone`)
+- **Remote management** - Fix and restore remote URLs for bgit compatibility (`bgit remote fix/restore`)
+- **Configuration sync** - Validate and sync bgit configuration (`bgit sync`)
+- **Safe uninstall** - Safely uninstall bgit and restore all repositories (`bgit uninstall`)
+- **Cross-platform support** - Works on Linux, macOS, and Windows
+

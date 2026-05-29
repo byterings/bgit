@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
-	"github.com/byterings/bgit/internal/user"
+	"github.com/spf13/cobra"
 )
 
 var (
-	addFlagAlias   string
-	addFlagName    string
-	addFlagEmail   string
-	addFlagGitHub  string
-	addFlagSSHKey  string
+	addFlagAlias  string
+	addFlagName   string
+	addFlagEmail  string
+	addFlagGitHub string
+	addFlagSSHKey string
 )
 
 var addCmd = &cobra.Command{
@@ -72,7 +73,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 	if addFlagSSHKey != "" && addFlagSSHKey != "skip" {
 		// Validate provided key path
-		if err := user.ValidateSSHKeyPath(addFlagSSHKey); err != nil {
+		if err := coressh.ValidateSSHKeyPath(addFlagSSHKey); err != nil {
 			return err
 		}
 		sshKeyPath = addFlagSSHKey
@@ -89,7 +90,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 
 		if strings.Contains(choice, "Generate new") {
 			// Generate new key using system ssh-keygen (more reliable)
-			privateKey, _, err := user.GenerateSSHKeySystem(githubUsername)
+			privateKey, _, err := coressh.GenerateSSHKeySystem(githubUsername)
 			if err != nil {
 				return fmt.Errorf("failed to generate SSH key: %w", err)
 			}
@@ -98,7 +99,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 			ui.Success(fmt.Sprintf("SSH key generated: %s", privateKey))
 
 			// Show public key content
-			pubKeyContent, err := user.GetPublicKeyContent(privateKey)
+			pubKeyContent, err := coressh.GetPublicKeyContent(privateKey)
 			if err == nil {
 				fmt.Println("\n" + strings.Repeat("-", 70))
 				fmt.Println("Add this public key to your GitHub account:")
@@ -115,7 +116,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to get key path: %w", err)
 			}
 
-			if err := user.ValidateSSHKeyPath(keyPath); err != nil {
+			if err := coressh.ValidateSSHKeyPath(keyPath); err != nil {
 				return err
 			}
 			sshKeyPath = keyPath
@@ -141,12 +142,8 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		SSHKeyPath:     sshKeyPath,
 	}
 
-	if err := cfg.AddUser(newUser); err != nil {
+	if err := coreidentity.AddUser(cfg, newUser); err != nil {
 		return fmt.Errorf("failed to add user: %w", err)
-	}
-
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
 	}
 
 	fmt.Println()

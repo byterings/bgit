@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/identity"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	corerepo "github.com/byterings/bgit/core/repo"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -67,16 +67,16 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	resolution, err := identity.GetEffectiveResolution(cfg)
+	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil || resolution == nil || resolution.User == nil {
 		// Fall back to checking global active user
 		if cfg.ActiveUser == "" {
 			return fmt.Errorf("no active user set\nRun: bgit use <alias>")
 		}
-		resolution = &identity.Resolution{
+		resolution = &coreidentity.Resolution{
 			User:   cfg.FindUserByAlias(cfg.ActiveUser),
 			Alias:  cfg.ActiveUser,
-			Source: identity.SourceGlobal,
+			Source: coreidentity.SourceGlobal,
 		}
 		if resolution.User == nil {
 			return fmt.Errorf("active user '%s' not found in config", cfg.ActiveUser)
@@ -85,12 +85,12 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 
 	activeUser := resolution.User
 
-	if resolution.Source != identity.SourceGlobal {
+	if resolution.Source != coreidentity.SourceGlobal {
 		sourceInfo := ""
 		switch resolution.Source {
-		case identity.SourceWorkspace:
+		case coreidentity.SourceWorkspace:
 			sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
-		case identity.SourceBinding:
+		case coreidentity.SourceBinding:
 			sourceInfo = " (bound repo)"
 		}
 		ui.Info(fmt.Sprintf("Using identity from %s%s", resolution.Source, sourceInfo))
@@ -105,7 +105,7 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no 'origin' remote found\nAdd a remote first: git remote add origin <url>")
 	}
 
-	existingUsername := extractAliasFromURL(currentURL)
+	existingUsername := corerepo.ExtractAliasFromURL(currentURL)
 	if existingUsername != "" && existingUsername != activeUser.GitHubUsername {
 		ui.Warning(fmt.Sprintf("This repo is configured for GitHub user '%s' but effective user is '%s' (%s)", existingUsername, activeUser.Alias, activeUser.GitHubUsername))
 
@@ -120,7 +120,7 @@ func runRemoteFix(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 	}
 
-	newURL, err := convertToBgitURL(currentURL, activeUser.GitHubUsername)
+	newURL, err := corerepo.ConvertToBgitURL(currentURL, activeUser.GitHubUsername)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func runRemoteRestore(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no 'origin' remote found")
 	}
 
-	newURL, err := convertToStandardURL(currentURL)
+	newURL, err := corerepo.ConvertToStandardURL(currentURL)
 	if err != nil {
 		return err
 	}
@@ -200,37 +200,4 @@ func getRemoteURL(remote string) (string, error) {
 func setRemoteURL(remote, url string) error {
 	cmd := exec.Command("git", "remote", "set-url", remote, url)
 	return cmd.Run()
-}
-
-// convertToStandardURL converts bgit URL back to standard GitHub SSH URL
-func convertToStandardURL(url string) (string, error) {
-	// Pattern for bgit format: git@github.com-alias:user/repo.git
-	bgitPattern := regexp.MustCompile(`^git@github\.com-[^:]+:([^/]+)/(.+?)(?:\.git)?$`)
-
-	// Pattern for standard SSH (already standard)
-	sshPattern := regexp.MustCompile(`^git@github\.com:([^/]+)/(.+?)(?:\.git)?$`)
-
-	// Pattern for HTTPS (already standard)
-	httpsPattern := regexp.MustCompile(`^https?://github\.com/`)
-
-	if matches := bgitPattern.FindStringSubmatch(url); matches != nil {
-		user := matches[1]
-		repo := strings.TrimSuffix(matches[2], ".git")
-		return fmt.Sprintf("git@github.com:%s/%s.git", user, repo), nil
-	} else if sshPattern.MatchString(url) || httpsPattern.MatchString(url) {
-		// Already in standard format
-		return url, nil
-	}
-
-	return "", fmt.Errorf("unrecognized URL format: %s", url)
-}
-
-// extractAliasFromURL extracts the bgit alias from a URL if present
-func extractAliasFromURL(url string) string {
-	// Pattern for bgit format: git@github.com-alias:user/repo.git
-	bgitPattern := regexp.MustCompile(`^git@github\.com-([^:]+):`)
-	if matches := bgitPattern.FindStringSubmatch(url); matches != nil {
-		return matches[1]
-	}
-	return ""
 }

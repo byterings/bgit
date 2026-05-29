@@ -7,7 +7,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/platform"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -360,7 +361,7 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 		}
 	}
 
-	sshConfigPath, _ := platform.GetSSHConfigPath()
+	sshConfigPath, _ := coressh.GetSSHConfigPath()
 	if _, err := os.Stat(sshConfigPath); os.IsNotExist(err) {
 		results = append(results, checkResult{
 			passed:  false,
@@ -370,7 +371,7 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 	} else {
 		content, err := os.ReadFile(sshConfigPath)
 		if err == nil {
-			if strings.Contains(string(content), "BEGIN BRGIT MANAGED") {
+			if coressh.HasManagedSection(string(content)) {
 				results = append(results, checkResult{
 					passed:  true,
 					message: "SSH config has bgit entries",
@@ -391,20 +392,10 @@ func checkSSH(cfg *config.Config, autoFix bool) ([]checkResult, int) {
 func checkSSHAgent() []checkResult {
 	var results []checkResult
 
-	authSock := os.Getenv("SSH_AUTH_SOCK")
-	if authSock == "" {
+	if !coressh.IsSSHAgentRunning() {
 		results = append(results, checkResult{
 			passed:  false,
 			message: "SSH agent not running (SSH_AUTH_SOCK not set)",
-			fix:     "Run: eval $(ssh-agent)",
-		})
-		return results
-	}
-
-	if _, err := os.Stat(authSock); os.IsNotExist(err) {
-		results = append(results, checkResult{
-			passed:  false,
-			message: "SSH agent socket missing",
 			fix:     "Run: eval $(ssh-agent)",
 		})
 		return results
@@ -415,10 +406,9 @@ func checkSSHAgent() []checkResult {
 		message: "SSH agent running",
 	})
 
-	cmd := exec.Command("ssh-add", "-l")
-	output, err := cmd.CombinedOutput()
+	output, err := coressh.ListAgentKeys()
 	if err != nil {
-		if strings.Contains(string(output), "no identities") {
+		if strings.Contains(output, "no identities") {
 			results = append(results, checkResult{
 				passed:  false,
 				message: "No keys loaded in SSH agent",
@@ -431,7 +421,7 @@ func checkSSHAgent() []checkResult {
 			})
 		}
 	} else {
-		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		lines := strings.Split(strings.TrimSpace(output), "\n")
 		results = append(results, checkResult{
 			passed:  true,
 			message: fmt.Sprintf("%d key(s) loaded in agent", len(lines)),
@@ -505,37 +495,12 @@ func checkGitConfig(cfg *config.Config) []checkResult {
 func checkGitHubConnectivity(cfg *config.Config) []checkResult {
 	var results []checkResult
 
-	for _, user := range cfg.Users {
-		if user.SSHKeyPath == "" {
-			continue
-		}
-
-		host := fmt.Sprintf("github.com-%s", user.GitHubUsername)
-		cmd := exec.Command("ssh", "-T", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", fmt.Sprintf("git@%s", host))
-		output, _ := cmd.CombinedOutput()
-		outputStr := string(output)
-		if strings.Contains(outputStr, "successfully authenticated") || strings.Contains(outputStr, "Hi ") {
-			results = append(results, checkResult{
-				passed:  true,
-				message: fmt.Sprintf("%s: authenticated as %s", user.Alias, user.GitHubUsername),
-			})
-		} else if strings.Contains(outputStr, "Permission denied") {
-			results = append(results, checkResult{
-				passed:  false,
-				message: fmt.Sprintf("%s: permission denied", user.Alias),
-				fix:     "Check SSH key is added to GitHub account",
-			})
-		} else if strings.Contains(outputStr, "Connection refused") || strings.Contains(outputStr, "Connection timed out") {
-			results = append(results, checkResult{
-				passed:  false,
-				message: fmt.Sprintf("%s: connection failed", user.Alias),
-			})
-		} else {
-			results = append(results, checkResult{
-				passed:  false,
-				message: fmt.Sprintf("%s: unknown response", user.Alias),
-			})
-		}
+	for _, result := range coressh.CheckGitHubConnectivity(cfg.Users) {
+		results = append(results, checkResult{
+			passed:  result.Passed,
+			message: result.Message,
+			fix:     result.Fix,
+		})
 	}
 
 	return results

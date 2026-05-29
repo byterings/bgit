@@ -8,8 +8,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/platform"
+	"github.com/byterings/bgit/core/config"
+	corerepo "github.com/byterings/bgit/core/repo"
+	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -258,7 +259,7 @@ func restoreRepoRemote(repoPath string, visited map[string]bool, fixed, failed *
 		return
 	}
 
-	newURL, err := convertToStandardURL(url)
+	newURL, err := corerepo.ConvertToStandardURL(url)
 	if err != nil {
 		*failed = appendUnique(*failed, repoPath)
 		return
@@ -286,41 +287,7 @@ func setRepoRemoteURL(repoPath, remote, url string) error {
 }
 
 func removeSSHConfigEntries() error {
-	sshConfigPath, err := platform.GetSSHConfigPath()
-	if err != nil {
-		return err
-	}
-
-	content, err := os.ReadFile(sshConfigPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-
-	lines := strings.Split(string(content), "\n")
-	var newLines []string
-	inBgitSection := false
-
-	for _, line := range lines {
-		if strings.Contains(line, "BEGIN BGIT MANAGED") || strings.Contains(line, "BEGIN BRGIT MANAGED") {
-			inBgitSection = true
-			continue
-		}
-		if strings.Contains(line, "END BGIT MANAGED") || strings.Contains(line, "END BRGIT MANAGED") {
-			inBgitSection = false
-			continue
-		}
-		if !inBgitSection {
-			newLines = append(newLines, line)
-		}
-	}
-
-	newContent := strings.Join(newLines, "\n")
-	newContent = strings.TrimRight(newContent, "\n") + "\n"
-
-	return os.WriteFile(sshConfigPath, []byte(newContent), 0600)
+	return coressh.RemoveManagedSectionFromFile()
 }
 
 func restoreGlobalHooksPath(cfg *config.Config) error {
@@ -360,7 +327,7 @@ func isBgitHooksPath(path string) bool {
 	}
 
 	return strings.Contains(string(content), "BEGIN BGIT MANAGED") ||
-		strings.Contains(string(content), "BEGIN BRGIT MANAGED")
+		coressh.HasManagedSection(string(content))
 }
 
 func restoreGitIdentity(cfg *config.Config) {

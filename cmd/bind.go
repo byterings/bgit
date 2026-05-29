@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/identity"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
+	corerepo "github.com/byterings/bgit/core/repo"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -55,7 +56,7 @@ func runBind(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	repoRoot := identity.FindGitRoot(cwd)
+	repoRoot := coreidentity.FindGitRoot(cwd)
 	if repoRoot == "" {
 		return fmt.Errorf("not in a git repository. Run this command from inside a git repo.")
 	}
@@ -78,50 +79,38 @@ func runBind(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no active user set. Use --user flag or run 'bgit use <alias>' first")
 	}
 
-	user := cfg.FindUserByAlias(userAlias)
-	if user == nil {
-		return fmt.Errorf("user '%s' not found", userAlias)
-	}
-
-	existingBinding := cfg.FindBindingByPath(repoRoot)
-	if existingBinding != nil {
-		if existingBinding.User == userAlias {
-			ui.Info(fmt.Sprintf("Repository already bound to '%s'. No changes needed.", userAlias))
-			return nil
-		}
-
-		if !bindForce {
-			return fmt.Errorf("repository already bound to '%s'. Use --force to override", existingBinding.User)
-		}
-
-		ui.Warning(fmt.Sprintf("Overriding existing binding from '%s' to '%s'", existingBinding.User, userAlias))
-	}
-
-	if identity.IsInsideWorkspace(cfg, repoRoot) {
-		ws := cfg.FindWorkspaceByPath(repoRoot)
-		if ws != nil && ws.User != userAlias {
-			ui.Warning(fmt.Sprintf("Note: This repo is inside workspace '%s' which uses '%s'", ws.Path, ws.User))
-			ui.Info("Explicit binding takes precedence over workspace.")
-		}
-	}
-
-	if err := cfg.AddBinding(repoRoot, userAlias); err != nil {
+	result, err := corerepo.BindRepository(cfg, repoRoot, userAlias, bindForce)
+	if err != nil {
 		return fmt.Errorf("failed to add binding: %w", err)
 	}
 
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
+	if result.NoChange {
+		ui.Info(fmt.Sprintf("Repository already bound to '%s'. No changes needed.", userAlias))
+		return nil
 	}
 
-	ui.Success(fmt.Sprintf("Bound repository to '%s' (%s)", userAlias, user.GitHubUsername))
+	if result.ExistingBinding != nil && result.ExistingBinding.User != userAlias {
+		if !bindForce {
+			return fmt.Errorf("repository already bound to '%s'. Use --force to override", result.ExistingBinding.User)
+		}
+		ui.Warning(fmt.Sprintf("Overriding existing binding from '%s' to '%s'", result.ExistingBinding.User, userAlias))
+	}
+	if result.Workspace != nil {
+		ui.Warning(fmt.Sprintf("Note: This repo is inside workspace '%s' which uses '%s'", result.Workspace.Path, result.Workspace.User))
+		ui.Info("Explicit binding takes precedence over workspace.")
+	}
+	ui.Success(fmt.Sprintf("Bound repository to '%s' (%s)", userAlias, result.User.GitHubUsername))
 	fmt.Printf("  Path: %s\n", repoRoot)
-	fmt.Printf("  Email: %s\n", user.Email)
+	fmt.Printf("  Email: %s\n", result.User.Email)
 
 	return nil
 }
 
 func removeBind(cfg *config.Config, repoRoot string) error {
-	binding := cfg.FindBindingByPath(repoRoot)
+	binding, removed, err := corerepo.RemoveBinding(cfg, repoRoot)
+	if err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
+	}
 	if binding == nil {
 		ui.Info("No binding found for this repository. Using global active user.")
 		return nil
@@ -129,10 +118,7 @@ func removeBind(cfg *config.Config, repoRoot string) error {
 
 	previousUser := binding.User
 
-	if cfg.RemoveBinding(repoRoot) {
-		if err := config.SaveConfig(cfg); err != nil {
-			return fmt.Errorf("failed to save config: %w", err)
-		}
+	if removed {
 		ui.Success(fmt.Sprintf("Removed binding for '%s'", previousUser))
 		ui.Info("Repository will now use workspace identity (if inside one) or global active user.")
 	}

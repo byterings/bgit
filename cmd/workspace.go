@@ -6,7 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
+	corerepo "github.com/byterings/bgit/core/repo"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -97,22 +98,14 @@ func listWorkspaces(cfg *config.Config) error {
 }
 
 func removeWorkspace(cfg *config.Config, userAlias string) error {
-	var found *config.Workspace
-	for _, ws := range cfg.GetWorkspaces() {
-		if ws.User == userAlias {
-			found = &ws
-			break
-		}
+	found, removed, err := corerepo.RemoveWorkspace(cfg, userAlias)
+	if err != nil {
+		return fmt.Errorf("failed to save config: %w", err)
 	}
-
 	if found == nil {
 		return fmt.Errorf("no workspace found for user '%s'", userAlias)
 	}
-
-	if cfg.RemoveWorkspace(userAlias) {
-		if err := config.SaveConfig(cfg); err != nil {
-			return fmt.Errorf("failed to save config: %w", err)
-		}
+	if removed {
 		ui.Success(fmt.Sprintf("Removed workspace binding for '%s' at %s", userAlias, found.Path))
 		ui.Info("Note: The folder was not deleted. Remove it manually if needed.")
 	}
@@ -139,19 +132,14 @@ func createWorkspaces(cfg *config.Config) error {
 		return fmt.Errorf("path does not exist: %s", basePath)
 	}
 
-	var users []config.User
+	var aliases []string
 	if workspaceUsers != "" {
-		aliases := strings.Split(workspaceUsers, ",")
-		for _, alias := range aliases {
-			alias = strings.TrimSpace(alias)
-			user := cfg.FindUserByAlias(alias)
-			if user == nil {
-				return fmt.Errorf("user '%s' not found", alias)
-			}
-			users = append(users, *user)
-		}
-	} else {
-		users = cfg.Users
+		aliases = strings.Split(workspaceUsers, ",")
+	}
+
+	users, err := corerepo.ResolveWorkspaceUsers(cfg, aliases)
+	if err != nil {
+		return err
 	}
 
 	if len(users) == 0 {
@@ -175,17 +163,15 @@ func createWorkspaces(cfg *config.Config) error {
 			ui.Info(fmt.Sprintf("Exists: %s/", user.Alias))
 		}
 
-		if err := cfg.AddWorkspace(folderPath, user.Alias); err != nil {
-			if !strings.Contains(err.Error(), "already exists") {
-				ui.Warning(fmt.Sprintf("Failed to bind %s: %v", user.Alias, err))
-				continue
-			}
+		alreadyExists, err := corerepo.RegisterWorkspace(cfg, folderPath, user.Alias)
+		if err != nil {
+			ui.Warning(fmt.Sprintf("Failed to bind %s: %v", user.Alias, err))
+			continue
+		}
+		if alreadyExists {
+			ui.Info(fmt.Sprintf("Workspace already bound: %s/", user.Alias))
 		}
 		created++
-	}
-
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
 	}
 
 	fmt.Println()

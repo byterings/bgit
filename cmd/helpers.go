@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/byterings/bgit/internal/config"
+	"github.com/byterings/bgit/core/config"
 )
 
 // autoInit initializes bgit automatically and runs first-time setup.

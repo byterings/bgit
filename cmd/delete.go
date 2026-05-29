@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-	"github.com/byterings/bgit/internal/config"
-	"github.com/byterings/bgit/internal/ssh"
+	"github.com/byterings/bgit/core/config"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	"github.com/byterings/bgit/internal/ui"
+	"github.com/spf13/cobra"
 )
 
 var deleteCmd = &cobra.Command{
@@ -59,16 +59,12 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	newUsers := []config.User{}
-	for _, u := range cfg.Users {
-		if u.Alias != user.Alias {
-			newUsers = append(newUsers, u)
-		}
+	result, err := coreidentity.DeleteUser(cfg, identifier)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	cfg.Users = newUsers
 
-	if cfg.ActiveUser == user.Alias {
-		cfg.ActiveUser = ""
+	if result.ActiveCleared {
 		ui.Info("Active user cleared")
 	}
 
@@ -85,14 +81,6 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		} else {
 			ui.Success(fmt.Sprintf("Deleted: %s", pubKeyPath))
 		}
-	}
-
-	if err := config.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("failed to save config: %w", err)
-	}
-
-	if err := ssh.UpdateSSHConfig(cfg.Users); err != nil {
-		ui.Info("Warning: Failed to update SSH config")
 	}
 
 	ui.Success(fmt.Sprintf("User '%s' deleted", user.Alias))

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/byterings/bgit/internal/identity"
+	coreidentity "github.com/byterings/bgit/core/identity"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +32,7 @@ func runActive(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get effective identity (respects workspace/binding)
-	resolution, err := identity.GetEffectiveResolution(cfg)
+	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to resolve identity: %w", err)
 	}
@@ -48,11 +48,11 @@ func runActive(cmd *cobra.Command, args []string) error {
 	// Show source of identity
 	sourceInfo := ""
 	switch resolution.Source {
-	case identity.SourceWorkspace:
+	case coreidentity.SourceWorkspace:
 		sourceInfo = fmt.Sprintf(" (workspace: %s)", resolution.Path)
-	case identity.SourceBinding:
+	case coreidentity.SourceBinding:
 		sourceInfo = " (bound repo)"
-	case identity.SourceGlobal:
+	case coreidentity.SourceGlobal:
 		sourceInfo = " (global)"
 	}
 

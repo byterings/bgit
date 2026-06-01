@@ -217,6 +217,26 @@ Why:
 
 ---
 
+### R-007
+- Status: done
+
+Files Changed:
+- core/config/config.go
+- core/config/validate.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added centralized config validation for supported version, duplicate identities, required user fields, active user references, and workspace/binding user references.
+- Normalized legacy config values before validation on both load and save.
+- Replaced direct config file truncation with atomic temp-file writes and rename-based replacement.
+
+Why:
+- Makes config persistence safer and more resilient without changing the TOML format or user-facing behavior.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -234,7 +254,7 @@ None
 ---
 
 ## Pending
-- R-007 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-008 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

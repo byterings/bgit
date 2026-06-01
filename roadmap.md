@@ -71,7 +71,7 @@
 - Title: Config Safety Improvements
 - Description: Add config validation, atomic writes, and config version handling
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

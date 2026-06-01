@@ -173,7 +173,7 @@ func CreateBackupDir() error {
 // NewConfig creates a new empty config.
 func NewConfig() *Config {
 	return &Config{
-		Version:        "1.0",
+		Version:        CurrentConfigVersion,
 		SetupCompleted: false,
 		ActiveUser:     "",
 		Users:          []User{},
@@ -192,20 +192,9 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to decode config: %w", err)
 	}
 
-	needsSave := false
-	for i := range config.Users {
-		if config.Users[i].Alias == "" {
-			config.Users[i].Alias = config.Users[i].GitHubUsername
-			needsSave = true
-		}
-	}
-
-	if config.ActiveUser != "" {
-		user := config.FindUserByUsername(config.ActiveUser)
-		if user != nil && user.Alias != "" {
-			config.ActiveUser = user.Alias
-			needsSave = true
-		}
+	needsSave := normalizeConfig(&config)
+	if err := ValidateConfig(&config); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
 	if needsSave {
@@ -219,22 +208,86 @@ func LoadConfig() (*Config, error) {
 
 // SaveConfig saves the config to file.
 func SaveConfig(config *Config) error {
+	if normalizeConfig(config) {
+		// keep normalized values in memory before validation/write
+	}
+	if err := ValidateConfig(config); err != nil {
+		return fmt.Errorf("invalid config: %w", err)
+	}
+
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return err
 	}
 
-	f, err := platform.OpenFileSecure(configPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC)
-	if err != nil {
-		return fmt.Errorf("failed to open config file: %w", err)
+	configDir := filepath.Dir(configPath)
+	if err := platform.MkdirSecure(configDir); err != nil {
+		return fmt.Errorf("failed to ensure config directory: %w", err)
 	}
-	defer f.Close()
 
-	encoder := toml.NewEncoder(f)
+	tempFile, err := os.CreateTemp(configDir, ConfigFileName+".tmp-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temp config file: %w", err)
+	}
+	tempPath := tempFile.Name()
+	defer os.Remove(tempPath)
+	defer tempFile.Close()
+
+	if err := applySecureFileMode(tempFile); err != nil {
+		return fmt.Errorf("failed to set temp config permissions: %w", err)
+	}
+
+	encoder := toml.NewEncoder(tempFile)
 	if err := encoder.Encode(config); err != nil {
 		return fmt.Errorf("failed to encode config: %w", err)
 	}
 
+	if err := tempFile.Sync(); err != nil {
+		return fmt.Errorf("failed to sync temp config file: %w", err)
+	}
+	if err := tempFile.Close(); err != nil {
+		return fmt.Errorf("failed to close temp config file: %w", err)
+	}
+	if err := os.Rename(tempPath, configPath); err != nil {
+		return fmt.Errorf("failed to replace config file atomically: %w", err)
+	}
+
+	return nil
+}
+
+func normalizeConfig(cfg *Config) bool {
+	needsSave := false
+
+	if cfg.Version == "" {
+		cfg.Version = CurrentConfigVersion
+		needsSave = true
+	}
+
+	for i := range cfg.Users {
+		if cfg.Users[i].Alias == "" {
+			cfg.Users[i].Alias = cfg.Users[i].GitHubUsername
+			needsSave = true
+		}
+	}
+
+	if cfg.ActiveUser != "" {
+		user := cfg.FindUserByUsername(cfg.ActiveUser)
+		if user != nil && user.Alias != "" && cfg.ActiveUser != user.Alias {
+			cfg.ActiveUser = user.Alias
+			needsSave = true
+		}
+	}
+
+	return needsSave
+}
+
+func applySecureFileMode(file *os.File) error {
+	if file == nil {
+		return nil
+	}
+	if err := file.Chmod(0600); err != nil && os.Getenv("OS") != "Windows_NT" {
+		return err
+	}
 	return nil
 }
 

@@ -49,10 +49,11 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	foundUser, err := coreidentity.UpdateUserSSHKey(cfg, identifier, updateSSHKey)
+	result, err := coreidentity.UpdateUserSSHKey(cfg, identifier, updateSSHKey)
 	if err != nil {
 		return fmt.Errorf("%w\nRun: bgit list", err)
 	}
+	foundUser := result.User
 
 	ui.Success(fmt.Sprintf("SSH key updated for '%s'", foundUser.Alias))
 

@@ -103,7 +103,7 @@ func setupWindowsSSH(cfg *config.Config) error {
 	if err != nil {
 		ui.Info("No keys currently loaded in ssh-agent")
 	} else {
-		fmt.Println(output)
+		fmt.Println(output.Output)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func setupUnixSSH(cfg *config.Config) error {
 	if err != nil {
 		ui.Info("No keys currently loaded in ssh-agent")
 	} else {
-		lines := strings.Split(output, "\n")
+		lines := strings.Split(output.Output, "\n")
 		for _, line := range lines {
 			if line != "" {
 				fmt.Println("  ", line)

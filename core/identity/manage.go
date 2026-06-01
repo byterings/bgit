@@ -21,17 +21,24 @@ const (
 
 type DeleteResult = models.DeleteResult
 type ActivateResult = models.ActivateResult
+type UserOperationResult = models.UserOperationResult
 
 // AddUser adds the given identity and persists the config.
-func AddUser(cfg *config.Config, user config.User) error {
+func AddUser(cfg *config.Config, user config.User) (*UserOperationResult, error) {
 	if err := cfg.AddUser(user); err != nil {
-		return err
+		return nil, err
 	}
-	return config.SaveConfig(cfg)
+	if err := config.SaveConfig(cfg); err != nil {
+		return nil, err
+	}
+	return &UserOperationResult{
+		User:    cfg.FindUserByAlias(user.Alias),
+		Changed: true,
+	}, nil
 }
 
 // UpdateUserSSHKey updates a user's SSH key and persists the config and SSH config.
-func UpdateUserSSHKey(cfg *config.Config, identifier, sshKeyPath string) (*config.User, error) {
+func UpdateUserSSHKey(cfg *config.Config, identifier, sshKeyPath string) (*UserOperationResult, error) {
 	foundUser := cfg.FindUser(identifier)
 	if foundUser == nil {
 		return nil, fmt.Errorf("user '%s' not found", identifier)
@@ -51,7 +58,10 @@ func UpdateUserSSHKey(cfg *config.Config, identifier, sshKeyPath string) (*confi
 		return nil, err
 	}
 
-	return cfg.FindUserByAlias(foundUser.Alias), nil
+	return &UserOperationResult{
+		User:    cfg.FindUserByAlias(foundUser.Alias),
+		Changed: true,
+	}, nil
 }
 
 // DeleteUser removes a user from config and persists the change.
@@ -112,7 +122,7 @@ func ActivateUser(cfg *config.Config, identifier string, mode LookupMode) (*Acti
 
 	return &ActivateResult{
 		User:      user,
-		KeyLoaded: coressh.EnsureKeyLoaded(user),
+		KeyLoaded: coressh.EnsureKeyLoaded(user).Changed,
 	}, nil
 }
 

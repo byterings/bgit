@@ -186,6 +186,37 @@ Why:
 
 ---
 
+### R-006
+- Status: done
+
+Files Changed:
+- core/models/results.go
+- core/identity/manage.go
+- core/repo/repo.go
+- core/ssh/agent.go
+- core/ssh/connectivity.go
+- cmd/add.go
+- cmd/bind.go
+- cmd/check.go
+- cmd/clone.go
+- cmd/doctor.go
+- cmd/setup_ssh.go
+- cmd/update.go
+- cmd/workspace.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Standardized core mutation and operational APIs around structured result objects from `core/models`.
+- Replaced mixed tuple-style returns in identity, repo, and SSH helpers with explicit result structs for user operations, workspace operations, binding removal, repo owner resolution, SSH command output, key loading, and connectivity checks.
+- Updated the CLI layer to consume the standardized result objects without changing user-facing behavior.
+
+Why:
+- Makes the core layer more consistent and easier to consume before the later safety and export/import work.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -203,7 +234,7 @@ None
 ---
 
 ## Pending
-- R-006 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-007 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

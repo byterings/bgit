@@ -127,7 +127,7 @@ func runClone(cmd *cobra.Command, args []string) error {
 	ui.Success("Repository cloned successfully!")
 
 	if !cloneNoBind {
-		if err := corerepo.BindClonedRepository(cfg, url, directory, resolution.Alias); err != nil {
+		if _, err := corerepo.BindClonedRepository(cfg, url, directory, resolution.Alias); err != nil {
 			ui.Warning(fmt.Sprintf("Clone succeeded, but auto-bind failed: %v", err))
 			ui.Info("You can bind manually with: bgit bind --user " + resolution.Alias)
 		} else {

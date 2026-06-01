@@ -55,11 +55,11 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	}
 
 	remoteURL, _ := getRemoteURL("origin")
-	owner := corerepo.ResolveRepoOwner(cfg, repoRoot, remoteURL)
+	ownerResult := corerepo.ResolveRepoOwner(cfg, repoRoot, remoteURL)
 	ownerAlias, ownerSource := "", ""
 	var ownerUser *config.User
-	if owner != nil {
-		ownerAlias, ownerSource, ownerUser = owner.Alias, owner.Source, owner.User
+	if ownerResult != nil && ownerResult.Owner != nil {
+		ownerAlias, ownerSource, ownerUser = ownerResult.Owner.Alias, ownerResult.Owner.Source, ownerResult.Owner.User
 	}
 
 	if cfg.ActiveUser == "" && ownerAlias == "" {

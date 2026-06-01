@@ -15,6 +15,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 ## Key Modules
 - `core/config`: config schema, config path helpers, persistence, legacy migration, active user state, and workspace/binding state mutation.
 - `core/identity`: identity resolution plus identity add/update/delete/activate flows.
+- `core/models`: shared reusable domain and result structs used across config, identity, repo, and SSH core packages.
 - `core/repo`: workspace and binding operations, remote URL conversion, clone auto-bind support, and repository owner resolution for safety checks.
 - `core/ssh`: SSH key generation/validation, managed `~/.ssh/config` updates, SSH agent helpers, and GitHub SSH connectivity checks.
 - `cmd/setup.go`: initializes config, installs managed pre-push hook, stores previous hook path for later restore.

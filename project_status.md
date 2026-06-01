@@ -158,6 +158,34 @@ Why:
 
 ---
 
+### R-005
+- Status: done
+
+Files Changed:
+- core/models/config.go
+- core/models/identity.go
+- core/models/repo.go
+- core/models/results.go
+- core/config/types.go
+- core/identity/manage.go
+- core/identity/resolver.go
+- core/repo/repo.go
+- core/ssh/agent.go
+- core/ssh/connectivity.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added `core/models` as the shared home for reusable identity, repository, and operational result structs.
+- Moved shared structs out of package-local definitions and updated the core packages to reference the shared model layer through aliases.
+- Kept persistence-specific `Config` in `core/config` while reusing shared entity structs for users, workspaces, and bindings.
+
+Why:
+- Establishes a shared model layer without changing behavior or starting the broader standardized response work planned for the next roadmap item.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -175,7 +203,7 @@ None
 ---
 
 ## Pending
-- R-005 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-006 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/byterings/bgit/core/config"
+	"github.com/byterings/bgit/core/models"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 )
@@ -18,17 +19,8 @@ const (
 	LookupByAny
 )
 
-// DeleteResult describes the result of removing an identity.
-type DeleteResult struct {
-	User          config.User
-	ActiveCleared bool
-}
-
-// ActivateResult describes the result of switching identities.
-type ActivateResult struct {
-	User      *config.User
-	KeyLoaded bool
-}
+type DeleteResult = models.DeleteResult
+type ActivateResult = models.ActivateResult
 
 // AddUser adds the given identity and persists the config.
 func AddUser(cfg *config.Config, user config.User) error {

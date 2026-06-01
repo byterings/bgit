@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	"github.com/byterings/bgit/core/models"
 )
 
 // StartSSHAgent starts the platform SSH agent if bgit can do so.
@@ -61,11 +62,7 @@ func EnsureKeyLoaded(user *config.User) bool {
 	return false
 }
 
-// SSHAgentSetupReport describes key loading results for setup flows.
-type SSHAgentSetupReport struct {
-	Added  map[string]string
-	Failed map[string]string
-}
+type SSHAgentSetupReport = models.SSHAgentSetupReport
 
 // SetupAgentForUsers attempts to start the SSH agent and load all configured user keys.
 func SetupAgentForUsers(users []config.User) SSHAgentSetupReport {

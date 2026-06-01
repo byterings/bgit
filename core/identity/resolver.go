@@ -6,24 +6,17 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	"github.com/byterings/bgit/core/models"
 )
 
-// ResolutionSource indicates how the identity was resolved.
-type ResolutionSource string
+type ResolutionSource = models.ResolutionSource
+type Resolution = models.Resolution
 
 const (
-	SourceWorkspace ResolutionSource = "workspace"
-	SourceBinding   ResolutionSource = "binding"
-	SourceGlobal    ResolutionSource = "global"
+	SourceWorkspace = models.SourceWorkspace
+	SourceBinding   = models.SourceBinding
+	SourceGlobal    = models.SourceGlobal
 )
-
-// Resolution contains the resolved identity and its source.
-type Resolution struct {
-	User   *config.User
-	Alias  string
-	Source ResolutionSource
-	Path   string
-}
 
 // ResolveIdentity resolves the effective identity for the given path.
 func ResolveIdentity(cfg *config.Config, currentPath string) (*Resolution, error) {

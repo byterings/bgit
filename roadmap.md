@@ -53,7 +53,7 @@
 - Title: Shared Models
 - Description: Create reusable shared structs for identities, config, requests, and responses
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

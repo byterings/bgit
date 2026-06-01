@@ -8,22 +8,11 @@ import (
 
 	"github.com/byterings/bgit/core/config"
 	coreidentity "github.com/byterings/bgit/core/identity"
+	"github.com/byterings/bgit/core/models"
 )
 
-// BindingResult describes the outcome of binding a repository to an identity.
-type BindingResult struct {
-	User            *config.User
-	ExistingBinding *config.Binding
-	Workspace       *config.Workspace
-	NoChange        bool
-}
-
-// RepoOwner describes the identity that owns a repository for safety checks.
-type RepoOwner struct {
-	Alias  string
-	Source string
-	User   *config.User
-}
+type BindingResult = models.BindingResult
+type RepoOwner = models.RepoOwner
 
 // ResolveWorkspaceUsers resolves the aliases to concrete users or returns all users.
 func ResolveWorkspaceUsers(cfg *config.Config, aliases []string) ([]config.User, error) {

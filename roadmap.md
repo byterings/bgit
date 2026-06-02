@@ -80,7 +80,7 @@
 - Title: Integration Test Improvements
 - Description: Improve real Git integration tests using isolated temporary environments and cleanup handling
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

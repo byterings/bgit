@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-02 (Phase 5)
+
+Milestone release focused on shared core models, standardized core responses, safer config persistence, and stronger isolated integration testing.
+
+### Added
+- **Shared core model layer** - Added core/models to hold reusable identity, repository, and operational structs shared across config, identity, repo, and SSH modules
+- **Standardized core result objects** - Core identity, repo, and SSH operations now return structured result objects instead of mixed tuple-style responses
+- **Safer config persistence** - Config loads and saves now validate supported versions and references, normalize legacy values, and save atomically via temp-file replacement
+- **Stronger isolated integration harness** - Integration tests now run with isolated HOME and XDG config paths, explicit Git system-config isolation, clearer failure output, and optional temp-dir preservation (`make test-integration`)
+
+### Fixed
+- **Config validation regressions caught earlier** - Integration coverage now includes invalid config version handling, duplicate user rejection, workspace removal, and binding override/no-op paths
+- **More consistent core APIs** - Core consumers now work against predictable result shapes, reducing command-layer branching and special-case handling
+
+## [0.4.0] - 2026-05-29 (Phase 4)
+
+Milestone release that finishes the core extraction and CLI integration work for config, SSH, identity, and repository flows.
+
+### Added
+- **Core config module** - Moved config loading, persistence, migration, and active identity state into core/config as the shared config boundary
+- **Core SSH module** - Moved SSH key generation, SSH config management, agent helpers, and connectivity checks into core/ssh
+- **Core identity module** - Moved identity resolution and identity lifecycle operations into core/identity
+- **Core repository module** - Added core/repo for workspace registration, repository binding, remote URL conversion, clone auto-bind support, and repository owner resolution
+
+### Fixed
+- **Thinner CLI command layer** - Commands now route their core behavior through extracted modules instead of duplicating repo, identity, and remote logic directly
+- **Consistent repository safety decisions** - Repository owner detection, remote conversion, and clone binding now use shared core logic across check, remote, clone, bind, and uninstall flows
+
 ## [0.3.1] - 2026-05-25 (Phase 3)
 
 Bugfix release focused on uninstall recovery, post-uninstall safety, and repeatable integration testing.

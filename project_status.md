@@ -237,6 +237,25 @@ Why:
 
 ---
 
+### R-008
+- Status: done
+
+Files Changed:
+- tests/integration.sh
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Strengthened the host integration harness with tighter environment isolation, reusable command helpers, clearer failure output, and optional temp-dir preservation for debugging.
+- Added regression coverage for invalid config version handling, duplicate user config rejection, binding override behavior, workspace removal, and no-op paths for bind/remote commands.
+- Kept Docker and real-account flows compatible by improving the shared host integration path rather than introducing a separate framework.
+
+Why:
+- Improves repeatability and diagnostics for real CLI integration testing without changing product behavior.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -254,7 +273,7 @@ None
 ---
 
 ## Pending
-- R-008 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-009 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

@@ -27,7 +27,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 
 ## Testing
 - `make test`: runs `go test ./...` with an isolated Go build cache under `/tmp`.
-- `make test-integration`: runs real CLI integration tests on the host using a temporary HOME, temporary Git config, and disposable repositories.
+- `make test-integration`: runs real CLI integration tests on the host using isolated `HOME`/`XDG_CONFIG_HOME`, `GIT_CONFIG_NOSYSTEM=1`, disposable repositories, config-validation regression cases, and cleanup preservation via `BGIT_TEST_KEEP_TMP=1` when needed.
 - `make test-docker`: builds `Dockerfile.test` and runs the same integration suite inside a disposable Linux container.
 - `make test-real`: optional real-account acceptance test that requires explicit environment variables and `BGIT_REAL_CONFIRM=YES`; it backs up and restores the user's real bgit, SSH, and Git state.
 - `docker-compose.test.yml` is available for manual Compose-based runs, but the Makefile uses plain Docker so Compose is not required.

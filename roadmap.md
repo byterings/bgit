@@ -111,6 +111,15 @@
 
 ---
 
+### R-011A
+
+- Title: Portable SSH Key Backup Support
+- Description: Include configured identity SSH key pairs in encrypted `.bgit` backups and restore them onto imported machines with target-machine paths
+- Priority: High
+- Status: done
+
+---
+
 ### R-012
 
 - Title: Desktop App Foundation

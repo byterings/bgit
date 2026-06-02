@@ -34,6 +34,8 @@ type ExportIdentitySummary struct {
 	Alias          string `json:"alias"`
 	GitHubUsername string `json:"github_username"`
 	HasSSHKeyPath  bool   `json:"has_ssh_key_path"`
+	PrivateKeyPath string `json:"private_key_path,omitempty"`
+	PublicKeyPath  string `json:"public_key_path,omitempty"`
 }
 
 // ExportEnvelopeHeader describes the encrypted outer file wrapper.

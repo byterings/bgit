@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/byterings/bgit/core/models"
 )
 
-func buildArchiveBytes(manifest models.ExportManifest, configData []byte, createdAt time.Time) ([]byte, error) {
+func buildArchiveBytes(manifest models.ExportManifest, configData []byte, keyFiles []archiveKeyFile, createdAt time.Time) ([]byte, error) {
 	var buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzipWriter)
@@ -31,6 +32,11 @@ func buildArchiveBytes(manifest models.ExportManifest, configData []byte, create
 	}
 	if err := writeDirEntry(tarWriter, PayloadKeysDir, createdAt); err != nil {
 		return nil, err
+	}
+	for _, keyFile := range keyFiles {
+		if err := writeFileEntry(tarWriter, keyFile.Path, keyFile.Data, keyFile.Mode, createdAt); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := tarWriter.Close(); err != nil {
@@ -81,13 +87,26 @@ func writeFileEntry(tw *tar.Writer, path string, data []byte, mode int64, create
 	return nil
 }
 
-func readPayloadConfig(archiveBytes []byte) ([]byte, error) {
+type payloadContents struct {
+	ConfigData []byte
+	Keys       map[string]payloadKeyPair
+}
+
+type payloadKeyPair struct {
+	PrivateKey []byte
+	PublicKey  []byte
+}
+
+func readPayloadContents(archiveBytes []byte) (*payloadContents, error) {
 	gzipReader, err := gzip.NewReader(bytes.NewReader(archiveBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read archive compression: %w", err)
 	}
 	defer gzipReader.Close()
 
+	contents := &payloadContents{
+		Keys: make(map[string]payloadKeyPair),
+	}
 	tarReader := tar.NewReader(gzipReader)
 	for {
 		header, err := tarReader.Next()
@@ -97,18 +116,53 @@ func readPayloadConfig(archiveBytes []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read archive entry: %w", err)
 		}
-		if header.Name != PayloadConfigPath {
+		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
 			continue
 		}
-		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
-			return nil, fmt.Errorf("archive config entry is not a regular file")
+
+		switch {
+		case header.Name == PayloadConfigPath:
+			data, err := io.ReadAll(tarReader)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read archived config: %w", err)
+			}
+			contents.ConfigData = data
+		case strings.HasPrefix(header.Name, PayloadKeysDir+"/"):
+			if err := readPayloadKeyEntry(tarReader, contents, header.Name); err != nil {
+				return nil, err
+			}
 		}
-		data, err := io.ReadAll(tarReader)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read archived config: %w", err)
-		}
-		return data, nil
 	}
 
-	return nil, fmt.Errorf("archive is missing %s", PayloadConfigPath)
+	if len(contents.ConfigData) == 0 {
+		return nil, fmt.Errorf("archive is missing %s", PayloadConfigPath)
+	}
+	return contents, nil
+}
+
+func readPayloadKeyEntry(r io.Reader, contents *payloadContents, path string) error {
+	name := strings.TrimPrefix(path, PayloadKeysDir+"/")
+	if name == "" || strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return fmt.Errorf("invalid archived key path %q", path)
+	}
+
+	isPublic := strings.HasSuffix(name, ".pub")
+	alias := strings.TrimSuffix(name, ".pub")
+	if err := validateKeyAlias(alias); err != nil {
+		return err
+	}
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return fmt.Errorf("failed to read archived key %s: %w", path, err)
+	}
+
+	pair := contents.Keys[alias]
+	if isPublic {
+		pair.PublicKey = data
+	} else {
+		pair.PrivateKey = data
+	}
+	contents.Keys[alias] = pair
+	return nil
 }

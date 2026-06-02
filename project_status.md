@@ -9,7 +9,7 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
 - uninstall recovery for hooks, remotes, and Git identity
-- automated validation with unit command coverage, integration tests, Docker tests, and guarded real-account acceptance tests
+- automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
 
@@ -331,6 +331,30 @@ Why:
 
 ---
 
+### R-011A
+- Status: done
+
+Files Changed:
+- core/export/archive.go
+- core/export/export.go
+- core/export/import.go
+- core/models/export.go
+- tests/backup-portability.sh
+- Makefile
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Extended encrypted `.bgit` backups to include configured identity SSH private and public keys inside the encrypted payload under `payload/keys/<alias>` and `payload/keys/<alias>.pub`.
+- Import now restores archived key pairs to the target machine under `~/.ssh/bgit_<alias>`, secures private keys with `0600`, rewrites imported `ssh_key_path` values, saves the validated config, and regenerates managed SSH config entries.
+- Added `make test-backup-portability` to simulate Machine A export and Machine B import with isolated HOME directories and validate identities, active user, config data, SSH key files, SSH config entries, and target-machine key paths.
+
+Why:
+- Makes encrypted backups portable across machines without regenerating SSH keys.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -339,6 +363,7 @@ Why:
 - guarded real-account acceptance testing
 - Windows install flow aligned to `install.ps1`
 - removal of unused manual Windows installer packaging
+- comprehensive BGIT import/export automated coverage for encrypted export, import restore, wrong-password failure, corrupted/empty archive rejection, isolated temporary environment use, SSH config regeneration, and config round-trip validation
 
 ---
 

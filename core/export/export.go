@@ -3,6 +3,7 @@ package export
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -30,6 +31,13 @@ type CreateArchiveResult struct {
 	Path string
 }
 
+type archiveKeyFile struct {
+	Alias string
+	Path  string
+	Data  []byte
+	Mode  int64
+}
+
 // CreateArchive exports the current bgit configuration into a stable archive layout.
 func CreateArchive(cfg *config.Config, toolVersion string, password string) (*CreateArchiveResult, error) {
 	if cfg == nil {
@@ -54,9 +62,13 @@ func CreateArchive(cfg *config.Config, toolVersion string, password string) (*Cr
 	if err != nil {
 		return nil, err
 	}
+	keyFiles, err := collectKeyFiles(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	manifest := buildManifest(cfg, toolVersion, createdAt)
-	archiveBytes, err := buildArchiveBytes(manifest, configData, createdAt)
+	archiveBytes, err := buildArchiveBytes(manifest, configData, keyFiles, createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +100,16 @@ func encodeConfig(cfg *config.Config) ([]byte, error) {
 func buildManifest(cfg *config.Config, toolVersion string, createdAt time.Time) models.ExportManifest {
 	identities := make([]models.ExportIdentitySummary, 0, len(cfg.Users))
 	for _, user := range cfg.Users {
-		identities = append(identities, models.ExportIdentitySummary{
+		summary := models.ExportIdentitySummary{
 			Alias:          user.Alias,
 			GitHubUsername: user.GitHubUsername,
 			HasSSHKeyPath:  strings.TrimSpace(user.SSHKeyPath) != "",
-		})
+		}
+		if summary.HasSSHKeyPath {
+			summary.PrivateKeyPath = keyArchivePath(user.Alias, false)
+			summary.PublicKeyPath = keyArchivePath(user.Alias, true)
+		}
+		identities = append(identities, summary)
 	}
 
 	return models.ExportManifest{
@@ -115,4 +132,55 @@ func buildManifest(cfg *config.Config, toolVersion string, createdAt time.Time) 
 		},
 		Identities: identities,
 	}
+}
+
+func collectKeyFiles(cfg *config.Config) ([]archiveKeyFile, error) {
+	var files []archiveKeyFile
+	for _, user := range cfg.Users {
+		if strings.TrimSpace(user.SSHKeyPath) == "" {
+			continue
+		}
+		if err := validateKeyAlias(user.Alias); err != nil {
+			return nil, err
+		}
+
+		privateKey, err := os.ReadFile(user.SSHKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read private key for %s: %w", user.Alias, err)
+		}
+		publicKey, err := os.ReadFile(user.SSHKeyPath + ".pub")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read public key for %s: %w", user.Alias, err)
+		}
+
+		files = append(files,
+			archiveKeyFile{
+				Alias: user.Alias,
+				Path:  keyArchivePath(user.Alias, false),
+				Data:  privateKey,
+				Mode:  0600,
+			},
+			archiveKeyFile{
+				Alias: user.Alias,
+				Path:  keyArchivePath(user.Alias, true),
+				Data:  publicKey,
+				Mode:  0644,
+			},
+		)
+	}
+	return files, nil
+}
+
+func keyArchivePath(alias string, public bool) string {
+	if public {
+		return filepath.ToSlash(filepath.Join(PayloadKeysDir, alias+".pub"))
+	}
+	return filepath.ToSlash(filepath.Join(PayloadKeysDir, alias))
+}
+
+func validateKeyAlias(alias string) error {
+	if alias == "" || strings.Contains(alias, "/") || strings.Contains(alias, "\\") || alias == "." || alias == ".." || strings.Contains(alias, "..") {
+		return fmt.Errorf("cannot export SSH key for unsafe alias %q", alias)
+	}
+	return nil
 }

@@ -17,7 +17,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `core/config` now validates config structure on load/save, normalizes legacy values, writes atomically via temp-file rename, and enforces supported config versions.
 - `core/identity`: identity resolution plus identity add/update/delete/activate flows.
 - `core/models`: shared reusable domain and result structs used across config, identity, repo, and SSH core packages.
-- `core/export`: archive-generation and import logic for `.bgit` backups. It preserves the `R-009` inner tar+gzip archive layout, wraps that payload in an encrypted outer file envelope, and can decrypt/import the archived config.
+- `core/export`: archive-generation and import logic for `.bgit` backups. It preserves the `R-009` inner tar+gzip archive layout, stores configured identity SSH key pairs under `payload/keys/`, wraps that payload in an encrypted outer file envelope, and can decrypt/import the archived config and keys onto another machine.
 - `core/repo`: workspace and binding operations, remote URL conversion, clone auto-bind support, and repository owner resolution for safety checks.
 - `core/ssh`: SSH key generation/validation, managed `~/.ssh/config` updates, SSH agent helpers, and GitHub SSH connectivity checks.
 - Core APIs now prefer structured result objects from `core/models` over mixed tuple-style returns for mutations and operational checks.
@@ -32,6 +32,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `make test`: runs `go test ./...` with an isolated Go build cache under `/tmp`.
 - `make test-integration`: runs real CLI integration tests on the host using isolated `HOME`/`XDG_CONFIG_HOME`, `GIT_CONFIG_NOSYSTEM=1`, disposable repositories, config-validation regression cases, and cleanup preservation via `BGIT_TEST_KEEP_TMP=1` when needed.
 - `make test-docker`: builds `Dockerfile.test` and runs the same integration suite inside a disposable Linux container.
+- `make test-backup-portability`: simulates Machine A and Machine B with separate temporary HOME directories, exports encrypted backups with SSH keys on Machine A, imports them on Machine B, and verifies config, key files, SSH config regeneration, and identity functionality.
 - `make test-real`: optional real-account acceptance test that requires explicit environment variables and `BGIT_REAL_CONFIRM=YES`; it backs up and restores the user's real bgit, SSH, and Git state.
 - `docker-compose.test.yml` is available for manual Compose-based runs, but the Makefile uses plain Docker so Compose is not required.
 

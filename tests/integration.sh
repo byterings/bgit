@@ -64,6 +64,15 @@ assert_exists() {
   fi
 }
 
+assert_files_equal() {
+  local expected="$1"
+  local actual="$2"
+  if ! cmp -s "$expected" "$actual"; then
+    printf 'Expected files to match:\n  expected: %s\n  actual:   %s\n' "$expected" "$actual" >&2
+    exit 1
+  fi
+}
+
 assert_equals() {
   local expected="$1"
   local actual="$2"
@@ -265,8 +274,11 @@ assert_contains "$output" "Remote URL already configured for company"
 output="$(run_bgit_ok check)"
 assert_contains "$output" "Safety checks passed"
 
-log "Export archive layout"
+log "Export archive success and encryption"
 cd "$ROOT_DIR"
+ORIGINAL_CONFIG="$TMPROOT/original-config.toml"
+cp "$TEST_HOME/.bgit/config.toml" "$ORIGINAL_CONFIG"
+
 output="$(run_bgit_ok_with_input $'test-password\ntest-password\n' export)"
 assert_contains "$output" "Created bgit export archive"
 
@@ -287,6 +299,21 @@ assert_contains "$HEADER_STRINGS" '"algorithm":"Argon2id"'
 assert_contains "$HEADER_STRINGS" '"algorithm":"AES-256-GCM"'
 assert_contains "$HEADER_STRINGS" '"layout_version":"1"'
 assert_contains "$HEADER_STRINGS" '"compression":"tar+gzip"'
+
+log "Import failure validation"
+output="$(run_bgit_fail_with_input $'wrong-password\n' import "$IMPORT_ARCHIVE")"
+assert_contains "$output" "failed to decrypt archive"
+
+CORRUPTED_ARCHIVE="$TMPROOT/corrupted.bgit"
+cp "$IMPORT_ARCHIVE" "$CORRUPTED_ARCHIVE"
+printf '\377' >> "$CORRUPTED_ARCHIVE"
+output="$(run_bgit_fail_with_input $'test-password\n' import "$CORRUPTED_ARCHIVE")"
+assert_contains "$output" "failed to decrypt archive"
+
+EMPTY_ARCHIVE="$TMPROOT/empty.bgit"
+: > "$EMPTY_ARCHIVE"
+output="$(run_bgit_fail_with_input $'test-password\n' import "$EMPTY_ARCHIVE")"
+assert_contains "$output" "file is too small"
 
 log "Workspace removal path"
 cd "$ROOT_DIR"
@@ -329,14 +356,11 @@ assert_not_exists "$TEST_HOME/.bgit"
 assert_equals "$TMPROOT/original-hooks" "$(git_global --get core.hooksPath)"
 
 log "Encrypted import restores config"
-output="$(run_bgit_fail_with_input $'wrong-password\n' import "$IMPORT_ARCHIVE")"
-assert_contains "$output" "failed to decrypt archive"
-assert_not_exists "$TEST_HOME/.bgit"
-
 output="$(run_bgit_ok_with_input $'test-password\n' import "$IMPORT_ARCHIVE")"
 assert_contains "$output" "Imported bgit archive"
 assert_contains "$output" "Users restored: 2"
 assert_contains "$output" "Active user: company"
+assert_files_equal "$ORIGINAL_CONFIG" "$TEST_HOME/.bgit/config.toml"
 
 output="$(run_bgit_ok list)"
 assert_contains "$output" "company"
@@ -344,6 +368,13 @@ assert_contains "$output" "personal"
 
 output="$(run_bgit_ok active)"
 assert_contains "$output" "Active user: company"
+
+assert_exists "$TEST_HOME/.ssh/config"
+assert_contains "$(cat "$TEST_HOME/.ssh/config")" "BEGIN BGIT MANAGED"
+output="$(run_bgit_ok setup)"
+assert_contains "$output" "Setup complete"
+assert_exists "$TEST_HOME/.ssh/config"
+assert_contains "$(cat "$TEST_HOME/.ssh/config")" "BEGIN BGIT MANAGED"
 
 cd "$REPO"
 output="$(run_bgit_ok uninstall --force)"

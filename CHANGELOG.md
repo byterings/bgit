@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-02 (Phase 6)
+
+Milestone release adding encrypted bgit export and import archives for portable identity backups.
+
+### Added
+- **BGIT export archive system** - Added bgit export to package the current bgit backup payload into a stable .bgit archive structure
+- **Encrypted export layer** - Wrapped .bgit archives in an encrypted envelope using Argon2id key derivation and AES-256-GCM payload encryption
+- **BGIT import restore flow** - Added bgit import to decrypt encrypted .bgit archives, validate the archived config, and restore it atomically (`bgit import <archive.bgit>`)
+
+### Fixed
+- **Password-only interactive archive protection** - Export and import passwords are prompted interactively and are not accepted through command-line arguments
+- **Encrypted archive integration coverage** - Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, and successful import restore
+
 ## [0.5.0] - 2026-06-02 (Phase 5)
 
 Milestone release focused on shared core models, standardized core responses, safer config persistence, and stronger isolated integration testing.

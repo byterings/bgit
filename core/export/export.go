@@ -31,9 +31,12 @@ type CreateArchiveResult struct {
 }
 
 // CreateArchive exports the current bgit configuration into a stable archive layout.
-func CreateArchive(cfg *config.Config, toolVersion string) (*CreateArchiveResult, error) {
+func CreateArchive(cfg *config.Config, toolVersion string, password string) (*CreateArchiveResult, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config is required")
+	}
+	if strings.TrimSpace(password) == "" {
+		return nil, fmt.Errorf("password is required")
 	}
 
 	backupDir, err := config.GetBackupDir()
@@ -53,7 +56,17 @@ func CreateArchive(cfg *config.Config, toolVersion string) (*CreateArchiveResult
 	}
 
 	manifest := buildManifest(cfg, toolVersion, createdAt)
-	if err := writeArchive(archivePath, manifest, configData, createdAt); err != nil {
+	archiveBytes, err := buildArchiveBytes(manifest, configData, createdAt)
+	if err != nil {
+		return nil, err
+	}
+
+	header, ciphertext, err := encryptArchive(archiveBytes, toolVersion, createdAt, password)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := writeEncryptedArchive(archivePath, header, ciphertext); err != nil {
 		return nil, err
 	}
 

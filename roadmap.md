@@ -98,7 +98,7 @@
 - Title: Export Encryption Layer
 - Description: Add Argon2id and AES-256-GCM encryption for `.bgit` archives
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -107,7 +107,7 @@
 - Title: BGIT Import System
 - Description: Implement encrypted `.bgit` import and restore flow
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

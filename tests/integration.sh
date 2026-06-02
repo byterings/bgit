@@ -94,9 +94,33 @@ run_bgit_ok() {
   printf '%s' "$output"
 }
 
+run_bgit_ok_with_input() {
+  local input="$1"
+  shift
+  local output
+  if ! output="$(printf '%s' "$input" | run_bgit "$@" 2>&1)"; then
+    LAST_OUTPUT="$output"
+    fail "command failed: bgit $*"
+  fi
+  LAST_OUTPUT="$output"
+  printf '%s' "$output"
+}
+
 run_bgit_fail() {
   local output
   if output="$(run_bgit "$@" 2>&1)"; then
+    LAST_OUTPUT="$output"
+    fail "command unexpectedly succeeded: bgit $*"
+  fi
+  LAST_OUTPUT="$output"
+  printf '%s' "$output"
+}
+
+run_bgit_fail_with_input() {
+  local input="$1"
+  shift
+  local output
+  if output="$(printf '%s' "$input" | run_bgit "$@" 2>&1)"; then
     LAST_OUTPUT="$output"
     fail "command unexpectedly succeeded: bgit $*"
   fi
@@ -243,30 +267,26 @@ assert_contains "$output" "Safety checks passed"
 
 log "Export archive layout"
 cd "$ROOT_DIR"
-output="$(run_bgit_ok export)"
+output="$(run_bgit_ok_with_input $'test-password\ntest-password\n' export)"
 assert_contains "$output" "Created bgit export archive"
 
 BACKUP_DIR="$TEST_HOME/.bgit/backups"
 ARCHIVE_PATH="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.bgit' | head -n 1)"
 assert_exists "$ARCHIVE_PATH"
+IMPORT_ARCHIVE="$TMPROOT/export-copy.bgit"
+cp "$ARCHIVE_PATH" "$IMPORT_ARCHIVE"
 
-ARCHIVE_LISTING="$(tar -tzf "$ARCHIVE_PATH")"
-assert_contains "$ARCHIVE_LISTING" "manifest.json"
-assert_contains "$ARCHIVE_LISTING" "payload/"
-assert_contains "$ARCHIVE_LISTING" "payload/config/"
-assert_contains "$ARCHIVE_LISTING" "payload/config/config.toml"
-assert_contains "$ARCHIVE_LISTING" "payload/keys/"
+if tar -tzf "$ARCHIVE_PATH" >/dev/null 2>&1; then
+  fail "expected encrypted archive to be unreadable as plaintext tar.gz"
+fi
 
-MANIFEST_CONTENT="$(tar -xOzf "$ARCHIVE_PATH" manifest.json)"
-assert_contains "$MANIFEST_CONTENT" '"format_version": "1"'
-assert_contains "$MANIFEST_CONTENT" '"layout_version": "1"'
-assert_contains "$MANIFEST_CONTENT" '"status": "plaintext"'
-assert_contains "$MANIFEST_CONTENT" '"planned_version": "R-010"'
-assert_contains "$MANIFEST_CONTENT" '"alias": "company"'
+assert_equals "BGITEX10" "$(dd if="$ARCHIVE_PATH" bs=1 count=8 2>/dev/null)"
 
-CONFIG_CONTENT="$(tar -xOzf "$ARCHIVE_PATH" payload/config/config.toml)"
-assert_contains "$CONFIG_CONTENT" 'active_user = "company"'
-assert_contains "$CONFIG_CONTENT" 'alias = "company"'
+HEADER_STRINGS="$(strings "$ARCHIVE_PATH")"
+assert_contains "$HEADER_STRINGS" '"algorithm":"Argon2id"'
+assert_contains "$HEADER_STRINGS" '"algorithm":"AES-256-GCM"'
+assert_contains "$HEADER_STRINGS" '"layout_version":"1"'
+assert_contains "$HEADER_STRINGS" '"compression":"tar+gzip"'
 
 log "Workspace removal path"
 cd "$ROOT_DIR"
@@ -305,6 +325,29 @@ assert_equals "none" "$output"
 
 output="$(run_bgit_ok doctor)"
 assert_contains "$output" "Config file not found"
+assert_not_exists "$TEST_HOME/.bgit"
+assert_equals "$TMPROOT/original-hooks" "$(git_global --get core.hooksPath)"
+
+log "Encrypted import restores config"
+output="$(run_bgit_fail_with_input $'wrong-password\n' import "$IMPORT_ARCHIVE")"
+assert_contains "$output" "failed to decrypt archive"
+assert_not_exists "$TEST_HOME/.bgit"
+
+output="$(run_bgit_ok_with_input $'test-password\n' import "$IMPORT_ARCHIVE")"
+assert_contains "$output" "Imported bgit archive"
+assert_contains "$output" "Users restored: 2"
+assert_contains "$output" "Active user: company"
+
+output="$(run_bgit_ok list)"
+assert_contains "$output" "company"
+assert_contains "$output" "personal"
+
+output="$(run_bgit_ok active)"
+assert_contains "$output" "Active user: company"
+
+cd "$REPO"
+output="$(run_bgit_ok uninstall --force)"
+assert_contains "$output" "bgit uninstall complete"
 assert_not_exists "$TEST_HOME/.bgit"
 assert_equals "$TMPROOT/original-hooks" "$(git_global --get core.hooksPath)"
 

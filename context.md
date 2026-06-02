@@ -17,11 +17,12 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `core/config` now validates config structure on load/save, normalizes legacy values, writes atomically via temp-file rename, and enforces supported config versions.
 - `core/identity`: identity resolution plus identity add/update/delete/activate flows.
 - `core/models`: shared reusable domain and result structs used across config, identity, repo, and SSH core packages.
-- `core/export`: archive-generation logic for `.bgit` backups, including manifest generation and stable payload layout packaging for the later encryption/import work.
+- `core/export`: archive-generation and import logic for `.bgit` backups. It preserves the `R-009` inner tar+gzip archive layout, wraps that payload in an encrypted outer file envelope, and can decrypt/import the archived config.
 - `core/repo`: workspace and binding operations, remote URL conversion, clone auto-bind support, and repository owner resolution for safety checks.
 - `core/ssh`: SSH key generation/validation, managed `~/.ssh/config` updates, SSH agent helpers, and GitHub SSH connectivity checks.
 - Core APIs now prefer structured result objects from `core/models` over mixed tuple-style returns for mutations and operational checks.
-- `cmd/export.go`: creates `.bgit` archives in the managed backup directory using the current export manifest/layout format. The archive is plaintext today and is intentionally shaped so `R-010` can add encryption around the existing payload.
+- `cmd/export.go`: creates encrypted `.bgit` archives in the managed backup directory, prompting interactively for a password and confirmation before encrypting the unchanged inner archive payload.
+- `cmd/import.go`: restores config from encrypted `.bgit` archives by prompting for the archive password, decrypting the payload, validating the archived config, and saving it atomically.
 - `cmd/setup.go`: initializes config, installs managed pre-push hook, stores previous hook path for later restore.
 - `cmd/use.go`: switches active identity and stores the pre-bgit Git identity before the first managed switch.
 - `cmd/uninstall.go`: restores repo remotes, removes managed SSH config, restores hooks/Git identity when possible, and removes bgit config.

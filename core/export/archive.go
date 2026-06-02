@@ -2,83 +2,45 @@ package export
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+	"io"
 	"time"
 
 	"github.com/byterings/bgit/core/models"
 )
 
-func writeArchive(path string, manifest models.ExportManifest, configData []byte, createdAt time.Time) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return fmt.Errorf("failed to create archive directory: %w", err)
-	}
-
-	tempFile, err := os.CreateTemp(filepath.Dir(path), "bgit-export-*.tmp")
-	if err != nil {
-		return fmt.Errorf("failed to create temp export archive: %w", err)
-	}
-	tempPath := tempFile.Name()
-	defer os.Remove(tempPath)
-	if err := tempFile.Chmod(0600); err != nil {
-		tempFile.Close()
-		return fmt.Errorf("failed to set temp archive permissions: %w", err)
-	}
-
-	gzipWriter := gzip.NewWriter(tempFile)
+func buildArchiveBytes(manifest models.ExportManifest, configData []byte, createdAt time.Time) ([]byte, error) {
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzipWriter)
 
 	if err := writeManifestEntry(tarWriter, manifest, createdAt); err != nil {
-		tarWriter.Close()
-		gzipWriter.Close()
-		tempFile.Close()
-		return err
+		return nil, err
 	}
 	if err := writeDirEntry(tarWriter, PayloadDir, createdAt); err != nil {
-		tarWriter.Close()
-		gzipWriter.Close()
-		tempFile.Close()
-		return err
+		return nil, err
 	}
 	if err := writeDirEntry(tarWriter, PayloadConfigDir, createdAt); err != nil {
-		tarWriter.Close()
-		gzipWriter.Close()
-		tempFile.Close()
-		return err
+		return nil, err
 	}
 	if err := writeFileEntry(tarWriter, PayloadConfigPath, configData, 0600, createdAt); err != nil {
-		tarWriter.Close()
-		gzipWriter.Close()
-		tempFile.Close()
-		return err
+		return nil, err
 	}
 	if err := writeDirEntry(tarWriter, PayloadKeysDir, createdAt); err != nil {
-		tarWriter.Close()
-		gzipWriter.Close()
-		tempFile.Close()
-		return err
+		return nil, err
 	}
 
 	if err := tarWriter.Close(); err != nil {
-		gzipWriter.Close()
-		tempFile.Close()
-		return fmt.Errorf("failed to finalize export archive: %w", err)
+		return nil, fmt.Errorf("failed to finalize export archive: %w", err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		tempFile.Close()
-		return fmt.Errorf("failed to finalize export compression: %w", err)
-	}
-	if err := tempFile.Close(); err != nil {
-		return fmt.Errorf("failed to close export archive: %w", err)
-	}
-	if err := os.Rename(tempPath, path); err != nil {
-		return fmt.Errorf("failed to move export archive into place: %w", err)
+		return nil, fmt.Errorf("failed to finalize export compression: %w", err)
 	}
 
-	return nil
+	return buf.Bytes(), nil
 }
 
 func writeManifestEntry(tw *tar.Writer, manifest models.ExportManifest, createdAt time.Time) error {
@@ -117,4 +79,36 @@ func writeFileEntry(tw *tar.Writer, path string, data []byte, mode int64, create
 		return fmt.Errorf("failed to write archive file %s: %w", path, err)
 	}
 	return nil
+}
+
+func readPayloadConfig(archiveBytes []byte) ([]byte, error) {
+	gzipReader, err := gzip.NewReader(bytes.NewReader(archiveBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read archive compression: %w", err)
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read archive entry: %w", err)
+		}
+		if header.Name != PayloadConfigPath {
+			continue
+		}
+		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
+			return nil, fmt.Errorf("archive config entry is not a regular file")
+		}
+		data, err := io.ReadAll(tarReader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read archived config: %w", err)
+		}
+		return data, nil
+	}
+
+	return nil, fmt.Errorf("archive is missing %s", PayloadConfigPath)
 }

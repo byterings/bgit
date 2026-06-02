@@ -279,6 +279,58 @@ Why:
 
 ---
 
+### R-010
+- Status: done
+
+Files Changed:
+- cmd/export.go
+- core/export/archive.go
+- core/export/encryption.go
+- core/export/export.go
+- core/models/export.go
+- internal/ui/prompts.go
+- tests/integration.sh
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Wrapped the existing `R-009` archive bytes in an encrypted outer `.bgit` file envelope while preserving the inner manifest and payload layout exactly.
+- Added interactive password and confirmation prompts for `bgit export` without accepting passwords through CLI arguments.
+- Added Argon2id key derivation metadata and AES-256-GCM encryption metadata to a small file header, followed by raw ciphertext for the payload.
+- Updated integration coverage to verify encrypted export creation and confirm the file is no longer directly readable as a plaintext tar+gzip archive.
+
+Why:
+- Completes the export encryption layer while keeping the inner archive contract stable for the later import work in `R-011`.
+
+---
+
+### R-011
+- Status: done
+
+Files Changed:
+- cmd/import.go
+- core/export/archive.go
+- core/export/encryption.go
+- core/export/import.go
+- core/models/export.go
+- internal/ui/prompts.go
+- tests/integration.sh
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added `bgit import <archive.bgit>` with an interactive password prompt and no password CLI arguments.
+- Added decrypt support for the existing `BGITEX10` envelope using stored Argon2id metadata and AES-256-GCM metadata.
+- Added read support for the unchanged inner tar+gzip payload layout and restores `payload/config/config.toml` through validated atomic config saving.
+- Added integration coverage for wrong-password failure and successful export/import restore after uninstall.
+
+Why:
+- Completes the encrypted export/import flow while preserving the archive format created by `R-009` and encrypted by `R-010`.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -296,7 +348,7 @@ None
 ---
 
 ## Pending
-- R-010 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-012 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

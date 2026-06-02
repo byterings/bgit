@@ -11,10 +11,10 @@ import (
 var exportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Create a bgit backup archive",
-	Long: `Create a .bgit archive containing the current bgit backup payload structure.
+	Long: `Create an encrypted .bgit archive containing the current bgit backup payload structure.
 
-This command only builds the archive structure and manifest. Encryption is added
-later as part of the export roadmap.`,
+This command preserves the existing backup archive layout and wraps it in the
+encrypted export envelope used by bgit.`,
 	RunE: runExport,
 }
 
@@ -32,7 +32,12 @@ func runExport(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	result, err := coreexport.CreateArchive(cfg, version)
+	password, err := ui.PromptPasswordConfirmation("Export password:", "Confirm export password:")
+	if err != nil {
+		return fmt.Errorf("failed to read export password: %w", err)
+	}
+
+	result, err := coreexport.CreateArchive(cfg, version, password)
 	if err != nil {
 		return fmt.Errorf("failed to create export archive: %w", err)
 	}

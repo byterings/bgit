@@ -57,6 +57,13 @@ assert_not_exists() {
   fi
 }
 
+assert_exists() {
+  local path="$1"
+  if [[ ! -e "$path" ]]; then
+    fail "expected path to exist: $path"
+  fi
+}
+
 assert_equals() {
   local expected="$1"
   local actual="$2"
@@ -233,6 +240,33 @@ assert_contains "$output" "Remote URL already configured for company"
 
 output="$(run_bgit_ok check)"
 assert_contains "$output" "Safety checks passed"
+
+log "Export archive layout"
+cd "$ROOT_DIR"
+output="$(run_bgit_ok export)"
+assert_contains "$output" "Created bgit export archive"
+
+BACKUP_DIR="$TEST_HOME/.bgit/backups"
+ARCHIVE_PATH="$(find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.bgit' | head -n 1)"
+assert_exists "$ARCHIVE_PATH"
+
+ARCHIVE_LISTING="$(tar -tzf "$ARCHIVE_PATH")"
+assert_contains "$ARCHIVE_LISTING" "manifest.json"
+assert_contains "$ARCHIVE_LISTING" "payload/"
+assert_contains "$ARCHIVE_LISTING" "payload/config/"
+assert_contains "$ARCHIVE_LISTING" "payload/config/config.toml"
+assert_contains "$ARCHIVE_LISTING" "payload/keys/"
+
+MANIFEST_CONTENT="$(tar -xOzf "$ARCHIVE_PATH" manifest.json)"
+assert_contains "$MANIFEST_CONTENT" '"format_version": "1"'
+assert_contains "$MANIFEST_CONTENT" '"layout_version": "1"'
+assert_contains "$MANIFEST_CONTENT" '"status": "plaintext"'
+assert_contains "$MANIFEST_CONTENT" '"planned_version": "R-010"'
+assert_contains "$MANIFEST_CONTENT" '"alias": "company"'
+
+CONFIG_CONTENT="$(tar -xOzf "$ARCHIVE_PATH" payload/config/config.toml)"
+assert_contains "$CONFIG_CONTENT" 'active_user = "company"'
+assert_contains "$CONFIG_CONTENT" 'alias = "company"'
 
 log "Workspace removal path"
 cd "$ROOT_DIR"

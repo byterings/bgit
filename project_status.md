@@ -256,6 +256,29 @@ Why:
 
 ---
 
+### R-009
+- Status: done
+
+Files Changed:
+- cmd/export.go
+- core/export/archive.go
+- core/export/export.go
+- core/models/export.go
+- tests/integration.sh
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added `bgit export` as a focused archive-generation command that writes `.bgit` backup archives into the managed backup directory without adding import or encryption behavior.
+- Added manifest models and a stable archive layout with `manifest.json`, `payload/config/config.toml`, and reserved payload directories so the archive shape is ready for the encryption layer planned in `R-010`.
+- Added integration coverage that verifies the archive file is produced and contains the expected manifest and payload structure.
+
+Why:
+- Establishes the backup archive contract before encryption and import are layered on top of it.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -273,7 +296,7 @@ None
 ---
 
 ## Pending
-- R-009 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-010 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

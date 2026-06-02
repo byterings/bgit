@@ -89,7 +89,7 @@
 - Title: BGIT Export System
 - Description: Implement `.bgit` export archive generation and packaging flow
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

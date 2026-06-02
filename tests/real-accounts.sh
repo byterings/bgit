@@ -197,9 +197,11 @@ test_alias_repo() {
   local output
 
   log "Testing alias '$alias' with repo '$repo_url'"
+  cd "$TMPROOT"
   output="$(run_bgit use "$alias")"
   assert_contains "$output" "Switched to identity: $alias"
 
+  cd "$TMPROOT"
   output="$(run_bgit clone "$repo_url" "$workdir")"
   assert_contains "$output" "Repository cloned successfully"
 
@@ -235,6 +237,8 @@ test_alias_repo() {
     HOME="$REAL_HOME" git commit --allow-empty -m "bgit real acceptance test $TIMESTAMP"
     HOME="$REAL_HOME" git push origin "$branch"
   fi
+
+  cd "$TMPROOT"
 }
 
 log "Build local test binary"

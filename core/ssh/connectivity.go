@@ -6,19 +6,14 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	"github.com/byterings/bgit/core/models"
 )
 
-// ConnectivityResult reports an SSH authentication check against GitHub.
-type ConnectivityResult struct {
-	Passed   bool
-	Alias    string
-	Username string
-	Fix      string
-	Message  string
-}
+type ConnectivityResult = models.ConnectivityResult
+type ConnectivityCheckResult = models.ConnectivityCheckResult
 
 // CheckGitHubConnectivity tests GitHub SSH auth for each configured user with a key.
-func CheckGitHubConnectivity(users []config.User) []ConnectivityResult {
+func CheckGitHubConnectivity(users []config.User) *ConnectivityCheckResult {
 	results := make([]ConnectivityResult, 0, len(users))
 
 	for _, user := range users {
@@ -52,5 +47,5 @@ func CheckGitHubConnectivity(users []config.User) []ConnectivityResult {
 		results = append(results, result)
 	}
 
-	return results
+	return &ConnectivityCheckResult{Results: results}
 }

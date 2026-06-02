@@ -98,15 +98,15 @@ func listWorkspaces(cfg *config.Config) error {
 }
 
 func removeWorkspace(cfg *config.Config, userAlias string) error {
-	found, removed, err := corerepo.RemoveWorkspace(cfg, userAlias)
+	result, err := corerepo.RemoveWorkspace(cfg, userAlias)
 	if err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
-	if found == nil {
+	if result.Workspace == nil {
 		return fmt.Errorf("no workspace found for user '%s'", userAlias)
 	}
-	if removed {
-		ui.Success(fmt.Sprintf("Removed workspace binding for '%s' at %s", userAlias, found.Path))
+	if result.Changed {
+		ui.Success(fmt.Sprintf("Removed workspace binding for '%s' at %s", userAlias, result.Workspace.Path))
 		ui.Info("Note: The folder was not deleted. Remove it manually if needed.")
 	}
 
@@ -137,10 +137,11 @@ func createWorkspaces(cfg *config.Config) error {
 		aliases = strings.Split(workspaceUsers, ",")
 	}
 
-	users, err := corerepo.ResolveWorkspaceUsers(cfg, aliases)
+	usersResult, err := corerepo.ResolveWorkspaceUsers(cfg, aliases)
 	if err != nil {
 		return err
 	}
+	users := usersResult.Users
 
 	if len(users) == 0 {
 		return fmt.Errorf("no users configured. Add users with: bgit add")
@@ -163,12 +164,12 @@ func createWorkspaces(cfg *config.Config) error {
 			ui.Info(fmt.Sprintf("Exists: %s/", user.Alias))
 		}
 
-		alreadyExists, err := corerepo.RegisterWorkspace(cfg, folderPath, user.Alias)
+		registration, err := corerepo.RegisterWorkspace(cfg, folderPath, user.Alias)
 		if err != nil {
 			ui.Warning(fmt.Sprintf("Failed to bind %s: %v", user.Alias, err))
 			continue
 		}
-		if alreadyExists {
+		if registration.AlreadyExists {
 			ui.Info(fmt.Sprintf("Workspace already bound: %s/", user.Alias))
 		}
 		created++

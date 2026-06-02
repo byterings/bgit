@@ -53,7 +53,7 @@
 - Title: Shared Models
 - Description: Create reusable shared structs for identities, config, requests, and responses
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -62,7 +62,7 @@
 - Title: Standardized Result Responses
 - Description: Standardize core module responses using structured result objects
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -71,7 +71,7 @@
 - Title: Config Safety Improvements
 - Description: Add config validation, atomic writes, and config version handling
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -80,7 +80,7 @@
 - Title: Integration Test Improvements
 - Description: Improve real Git integration tests using isolated temporary environments and cleanup handling
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

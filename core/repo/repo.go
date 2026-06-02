@@ -8,27 +8,21 @@ import (
 
 	"github.com/byterings/bgit/core/config"
 	coreidentity "github.com/byterings/bgit/core/identity"
+	"github.com/byterings/bgit/core/models"
 )
 
-// BindingResult describes the outcome of binding a repository to an identity.
-type BindingResult struct {
-	User            *config.User
-	ExistingBinding *config.Binding
-	Workspace       *config.Workspace
-	NoChange        bool
-}
-
-// RepoOwner describes the identity that owns a repository for safety checks.
-type RepoOwner struct {
-	Alias  string
-	Source string
-	User   *config.User
-}
+type BindingResult = models.BindingResult
+type RepoOwner = models.RepoOwner
+type WorkspaceUsersResult = models.WorkspaceUsersResult
+type WorkspaceRegistrationResult = models.WorkspaceRegistrationResult
+type WorkspaceRemovalResult = models.WorkspaceRemovalResult
+type BindingRemovalResult = models.BindingRemovalResult
+type RepoOwnerResult = models.RepoOwnerResult
 
 // ResolveWorkspaceUsers resolves the aliases to concrete users or returns all users.
-func ResolveWorkspaceUsers(cfg *config.Config, aliases []string) ([]config.User, error) {
+func ResolveWorkspaceUsers(cfg *config.Config, aliases []string) (*WorkspaceUsersResult, error) {
 	if len(aliases) == 0 {
-		return cfg.Users, nil
+		return &WorkspaceUsersResult{Users: cfg.Users}, nil
 	}
 
 	users := make([]config.User, 0, len(aliases))
@@ -40,39 +34,48 @@ func ResolveWorkspaceUsers(cfg *config.Config, aliases []string) ([]config.User,
 		users = append(users, *user)
 	}
 
-	return users, nil
+	return &WorkspaceUsersResult{Users: users}, nil
 }
 
 // RegisterWorkspace ensures the workspace binding exists and persists the config.
-func RegisterWorkspace(cfg *config.Config, folderPath, userAlias string) (bool, error) {
+func RegisterWorkspace(cfg *config.Config, folderPath, userAlias string) (*WorkspaceRegistrationResult, error) {
 	if err := cfg.AddWorkspace(folderPath, userAlias); err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return true, nil
+			return &WorkspaceRegistrationResult{
+				Workspace:     cfg.FindWorkspaceByPath(folderPath),
+				AlreadyExists: true,
+			}, nil
 		}
-		return false, err
+		return nil, err
 	}
 	if err := config.SaveConfig(cfg); err != nil {
-		return false, err
+		return nil, err
 	}
-	return false, nil
+	return &WorkspaceRegistrationResult{
+		Workspace: cfg.FindWorkspaceByPath(folderPath),
+		Changed:   true,
+	}, nil
 }
 
 // RemoveWorkspace removes the workspace binding for a user alias and persists the config.
-func RemoveWorkspace(cfg *config.Config, userAlias string) (*config.Workspace, bool, error) {
+func RemoveWorkspace(cfg *config.Config, userAlias string) (*WorkspaceRemovalResult, error) {
 	for _, ws := range cfg.GetWorkspaces() {
 		if ws.User == userAlias {
 			workspace := ws
 			if cfg.RemoveWorkspace(userAlias) {
 				if err := config.SaveConfig(cfg); err != nil {
-					return nil, false, err
+					return nil, err
 				}
-				return &workspace, true, nil
+				return &WorkspaceRemovalResult{
+					Workspace: &workspace,
+					Changed:   true,
+				}, nil
 			}
-			return &workspace, false, nil
+			return &WorkspaceRemovalResult{Workspace: &workspace}, nil
 		}
 	}
 
-	return nil, false, nil
+	return &WorkspaceRemovalResult{}, nil
 }
 
 // BindRepository binds the repository to the given user and persists the config.
@@ -114,59 +117,61 @@ func BindRepository(cfg *config.Config, repoRoot, userAlias string, allowOverrid
 }
 
 // RemoveBinding removes the repo binding and persists the config.
-func RemoveBinding(cfg *config.Config, repoRoot string) (*config.Binding, bool, error) {
+func RemoveBinding(cfg *config.Config, repoRoot string) (*BindingRemovalResult, error) {
 	binding := cfg.FindBindingByPath(repoRoot)
 	if binding == nil {
-		return nil, false, nil
+		return &BindingRemovalResult{}, nil
 	}
 
 	existing := *binding
 	if cfg.RemoveBinding(repoRoot) {
 		if err := config.SaveConfig(cfg); err != nil {
-			return nil, false, err
+			return nil, err
 		}
-		return &existing, true, nil
+		return &BindingRemovalResult{
+			Binding: &existing,
+			Changed: true,
+		}, nil
 	}
 
-	return &existing, false, nil
+	return &BindingRemovalResult{Binding: &existing}, nil
 }
 
 // BindClonedRepository binds the inferred clone path to the given user and persists the config.
-func BindClonedRepository(cfg *config.Config, cloneURL, directory, userAlias string) error {
+func BindClonedRepository(cfg *config.Config, cloneURL, directory, userAlias string) (*BindingResult, error) {
 	clonePath := directory
 	if clonePath == "" {
 		inferred, err := InferCloneDirectory(cloneURL)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		clonePath = inferred
 	}
 
 	absPath, err := filepath.Abs(clonePath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve clone path: %w", err)
+		return nil, fmt.Errorf("failed to resolve clone path: %w", err)
 	}
 
 	repoRoot := coreidentity.FindGitRoot(absPath)
 	if repoRoot == "" {
-		return fmt.Errorf("could not locate cloned git repository at %s", absPath)
+		return nil, fmt.Errorf("could not locate cloned git repository at %s", absPath)
 	}
 
-	_, err = BindRepository(cfg, repoRoot, userAlias, true)
-	return err
+	return BindRepository(cfg, repoRoot, userAlias, true)
 }
 
 // ResolveRepoOwner returns the binding/workspace/remote owner for a repository.
-func ResolveRepoOwner(cfg *config.Config, repoRoot, remoteURL string) *RepoOwner {
+func ResolveRepoOwner(cfg *config.Config, repoRoot, remoteURL string) *RepoOwnerResult {
 	if binding := cfg.FindBindingByPath(repoRoot); binding != nil {
 		if bindingUser := cfg.FindUserByAlias(binding.User); bindingUser != nil {
-			return &RepoOwner{Alias: binding.User, Source: "binding", User: bindingUser}
+			return &RepoOwnerResult{Owner: &RepoOwner{Alias: binding.User, Source: "binding", User: bindingUser}}
 		}
 	}
 
 	if workspace := cfg.FindWorkspaceByPath(repoRoot); workspace != nil {
 		if workspaceUser := cfg.FindUserByAlias(workspace.User); workspaceUser != nil {
-			return &RepoOwner{Alias: workspace.User, Source: "workspace", User: workspaceUser}
+			return &RepoOwnerResult{Owner: &RepoOwner{Alias: workspace.User, Source: "workspace", User: workspaceUser}}
 		}
 	}
 
@@ -177,10 +182,10 @@ func ResolveRepoOwner(cfg *config.Config, repoRoot, remoteURL string) *RepoOwner
 
 	remoteUser := cfg.FindUserByUsername(remoteUsername)
 	if remoteUser == nil {
-		return nil
+		return &RepoOwnerResult{}
 	}
 
-	return &RepoOwner{Alias: remoteUser.Alias, Source: "remote", User: remoteUser}
+	return &RepoOwnerResult{Owner: &RepoOwner{Alias: remoteUser.Alias, Source: "remote", User: remoteUser}}
 }
 
 // ConvertToBgitURL converts a supported GitHub URL into bgit's SSH host-alias form.

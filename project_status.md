@@ -158,6 +158,104 @@ Why:
 
 ---
 
+### R-005
+- Status: done
+
+Files Changed:
+- core/models/config.go
+- core/models/identity.go
+- core/models/repo.go
+- core/models/results.go
+- core/config/types.go
+- core/identity/manage.go
+- core/identity/resolver.go
+- core/repo/repo.go
+- core/ssh/agent.go
+- core/ssh/connectivity.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added `core/models` as the shared home for reusable identity, repository, and operational result structs.
+- Moved shared structs out of package-local definitions and updated the core packages to reference the shared model layer through aliases.
+- Kept persistence-specific `Config` in `core/config` while reusing shared entity structs for users, workspaces, and bindings.
+
+Why:
+- Establishes a shared model layer without changing behavior or starting the broader standardized response work planned for the next roadmap item.
+
+---
+
+### R-006
+- Status: done
+
+Files Changed:
+- core/models/results.go
+- core/identity/manage.go
+- core/repo/repo.go
+- core/ssh/agent.go
+- core/ssh/connectivity.go
+- cmd/add.go
+- cmd/bind.go
+- cmd/check.go
+- cmd/clone.go
+- cmd/doctor.go
+- cmd/setup_ssh.go
+- cmd/update.go
+- cmd/workspace.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Standardized core mutation and operational APIs around structured result objects from `core/models`.
+- Replaced mixed tuple-style returns in identity, repo, and SSH helpers with explicit result structs for user operations, workspace operations, binding removal, repo owner resolution, SSH command output, key loading, and connectivity checks.
+- Updated the CLI layer to consume the standardized result objects without changing user-facing behavior.
+
+Why:
+- Makes the core layer more consistent and easier to consume before the later safety and export/import work.
+
+---
+
+### R-007
+- Status: done
+
+Files Changed:
+- core/config/config.go
+- core/config/validate.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Added centralized config validation for supported version, duplicate identities, required user fields, active user references, and workspace/binding user references.
+- Normalized legacy config values before validation on both load and save.
+- Replaced direct config file truncation with atomic temp-file writes and rename-based replacement.
+
+Why:
+- Makes config persistence safer and more resilient without changing the TOML format or user-facing behavior.
+
+---
+
+### R-008
+- Status: done
+
+Files Changed:
+- tests/integration.sh
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+- Strengthened the host integration harness with tighter environment isolation, reusable command helpers, clearer failure output, and optional temp-dir preservation for debugging.
+- Added regression coverage for invalid config version handling, duplicate user config rejection, binding override behavior, workspace removal, and no-op paths for bind/remote commands.
+- Kept Docker and real-account flows compatible by improving the shared host integration path rather than introducing a separate framework.
+
+Why:
+- Improves repeatability and diagnostics for real CLI integration testing without changing product behavior.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -175,7 +273,7 @@ None
 ---
 
 ## Pending
-- R-005 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-009 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

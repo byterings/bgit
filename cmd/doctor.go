@@ -408,7 +408,7 @@ func checkSSHAgent() []checkResult {
 
 	output, err := coressh.ListAgentKeys()
 	if err != nil {
-		if strings.Contains(output, "no identities") {
+		if output != nil && strings.Contains(output.Output, "no identities") {
 			results = append(results, checkResult{
 				passed:  false,
 				message: "No keys loaded in SSH agent",
@@ -421,7 +421,7 @@ func checkSSHAgent() []checkResult {
 			})
 		}
 	} else {
-		lines := strings.Split(strings.TrimSpace(output), "\n")
+		lines := strings.Split(strings.TrimSpace(output.Output), "\n")
 		results = append(results, checkResult{
 			passed:  true,
 			message: fmt.Sprintf("%d key(s) loaded in agent", len(lines)),
@@ -495,7 +495,8 @@ func checkGitConfig(cfg *config.Config) []checkResult {
 func checkGitHubConnectivity(cfg *config.Config) []checkResult {
 	var results []checkResult
 
-	for _, result := range coressh.CheckGitHubConnectivity(cfg.Users) {
+	connectivity := coressh.CheckGitHubConnectivity(cfg.Users)
+	for _, result := range connectivity.Results {
 		results = append(results, checkResult{
 			passed:  result.Passed,
 			message: result.Message,

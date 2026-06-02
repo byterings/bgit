@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/byterings/bgit/core/config"
+	"github.com/byterings/bgit/core/models"
 )
 
 // StartSSHAgent starts the platform SSH agent if bgit can do so.
@@ -29,42 +30,47 @@ func IsSSHAgentRunning() bool {
 	return true
 }
 
+type SSHAgentSetupReport = models.SSHAgentSetupReport
+type CommandOutputResult = models.CommandOutputResult
+type KeyLoadResult = models.KeyLoadResult
+
 // ListAgentKeys returns the output of ssh-add -l.
-func ListAgentKeys() (string, error) {
+func ListAgentKeys() (*CommandOutputResult, error) {
 	cmd := exec.Command("ssh-add", "-l")
 	output, err := cmd.CombinedOutput()
-	return string(output), err
+	return &CommandOutputResult{Output: string(output)}, err
 }
 
 // AddKeyToAgent adds the given key path to the SSH agent.
-func AddKeyToAgent(path string) (string, error) {
+func AddKeyToAgent(path string) (*CommandOutputResult, error) {
 	cmd := exec.Command("ssh-add", path)
 	output, err := cmd.CombinedOutput()
-	return string(output), err
+	return &CommandOutputResult{Output: string(output)}, err
 }
 
 // EnsureKeyLoaded starts the SSH agent where possible and loads the user's key if missing.
-func EnsureKeyLoaded(user *config.User) bool {
+func EnsureKeyLoaded(user *config.User) KeyLoadResult {
 	if user == nil || user.SSHKeyPath == "" {
-		return false
+		return KeyLoadResult{}
 	}
 
 	StartSSHAgent()
 	output, _ := ListAgentKeys()
-	if strings.Contains(output, user.SSHKeyPath) {
-		return false
+	if output != nil && strings.Contains(output.Output, user.SSHKeyPath) {
+		return KeyLoadResult{}
 	}
 
-	if _, err := AddKeyToAgent(user.SSHKeyPath); err == nil {
-		return true
+	result, err := AddKeyToAgent(user.SSHKeyPath)
+	if err == nil {
+		return KeyLoadResult{
+			Output:  result.Output,
+			Changed: true,
+		}
 	}
-	return false
-}
-
-// SSHAgentSetupReport describes key loading results for setup flows.
-type SSHAgentSetupReport struct {
-	Added  map[string]string
-	Failed map[string]string
+	if result == nil {
+		return KeyLoadResult{}
+	}
+	return KeyLoadResult{Output: result.Output}
 }
 
 // SetupAgentForUsers attempts to start the SSH agent and load all configured user keys.
@@ -81,7 +87,7 @@ func SetupAgentForUsers(users []config.User) SSHAgentSetupReport {
 			continue
 		}
 		if output, err := AddKeyToAgent(user.SSHKeyPath); err != nil {
-			report.Failed[user.Alias] = output
+			report.Failed[user.Alias] = output.Output
 		} else {
 			report.Added[user.Alias] = user.SSHKeyPath
 		}

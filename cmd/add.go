@@ -142,7 +142,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		SSHKeyPath:     sshKeyPath,
 	}
 
-	if err := coreidentity.AddUser(cfg, newUser); err != nil {
+	if _, err := coreidentity.AddUser(cfg, newUser); err != nil {
 		return fmt.Errorf("failed to add user: %w", err)
 	}
 

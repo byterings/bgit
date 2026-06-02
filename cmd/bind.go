@@ -107,18 +107,18 @@ func runBind(cmd *cobra.Command, args []string) error {
 }
 
 func removeBind(cfg *config.Config, repoRoot string) error {
-	binding, removed, err := corerepo.RemoveBinding(cfg, repoRoot)
+	result, err := corerepo.RemoveBinding(cfg, repoRoot)
 	if err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
-	if binding == nil {
+	if result.Binding == nil {
 		ui.Info("No binding found for this repository. Using global active user.")
 		return nil
 	}
 
-	previousUser := binding.User
+	previousUser := result.Binding.User
 
-	if removed {
+	if result.Changed {
 		ui.Success(fmt.Sprintf("Removed binding for '%s'", previousUser))
 		ui.Info("Repository will now use workspace identity (if inside one) or global active user.")
 	}

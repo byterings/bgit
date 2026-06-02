@@ -1,6 +1,42 @@
 {
   "releases": [
     {
+      "version": "0.5.0",
+      "date": "2026-06-02",
+      "phase": 5,
+      "summary": "Milestone release focused on shared core models, standardized core responses, safer config persistence, and stronger isolated integration testing.",
+      "features": [
+        {
+          "title": "Shared core model layer",
+          "description": "Added core/models to hold reusable identity, repository, and operational structs shared across config, identity, repo, and SSH modules"
+        },
+        {
+          "title": "Standardized core result objects",
+          "description": "Core identity, repo, and SSH operations now return structured result objects instead of mixed tuple-style responses"
+        },
+        {
+          "title": "Safer config persistence",
+          "description": "Config loads and saves now validate supported versions and references, normalize legacy values, and save atomically via temp-file replacement"
+        },
+        {
+          "title": "Stronger isolated integration harness",
+          "description": "Integration tests now run with isolated HOME and XDG config paths, explicit Git system-config isolation, clearer failure output, and optional temp-dir preservation",
+          "command": "make test-integration"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Config validation regressions caught earlier",
+          "description": "Integration coverage now includes invalid config version handling, duplicate user rejection, workspace removal, and binding override/no-op paths"
+        },
+        {
+          "title": "More consistent core APIs",
+          "description": "Core consumers now work against predictable result shapes, reducing command-layer branching and special-case handling"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.4.0",
       "date": "2026-05-29",
       "phase": 4,

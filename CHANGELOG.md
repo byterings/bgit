@@ -57,7 +57,7 @@ Bugfix release focused on uninstall recovery, post-uninstall safety, and repeata
 - **Real-account acceptance test harness** - Added an opt-in real-account test flow that backs up and restores real bgit, SSH, and Git state while validating selected identities and repositories (`make test-real`)
 
 ### Fixed
-- **Uninstall recovery for existing users** - Uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available
+- **Uninstall recovery for existing users** - Resolved GitHub issue #5 reported by maheshmthorat: uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available so GitHub Desktop and normal Git commands are not left affected after uninstall
 - **Post-uninstall read-only safety** - Read-only commands such as list, status, active, prompt, and doctor no longer recreate ~/.bgit or reinstall hooks after uninstall
 - **Optional SSH key cleanup** - Added bgit uninstall --remove-keys so SSH key deletion is explicit instead of implicit
 

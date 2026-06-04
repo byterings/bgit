@@ -32,6 +32,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	ui.Info("This password is required to import this backup later. If you forget it, the archive cannot be restored.")
 	password, err := ui.PromptPasswordConfirmation("Export password:", "Confirm export password:")
 	if err != nil {
 		return fmt.Errorf("failed to read export password: %w", err)

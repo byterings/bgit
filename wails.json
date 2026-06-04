@@ -1,0 +1,14 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "bgit",
+  "outputfilename": "bgit-desktop",
+  "frontend:dir": "desktop/frontend",
+  "frontend:install": "",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "http://127.0.0.1:34115",
+  "author": {
+    "name": "ByteRings",
+    "email": ""
+  }
+}

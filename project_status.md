@@ -405,6 +405,60 @@ Why:
 
 ---
 
+### R-012
+
+- Status: done
+
+Files Changed:
+
+- desktop/main.go
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/package.json
+- desktop/frontend/build.mjs
+- desktop/frontend/dev.mjs
+- wails.json
+- Makefile
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Wails desktop foundation with a separate `desktop` entrypoint so the existing CLI entrypoint remains unchanged.
+- Added minimal backend methods for desktop consumers to read configured identities, active identity, effective identity, and summary counts through existing core modules.
+- Added a minimal embedded frontend and Makefile targets for desktop dev/build workflows.
+
+Why:
+
+- Establishes the desktop application structure and backend integration required before building the dashboard and management UI in later roadmap tasks.
+
+---
+
+### R-013
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Replaced the desktop placeholder screen with a read-only identity dashboard.
+- Added active profile, identity counts, setup state, identity table, SSH key status badges, effective identity source, refresh behavior, and empty/unconfigured states.
+- Kept all identity mutation behavior out of scope for `R-014`.
+
+Why:
+
+- Provides the first usable desktop screen for viewing configured identities and the active profile.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -426,7 +480,7 @@ None
 
 ## Pending
 
-- R-012 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-014 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

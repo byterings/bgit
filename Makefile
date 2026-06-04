@@ -1,4 +1,4 @@
-.PHONY: test test-integration test-docker test-backup-portability test-real
+.PHONY: test test-integration test-docker test-backup-portability test-real desktop-dev desktop-build
 
 test:
 	GOCACHE=/tmp/bgit-gocache go test ./...
@@ -15,3 +15,9 @@ test-backup-portability:
 
 test-real:
 	bash tests/real-accounts.sh
+
+desktop-dev:
+	wails dev -config wails.json
+
+desktop-build:
+	wails build -config wails.json

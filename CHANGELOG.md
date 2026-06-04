@@ -15,10 +15,14 @@ Milestone release adding encrypted bgit export and import archives for portable 
 - **BGIT export archive system** - Added bgit export to package the current bgit backup payload into a stable .bgit archive structure
 - **Encrypted export layer** - Wrapped .bgit archives in an encrypted envelope using Argon2id key derivation and AES-256-GCM payload encryption
 - **BGIT import restore flow** - Added bgit import to decrypt encrypted .bgit archives, validate the archived config, and restore it atomically (`bgit import <archive.bgit>`)
+- **Portable SSH key backup support** - Encrypted .bgit backups now include configured identity SSH private and public keys under payload/keys so backups can be imported on another machine without regenerating keys
+- **Backup portability validation** - Added a Machine A to Machine B portability test that verifies identities, active user, SSH key files, target-machine key paths, and regenerated SSH config entries (`make test-backup-portability`)
 
 ### Fixed
 - **Password-only interactive archive protection** - Export and import passwords are prompted interactively and are not accepted through command-line arguments
-- **Encrypted archive integration coverage** - Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, and successful import restore
+- **Export password recovery warning** - bgit export now warns users that the archive password is required for import and cannot be recovered if forgotten
+- **Target-machine SSH key path restore** - Import rewrites restored SSH key paths to the target machine and regenerates bgit-managed SSH config entries after restoring keys
+- **Encrypted archive integration coverage** - Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, corrupted and empty archive rejection, and successful import restore
 
 ## [0.5.0] - 2026-06-02 (Phase 5)
 

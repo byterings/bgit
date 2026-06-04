@@ -18,6 +18,15 @@
           "title": "BGIT import restore flow",
           "description": "Added bgit import to decrypt encrypted .bgit archives, validate the archived config, and restore it atomically",
           "command": "bgit import <archive.bgit>"
+        },
+        {
+          "title": "Portable SSH key backup support",
+          "description": "Encrypted .bgit backups now include configured identity SSH private and public keys under payload/keys so backups can be imported on another machine without regenerating keys"
+        },
+        {
+          "title": "Backup portability validation",
+          "description": "Added a Machine A to Machine B portability test that verifies identities, active user, SSH key files, target-machine key paths, and regenerated SSH config entries",
+          "command": "make test-backup-portability"
         }
       ],
       "fixes": [
@@ -26,8 +35,16 @@
           "description": "Export and import passwords are prompted interactively and are not accepted through command-line arguments"
         },
         {
+          "title": "Export password recovery warning",
+          "description": "bgit export now warns users that the archive password is required for import and cannot be recovered if forgotten"
+        },
+        {
+          "title": "Target-machine SSH key path restore",
+          "description": "Import rewrites restored SSH key paths to the target machine and regenerates bgit-managed SSH config entries after restoring keys"
+        },
+        {
           "title": "Encrypted archive integration coverage",
-          "description": "Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, and successful import restore"
+          "description": "Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, corrupted and empty archive rejection, and successful import restore"
         }
       ],
       "breaking_changes": []

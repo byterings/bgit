@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-02 (Phase 6)
+
+Milestone release adding encrypted bgit export and import archives for portable identity backups.
+
+### Added
+- **BGIT export archive system** - Added bgit export to package the current bgit backup payload into a stable .bgit archive structure
+- **Encrypted export layer** - Wrapped .bgit archives in an encrypted envelope using Argon2id key derivation and AES-256-GCM payload encryption
+- **BGIT import restore flow** - Added bgit import to decrypt encrypted .bgit archives, validate the archived config, and restore it atomically (`bgit import <archive.bgit>`)
+- **Portable SSH key backup support** - Encrypted .bgit backups now include configured identity SSH private and public keys under payload/keys so backups can be imported on another machine without regenerating keys
+- **Backup portability validation** - Added a Machine A to Machine B portability test that verifies identities, active user, SSH key files, target-machine key paths, and regenerated SSH config entries (`make test-backup-portability`)
+
+### Fixed
+- **Password-only interactive archive protection** - Export and import passwords are prompted interactively and are not accepted through command-line arguments
+- **Export password recovery warning** - bgit export now warns users that the archive password is required for import and cannot be recovered if forgotten
+- **Target-machine SSH key path restore** - Import rewrites restored SSH key paths to the target machine and regenerates bgit-managed SSH config entries after restoring keys
+- **Encrypted archive integration coverage** - Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, corrupted and empty archive rejection, and successful import restore
+
 ## [0.5.0] - 2026-06-02 (Phase 5)
 
 Milestone release focused on shared core models, standardized core responses, safer config persistence, and stronger isolated integration testing.
@@ -44,7 +61,7 @@ Bugfix release focused on uninstall recovery, post-uninstall safety, and repeata
 - **Real-account acceptance test harness** - Added an opt-in real-account test flow that backs up and restores real bgit, SSH, and Git state while validating selected identities and repositories (`make test-real`)
 
 ### Fixed
-- **Uninstall recovery for existing users** - Uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available
+- **Uninstall recovery for existing users** - Resolved GitHub issue #5 reported by maheshmthorat: uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available so GitHub Desktop and normal Git commands are not left affected after uninstall
 - **Post-uninstall read-only safety** - Read-only commands such as list, status, active, prompt, and doctor no longer recreate ~/.bgit or reinstall hooks after uninstall
 - **Optional SSH key cleanup** - Added bgit uninstall --remove-keys so SSH key deletion is explicit instead of implicit
 

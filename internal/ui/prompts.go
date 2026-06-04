@@ -1,11 +1,17 @@
 package ui
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"regexp"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"golang.org/x/term"
 )
+
+var nonTTYSecretReader = bufio.NewReader(os.Stdin)
 
 // PromptUserInfo prompts for user information interactively
 func PromptUserInfo() (alias, name, email, githubUsername string, err error) {
@@ -97,6 +103,57 @@ func PromptConfirmation(message string) (bool, error) {
 		return false, err
 	}
 	return confirmed, nil
+}
+
+// PromptPasswordConfirmation prompts for a password and matching confirmation.
+func PromptPasswordConfirmation(message, confirmMessage string) (string, error) {
+	password, err := promptSecret(message)
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(password) == "" {
+		return "", fmt.Errorf("password cannot be empty")
+	}
+
+	confirmation, err := promptSecret(confirmMessage)
+	if err != nil {
+		return "", err
+	}
+	if password != confirmation {
+		return "", fmt.Errorf("passwords do not match")
+	}
+
+	return password, nil
+}
+
+// PromptPassword prompts for a single password value.
+func PromptPassword(message string) (string, error) {
+	password, err := promptSecret(message)
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(password) == "" {
+		return "", fmt.Errorf("password cannot be empty")
+	}
+	return password, nil
+}
+
+func promptSecret(message string) (string, error) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		var value string
+		prompt := &survey.Password{Message: message}
+		if err := survey.AskOne(prompt, &value, survey.WithValidator(survey.Required)); err != nil {
+			return "", err
+		}
+		return value, nil
+	}
+
+	fmt.Fprint(os.Stderr, message+" ")
+	value, err := nonTTYSecretReader.ReadString('\n')
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimRight(value, "\r\n"), nil
 }
 
 // isValidEmail checks if email format is valid

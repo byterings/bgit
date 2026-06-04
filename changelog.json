@@ -1,6 +1,55 @@
 {
   "releases": [
     {
+      "version": "0.6.0",
+      "date": "2026-06-02",
+      "phase": 6,
+      "summary": "Milestone release adding encrypted bgit export and import archives for portable identity backups.",
+      "features": [
+        {
+          "title": "BGIT export archive system",
+          "description": "Added bgit export to package the current bgit backup payload into a stable .bgit archive structure"
+        },
+        {
+          "title": "Encrypted export layer",
+          "description": "Wrapped .bgit archives in an encrypted envelope using Argon2id key derivation and AES-256-GCM payload encryption"
+        },
+        {
+          "title": "BGIT import restore flow",
+          "description": "Added bgit import to decrypt encrypted .bgit archives, validate the archived config, and restore it atomically",
+          "command": "bgit import <archive.bgit>"
+        },
+        {
+          "title": "Portable SSH key backup support",
+          "description": "Encrypted .bgit backups now include configured identity SSH private and public keys under payload/keys so backups can be imported on another machine without regenerating keys"
+        },
+        {
+          "title": "Backup portability validation",
+          "description": "Added a Machine A to Machine B portability test that verifies identities, active user, SSH key files, target-machine key paths, and regenerated SSH config entries",
+          "command": "make test-backup-portability"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Password-only interactive archive protection",
+          "description": "Export and import passwords are prompted interactively and are not accepted through command-line arguments"
+        },
+        {
+          "title": "Export password recovery warning",
+          "description": "bgit export now warns users that the archive password is required for import and cannot be recovered if forgotten"
+        },
+        {
+          "title": "Target-machine SSH key path restore",
+          "description": "Import rewrites restored SSH key paths to the target machine and regenerates bgit-managed SSH config entries after restoring keys"
+        },
+        {
+          "title": "Encrypted archive integration coverage",
+          "description": "Integration tests now cover encrypted export creation, unreadable plaintext archive checks, wrong-password import failure, corrupted and empty archive rejection, and successful import restore"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.5.0",
       "date": "2026-06-02",
       "phase": 5,
@@ -91,7 +140,7 @@
       "fixes": [
         {
           "title": "Uninstall recovery for existing users",
-          "description": "Uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available"
+          "description": "Resolved GitHub issue #5 reported by maheshmthorat: uninstall now restores configured repo remotes first, removes managed SSH config, restores or clears bgit-managed hooks, and restores backed-up Git identity when available so GitHub Desktop and normal Git commands are not left affected after uninstall"
         },
         {
           "title": "Post-uninstall read-only safety",

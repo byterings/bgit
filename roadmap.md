@@ -89,7 +89,7 @@
 - Title: BGIT Export System
 - Description: Implement `.bgit` export archive generation and packaging flow
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -98,7 +98,7 @@
 - Title: Export Encryption Layer
 - Description: Add Argon2id and AES-256-GCM encryption for `.bgit` archives
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -107,7 +107,16 @@
 - Title: BGIT Import System
 - Description: Implement encrypted `.bgit` import and restore flow
 - Priority: High
-- Status: pending
+- Status: done
+
+---
+
+### R-011A
+
+- Title: Portable SSH Key Backup Support
+- Description: Include configured identity SSH key pairs in encrypted `.bgit` backups and restore them onto imported machines with target-machine paths
+- Priority: High
+- Status: done
 
 ---
 

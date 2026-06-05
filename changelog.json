@@ -1,6 +1,41 @@
 {
   "releases": [
     {
+      "version": "0.7.0-beta",
+      "date": "2026-06-05",
+      "phase": 7,
+      "summary": "Beta milestone release introducing the Wails desktop app foundation, identity dashboard, identity management, and visual diagnostics.",
+      "features": [
+        {
+          "title": "Desktop app foundation",
+          "description": "Added a Wails desktop application under desktop/ with a separate entrypoint and backend bindings while preserving the existing CLI entrypoint"
+        },
+        {
+          "title": "Desktop identity dashboard",
+          "description": "Added a desktop dashboard for configured identities, active profile, setup state, identity counts, SSH key status, and effective identity source"
+        },
+        {
+          "title": "Desktop identity management",
+          "description": "Added desktop actions to add, edit, activate, and delete bgit identities using the existing core identity and SSH flows"
+        },
+        {
+          "title": "Desktop doctor integration",
+          "description": "Added read-only desktop diagnostics for config health, SSH setup, SSH agent state, and Git identity alignment"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Desktop project structure cleanup",
+          "description": "Moved active Wails configuration under desktop/ and removed obsolete manual Windows installer documentation from the release structure"
+        },
+        {
+          "title": "Beta release metadata",
+          "description": "Prepared release metadata for v0.7.0-beta and marks beta releases as prereleases in the GitHub release workflow"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.6.0",
       "date": "2026-06-02",
       "phase": 6,

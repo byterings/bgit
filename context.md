@@ -10,7 +10,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - Git integration: global `user.name`, `user.email`, and `core.hooksPath`.
 - SSH integration: managed section in `~/.ssh/config` plus optional bgit-generated SSH keys.
 - Database: none.
-- Frontend: minimal Wails desktop scaffold under `desktop/` with a static embedded foundation UI.
+- Frontend: Wails desktop app under `desktop/` with a static embedded identity dashboard, management UI, and visual diagnostics.
 
 ## Key Modules
 - `core/config`: config schema, config path helpers, persistence, legacy migration, active user state, and workspace/binding state mutation.
@@ -23,7 +23,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - Core APIs now prefer structured result objects from `core/models` over mixed tuple-style returns for mutations and operational checks.
 - `cmd/export.go`: creates encrypted `.bgit` archives in the managed backup directory, prompting interactively for a password and confirmation before encrypting the unchanged inner archive payload.
 - `cmd/import.go`: restores config from encrypted `.bgit` archives by prompting for the archive password, decrypting the payload, validating the archived config, and saving it atomically.
-- `desktop/`: Wails desktop foundation with a separate entrypoint and backend methods for reading configured identities, active identity, and effective identity state from existing core modules.
+- `desktop/`: Wails desktop app with a separate entrypoint and backend methods for reading configured identities, active identity, effective identity state, desktop identity add/update/delete/activate operations, and read-only diagnostic checks through existing core modules and config persistence.
 - `cmd/setup.go`: initializes config, installs managed pre-push hook, stores previous hook path for later restore.
 - `cmd/use.go`: switches active identity and stores the pre-bgit Git identity before the first managed switch.
 - `cmd/uninstall.go`: restores repo remotes, removes managed SSH config, restores hooks/Git identity when possible, and removes bgit config.

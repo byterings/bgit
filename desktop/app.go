@@ -34,3 +34,23 @@ func (a *App) GetActiveIdentity() (*IdentityView, error) {
 	}
 	return status.ActiveIdentity, nil
 }
+
+func (a *App) AddIdentity(request IdentityRequest) (*IdentityActionResult, error) {
+	return addDesktopIdentity(request)
+}
+
+func (a *App) UpdateIdentity(request UpdateIdentityRequest) (*IdentityActionResult, error) {
+	return updateDesktopIdentity(request)
+}
+
+func (a *App) ActivateIdentity(alias string) (*IdentityActionResult, error) {
+	return activateDesktopIdentity(alias)
+}
+
+func (a *App) DeleteIdentity(request DeleteIdentityRequest) (*IdentityActionResult, error) {
+	return deleteDesktopIdentity(request)
+}
+
+func (a *App) GetDoctorStatus() (*DoctorStatus, error) {
+	return loadDoctorStatus()
+}

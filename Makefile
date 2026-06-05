@@ -17,7 +17,7 @@ test-real:
 	bash tests/real-accounts.sh
 
 desktop-dev:
-	wails dev -config wails.json
+	cd desktop && wails dev
 
 desktop-build:
-	wails build -config wails.json
+	cd desktop && wails build

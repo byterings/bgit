@@ -27,3 +27,48 @@ type EffectiveIdentityView struct {
 	Source string `json:"source"`
 	Path   string `json:"path,omitempty"`
 }
+
+type IdentityRequest struct {
+	Alias          string `json:"alias"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	GitHubUsername string `json:"githubUsername"`
+	SSHKeyPath     string `json:"sshKeyPath"`
+	GenerateSSHKey bool   `json:"generateSSHKey"`
+}
+
+type UpdateIdentityRequest struct {
+	Alias          string `json:"alias"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
+	GitHubUsername string `json:"githubUsername"`
+	SSHKeyPath     string `json:"sshKeyPath"`
+}
+
+type DeleteIdentityRequest struct {
+	Alias      string `json:"alias"`
+	DeleteKeys bool   `json:"deleteKeys"`
+}
+
+type IdentityActionResult struct {
+	Message string         `json:"message"`
+	Status  *DesktopStatus `json:"status"`
+}
+
+type DoctorStatus struct {
+	Configured bool            `json:"configured"`
+	Errors     int             `json:"errors"`
+	Warnings   int             `json:"warnings"`
+	Sections   []DoctorSection `json:"sections"`
+}
+
+type DoctorSection struct {
+	Title  string            `json:"title"`
+	Checks []DoctorCheckView `json:"checks"`
+}
+
+type DoctorCheckView struct {
+	Level   string `json:"level"`
+	Message string `json:"message"`
+	Fix     string `json:"fix,omitempty"`
+}

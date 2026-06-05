@@ -25,6 +25,11 @@ jobs:
         run: |
           VERSION=$(cat version.txt | tr -d '\n')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
           echo "Version: $VERSION"
 
       - name: Check if release exists
@@ -84,7 +89,7 @@ jobs:
 
           **Linux / macOS:**
           ```bash
-          curl -sSL https://raw.githubusercontent.com/byterings/bgit/main/install.sh | bash
+          curl -fsSL https://bgitcli.com/install.sh | bash
           ```
 
           **Windows:**
@@ -103,7 +108,7 @@ jobs:
           name: bgit v${{ steps.version.outputs.version }}
           body_path: release_notes.md
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.version.outputs.prerelease }}
           files: |
             bgit-linux-amd64
             bgit-linux-arm64

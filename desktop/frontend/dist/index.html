@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bgit</title>
+    <style>
+      :root {
+        color: #172033;
+        background: #f8fafc;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+      header,
+      .section-heading,
+      .row-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      h2 {
+        margin: 0 0 16px;
+        font-size: 16px;
+      }
+      h3 {
+        margin: 0 0 12px;
+        font-size: 14px;
+      }
+      p {
+        margin: 0;
+        color: #526071;
+      }
+      button,
+      input {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #172033;
+        min-height: 36px;
+        font: inherit;
+      }
+      button {
+        padding: 0 14px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #94a3b8;
+        background: #f8fafc;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      input {
+        width: 100%;
+        padding: 0 10px;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      label.check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+      }
+      input[type="checkbox"] {
+        width: 16px;
+        min-height: 16px;
+      }
+      .panel {
+        margin-top: 24px;
+        border: 1px solid #d8dee8;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 20px;
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .doctor-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .metric {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 22px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+        gap: 20px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .form-grid .wide {
+        grid-column: 1 / -1;
+      }
+      .active-card,
+      .stack {
+        display: grid;
+        gap: 10px;
+      }
+      .active-name {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .muted {
+        color: #64748b;
+      }
+      .message {
+        margin-top: 16px;
+        min-height: 20px;
+        color: #166534;
+      }
+      .message.error {
+        color: #b91c1c;
+      }
+      .badge {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        padding: 0 10px;
+        font-size: 12px;
+        color: #334155;
+        background: #f8fafc;
+      }
+      .badge.good {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .badge.warn {
+        border-color: #fde68a;
+        color: #92400e;
+        background: #fffbeb;
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .table th,
+      .table td {
+        border-top: 1px solid #eef2f7;
+        padding: 12px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .table th {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .table tr:first-child th {
+        border-top: 0;
+      }
+      .identity-cell {
+        display: grid;
+        gap: 4px;
+      }
+      .path {
+        display: block;
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .check-list {
+        display: grid;
+        gap: 14px;
+      }
+      .check-section {
+        display: grid;
+        gap: 8px;
+      }
+      .check-section h3 {
+        margin: 0;
+      }
+      .check-row {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        border-top: 1px solid #eef2f7;
+        padding-top: 8px;
+      }
+      .check-level {
+        display: inline-flex;
+        width: fit-content;
+        min-height: 24px;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        padding: 0 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .check-level.pass {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .check-level.warn {
+        border-color: #fde68a;
+        color: #92400e;
+        background: #fffbeb;
+      }
+      .check-level.fail {
+        border-color: #fecaca;
+        color: #991b1b;
+        background: #fef2f2;
+      }
+      .check-fix {
+        margin-top: 4px;
+        color: #64748b;
+      }
+      .danger {
+        border-color: #fecaca;
+        color: #991b1b;
+      }
+      code {
+        color: #334155;
+      }
+      .empty {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+      }
+      dialog {
+        width: min(640px, calc(100vw - 32px));
+        border: 1px solid #d8dee8;
+        border-radius: 8px;
+        padding: 0;
+      }
+      dialog::backdrop {
+        background: rgb(15 23 42 / 0.28);
+      }
+      .dialog-body {
+        padding: 20px;
+      }
+      @media (max-width: 820px) {
+        main {
+          padding: 20px;
+        }
+        header,
+        .section-heading,
+        .row-actions {
+          display: grid;
+        }
+        .grid,
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>bgit</h1>
+          <p>Identity dashboard for this machine.</p>
+        </div>
+        <button id="refresh" type="button">Refresh</button>
+      </header>
+      <section id="app" class="panel">Loading...</section>
+      <p id="message" class="message" aria-live="polite"></p>
+    </main>
+
+    <dialog id="editDialog">
+      <form id="editForm" class="dialog-body" method="dialog">
+        <h2>Edit Identity</h2>
+        <input id="editAlias" name="alias" type="hidden" />
+        <div class="form-grid">
+          <label>
+            Name
+            <input id="editName" name="name" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input id="editEmail" name="email" autocomplete="email" required />
+          </label>
+          <label>
+            GitHub username
+            <input id="editGitHub" name="githubUsername" required />
+          </label>
+          <label>
+            SSH private key path
+            <input id="editSSHKey" name="sshKeyPath" />
+          </label>
+        </div>
+        <div class="row-actions" style="margin-top: 18px">
+          <button id="cancelEdit" type="button">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script>
+      const statusLabels = {
+        available: "Available",
+        missing: "Missing",
+        not_configured: "Not configured",
+        unknown: "Unknown",
+      };
+      const doctorLevelLabels = {
+        pass: "Pass",
+        warn: "Warn",
+        fail: "Fail",
+      };
+      let currentStatus = null;
+      let currentDoctor = null;
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function api() {
+        return window.go?.main?.App;
+      }
+
+      function setMessage(text, error = false) {
+        const target = document.getElementById("message");
+        target.textContent = text || "";
+        target.classList.toggle("error", error);
+      }
+
+      function statusBadge(status) {
+        const label = statusLabels[status] || "Unknown";
+        const tone = status === "available" ? "good" : status === "missing" ? "warn" : "";
+        return `<span class="badge ${tone}">${label}</span>`;
+      }
+
+      function activePanel(status) {
+        const active = status.activeIdentity;
+        if (!active) {
+          return `
+            <section class="panel active-card">
+              <h2>Active Profile</h2>
+              <p class="muted">No active identity set.</p>
+            </section>
+          `;
+        }
+        const effective = status.effectiveIdentity;
+        return `
+          <section class="panel active-card">
+            <h2>Active Profile</h2>
+            <div class="active-name">${escapeHtml(active.alias)}</div>
+            <div>${escapeHtml(active.name)}</div>
+            <div class="muted">${escapeHtml(active.email)}</div>
+            <div class="muted">GitHub: ${escapeHtml(active.githubUsername)}</div>
+            ${statusBadge(active.sshKeyStatus)}
+            ${
+              effective
+                ? `<div class="muted">Effective source: ${escapeHtml(effective.source)}</div>`
+                : ""
+            }
+          </section>
+        `;
+      }
+
+      function addIdentityForm() {
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Add Identity</h2>
+              </div>
+            </div>
+            <form id="addForm" class="form-grid">
+              <label>
+                Alias
+                <input name="alias" autocomplete="off" required />
+              </label>
+              <label>
+                GitHub username
+                <input name="githubUsername" autocomplete="username" required />
+              </label>
+              <label>
+                Name
+                <input name="name" autocomplete="name" required />
+              </label>
+              <label>
+                Email
+                <input name="email" autocomplete="email" required />
+              </label>
+              <label class="wide">
+                Existing SSH private key path
+                <input name="sshKeyPath" placeholder="Optional" />
+              </label>
+              <label class="check wide">
+                <input name="generateSSHKey" type="checkbox" />
+                Generate new SSH key
+              </label>
+              <div class="wide">
+                <button type="submit">Add Identity</button>
+              </div>
+            </form>
+          </section>
+        `;
+      }
+
+      function doctorPanel(doctor) {
+        if (!doctor) {
+          return `
+            <section class="panel">
+              <div class="section-heading">
+                <h2>Doctor</h2>
+                <button type="button" data-action="doctor-refresh">Run Checks</button>
+              </div>
+              <p class="muted">Diagnostics not loaded.</p>
+            </section>
+          `;
+        }
+
+        const state =
+          doctor.errors > 0
+            ? "Needs attention"
+            : doctor.warnings > 0
+              ? "Warnings"
+              : "Healthy";
+
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Doctor</h2>
+                <p>${escapeHtml(state)}</p>
+              </div>
+              <button type="button" data-action="doctor-refresh">Run Checks</button>
+            </div>
+            <div class="doctor-summary">
+              <span class="badge good">${doctorSuccessCount(doctor)} passing</span>
+              <span class="badge warn">${doctor.warnings || 0} warning(s)</span>
+              <span class="badge ${doctor.errors > 0 ? "warn" : ""}">${doctor.errors || 0} error(s)</span>
+            </div>
+            ${doctorSections(doctor.sections || [])}
+          </section>
+        `;
+      }
+
+      function doctorSuccessCount(doctor) {
+        return (doctor.sections || []).reduce(
+          (total, section) =>
+            total + (section.checks || []).filter((check) => check.level === "pass").length,
+          0,
+        );
+      }
+
+      function doctorSections(sections) {
+        if (sections.length === 0) {
+          return `<p class="muted">No diagnostics available.</p>`;
+        }
+        return `
+          <div class="check-list">
+            ${sections
+              .map(
+                (section) => `
+                  <div class="check-section">
+                    <h3>${escapeHtml(section.title)}</h3>
+                    ${(section.checks || []).map(doctorCheckRow).join("")}
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      function doctorCheckRow(check) {
+        const level = check.level || "warn";
+        return `
+          <div class="check-row">
+            <span class="check-level ${escapeHtml(level)}">${escapeHtml(doctorLevelLabels[level] || "Check")}</span>
+            <div>
+              <div>${escapeHtml(check.message)}</div>
+              ${check.fix ? `<div class="check-fix">${escapeHtml(check.fix)}</div>` : ""}
+            </div>
+          </div>
+        `;
+      }
+
+      function identityRows(identities) {
+        if (identities.length === 0) {
+          return `<div class="empty"><p>No identities configured.</p></div>`;
+        }
+        return `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Identity</th>
+                <th>GitHub</th>
+                <th>SSH Key</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${identities
+                .map(
+                  (identity) => `
+                    <tr>
+                      <td>
+                        <div class="identity-cell">
+                          <strong>${escapeHtml(identity.alias)}${identity.active ? " (active)" : ""}</strong>
+                          <span>${escapeHtml(identity.name)}</span>
+                          <span class="muted">${escapeHtml(identity.email)}</span>
+                        </div>
+                      </td>
+                      <td>${escapeHtml(identity.githubUsername)}</td>
+                      <td><code class="path" title="${escapeHtml(identity.sshKeyPath)}">${escapeHtml(identity.sshKeyPath || "Not configured")}</code></td>
+                      <td>${statusBadge(identity.sshKeyStatus)}</td>
+                      <td>
+                        <div class="actions">
+                          <button type="button" data-action="activate" data-alias="${escapeHtml(identity.alias)}" ${identity.active ? "disabled" : ""}>Use</button>
+                          <button type="button" data-action="edit" data-alias="${escapeHtml(identity.alias)}">Edit</button>
+                          <button class="danger" type="button" data-action="delete" data-alias="${escapeHtml(identity.alias)}">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function render(status, doctor = currentDoctor) {
+        currentStatus = status;
+        currentDoctor = doctor;
+        const target = document.getElementById("app");
+        target.className = "";
+
+        if (!status.configured) {
+          target.innerHTML = `
+            <section class="panel empty"><p>bgit is not configured on this machine.</p></section>
+            ${addIdentityForm()}
+            ${doctorPanel(doctor)}
+          `;
+          bindForms();
+          bindDoctorActions();
+          return;
+        }
+
+        const identities = status.identities || [];
+        target.innerHTML = `
+          <section class="panel summary">
+            <div class="metric"><span>Identities</span><strong>${status.identityCount}</strong></div>
+            <div class="metric"><span>Workspaces</span><strong>${status.workspaceCount}</strong></div>
+            <div class="metric"><span>Bindings</span><strong>${status.bindingCount}</strong></div>
+            <div class="metric"><span>Setup</span><strong>${status.setupCompleted ? "Ready" : "Pending"}</strong></div>
+          </section>
+          <div class="grid">
+            ${activePanel(status)}
+            ${addIdentityForm()}
+          </div>
+          <section class="panel">
+            <h2>Identities</h2>
+            ${identityRows(identities)}
+          </section>
+          ${doctorPanel(doctor)}
+        `;
+        bindForms();
+        bindIdentityActions();
+        bindDoctorActions();
+      }
+
+      function formPayload(form) {
+        const data = new FormData(form);
+        return {
+          alias: String(data.get("alias") || "").trim(),
+          name: String(data.get("name") || "").trim(),
+          email: String(data.get("email") || "").trim(),
+          githubUsername: String(data.get("githubUsername") || "").trim(),
+          sshKeyPath: String(data.get("sshKeyPath") || "").trim(),
+          generateSSHKey: data.get("generateSSHKey") === "on",
+        };
+      }
+
+      function bindForms() {
+        const addForm = document.getElementById("addForm");
+        if (!addForm) {
+          return;
+        }
+        addForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          await runAction(() => api().AddIdentity(formPayload(addForm)), addForm);
+        });
+      }
+
+      function bindIdentityActions() {
+        document.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const alias = button.dataset.alias;
+            if (button.dataset.action === "activate") {
+              await runAction(() => api().ActivateIdentity(alias), button);
+            }
+            if (button.dataset.action === "edit") {
+              openEditDialog(alias);
+            }
+            if (button.dataset.action === "delete") {
+              const identity = findIdentity(alias);
+              if (!confirm(`Delete identity '${alias}'?`)) {
+                return;
+              }
+              const deleteKeys = identity?.sshKeyPath
+                ? confirm(`Also delete SSH key files for '${alias}'?`)
+                : false;
+              await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button);
+            }
+          });
+        });
+      }
+
+      function bindDoctorActions() {
+        document.querySelectorAll("[data-action='doctor-refresh']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await runDoctorRefresh(button);
+          });
+        });
+      }
+
+      function findIdentity(alias) {
+        return (currentStatus?.identities || []).find((identity) => identity.alias === alias);
+      }
+
+      function openEditDialog(alias) {
+        const identity = findIdentity(alias);
+        if (!identity) {
+          setMessage(`Identity '${alias}' not found`, true);
+          return;
+        }
+
+        document.getElementById("editAlias").value = identity.alias;
+        document.getElementById("editName").value = identity.name;
+        document.getElementById("editEmail").value = identity.email;
+        document.getElementById("editGitHub").value = identity.githubUsername;
+        document.getElementById("editSSHKey").value = identity.sshKeyPath || "";
+        document.getElementById("editDialog").showModal();
+      }
+
+      async function runAction(action, disabledTarget) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true);
+          return;
+        }
+        setMessage("");
+        const previousDisabled = disabledTarget.disabled;
+        disabledTarget.disabled = true;
+        try {
+          const result = await action();
+          const doctor = await api().GetDoctorStatus();
+          if (result?.status) {
+            render(result.status, doctor);
+          } else {
+            await load();
+          }
+          setMessage(result?.message || "Done");
+        } catch (error) {
+          setMessage(String(error), true);
+        } finally {
+          disabledTarget.disabled = previousDisabled;
+        }
+      }
+
+      async function runDoctorRefresh(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true);
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const doctor = await api().GetDoctorStatus();
+          render(currentStatus, doctor);
+          setMessage("Doctor checks refreshed");
+        } catch (error) {
+          setMessage(String(error), true);
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function load() {
+        const target = document.getElementById("app");
+        try {
+          target.className = "panel";
+          target.textContent = "Loading...";
+          if (!api()) {
+            throw new Error("Desktop backend is not available. Open this screen in the Wails app window.");
+          }
+          const [status, doctor] = await Promise.all([api().GetStatus(), api().GetDoctorStatus()]);
+          render(status, doctor);
+        } catch (error) {
+          target.textContent = String(error);
+        }
+      }
+
+      document.getElementById("refresh").addEventListener("click", load);
+      document.getElementById("cancelEdit").addEventListener("click", () => {
+        document.getElementById("editDialog").close();
+      });
+      document.getElementById("editForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const payload = formPayload(form);
+        payload.generateSSHKey = false;
+        await runAction(() => api().UpdateIdentity(payload), form.querySelector("button[type='submit']"));
+        document.getElementById("editDialog").close();
+      });
+
+      load();
+    </script>
+  </body>
+</html>

@@ -20,6 +20,11 @@ jobs:
         with:
           go-version: '1.24.11'
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Read version
         id: version
         run: |
@@ -47,7 +52,7 @@ jobs:
         if: steps.check_release.outputs.exists == 'false'
         run: go run scripts/generate-changelog.go
 
-      - name: Build binaries
+      - name: Build CLI binaries
         if: steps.check_release.outputs.exists == 'false'
         run: |
           VERSION=${{ steps.version.outputs.version }}
@@ -69,6 +74,30 @@ jobs:
 
           # Windows ARM64
           GOOS=windows GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-arm64.exe .
+
+      - name: Install Linux desktop dependencies
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev
+
+      - name: Install Wails CLI
+        if: steps.check_release.outputs.exists == 'false'
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Build Linux desktop beta
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          cd desktop
+          wails build -tags webkit2_41 -clean
+          cd ..
+          cp desktop/build/bin/bgit-desktop bgit-desktop-linux-amd64
+          chmod +x bgit-desktop-linux-amd64
 
       - name: Extract release notes
         if: steps.check_release.outputs.exists == 'false'
@@ -97,6 +126,11 @@ jobs:
           irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
           ```
 
+          ### Desktop Beta
+
+          Linux desktop beta artifact:
+          - bgit-desktop-linux-amd64
+
           See [changelog.json](changelog.json) for full details.
           EOF
 
@@ -116,6 +150,7 @@ jobs:
             bgit-darwin-arm64
             bgit-windows-amd64.exe
             bgit-windows-arm64.exe
+            bgit-desktop-linux-amd64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

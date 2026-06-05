@@ -405,6 +405,119 @@ Why:
 
 ---
 
+### R-012
+
+- Status: done
+
+Files Changed:
+
+- desktop/main.go
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/package.json
+- desktop/frontend/build.mjs
+- desktop/frontend/dev.mjs
+- wails.json
+- Makefile
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Wails desktop foundation with a separate `desktop` entrypoint so the existing CLI entrypoint remains unchanged.
+- Added minimal backend methods for desktop consumers to read configured identities, active identity, effective identity, and summary counts through existing core modules.
+- Added a minimal embedded frontend and Makefile targets for desktop dev/build workflows.
+
+Why:
+
+- Establishes the desktop application structure and backend integration required before building the dashboard and management UI in later roadmap tasks.
+
+---
+
+### R-013
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Replaced the desktop placeholder screen with a read-only identity dashboard.
+- Added active profile, identity counts, setup state, identity table, SSH key status badges, effective identity source, refresh behavior, and empty/unconfigured states.
+- Kept all identity mutation behavior out of scope for `R-014`.
+
+Why:
+
+- Provides the first usable desktop screen for viewing configured identities and the active profile.
+
+---
+
+### R-014
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added Wails backend methods for desktop identity add, update, activate, and delete operations.
+- Added request/result models for desktop identity mutations and refreshed dashboard state after successful operations.
+- Extended the desktop UI with add identity, edit identity, activate identity, and delete identity controls.
+- Kept identity mutations backed by existing config, SSH, and core identity behavior while leaving CLI behavior unchanged.
+
+Why:
+
+- Completes desktop identity management so users can manage configured bgit identities without leaving the desktop app.
+
+---
+
+### R-015
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- .gitignore
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a desktop `GetDoctorStatus` backend method with read-only diagnostic sections for config, SSH setup, SSH agent, and Git identity alignment.
+- Added desktop doctor models for sectioned pass/warn/fail checks with suggested fixes.
+- Extended the desktop UI with a visual Doctor panel, summary counts, sectioned check rows, and refresh behavior.
+- Added a narrow gitignore exception so the embedded desktop HTML is tracked.
+- Kept existing CLI `bgit doctor` behavior unchanged.
+
+Why:
+
+- Completes visual diagnostics in the desktop app without adding desktop auto-fix behavior or changing CLI doctor output.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -426,7 +539,7 @@ None
 
 ## Pending
 
-- R-012 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-016 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

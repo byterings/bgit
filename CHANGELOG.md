@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta] - 2026-06-05 (Phase 7)
+
+Beta milestone release introducing the Wails desktop app foundation, identity dashboard, identity management, and visual diagnostics.
+
+### Added
+- **Desktop app foundation** - Added a Wails desktop application under desktop/ with a separate entrypoint and backend bindings while preserving the existing CLI entrypoint
+- **Desktop identity dashboard** - Added a desktop dashboard for configured identities, active profile, setup state, identity counts, SSH key status, and effective identity source
+- **Desktop identity management** - Added desktop actions to add, edit, activate, and delete bgit identities using the existing core identity and SSH flows
+- **Desktop doctor integration** - Added read-only desktop diagnostics for config health, SSH setup, SSH agent state, and Git identity alignment
+
+### Fixed
+- **Desktop project structure cleanup** - Moved active Wails configuration under desktop/ and removed obsolete manual Windows installer documentation from the release structure
+- **Beta release metadata** - Prepared release metadata for v0.7.0-beta and marks beta releases as prereleases in the GitHub release workflow
+
 ## [0.6.0] - 2026-06-02 (Phase 6)
 
 Milestone release adding encrypted bgit export and import archives for portable identity backups.

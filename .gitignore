@@ -31,6 +31,8 @@ Thumbs.db
 
 # Build artifacts
 dist/
+!desktop/frontend/dist/
+!desktop/frontend/dist/index.html
 build/
 release/
 

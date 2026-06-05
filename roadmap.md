@@ -125,7 +125,7 @@
 - Title: Desktop App Foundation
 - Description: Initialize Wails desktop application structure and backend integration
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -134,7 +134,7 @@
 - Title: Desktop Identity Dashboard
 - Description: Create desktop UI for viewing identities and active profile
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -143,7 +143,7 @@
 - Title: Desktop Identity Management
 - Description: Add identity add/remove/update/activate functionality in desktop UI
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -152,7 +152,7 @@
 - Title: Desktop Doctor Integration
 - Description: Add visual diagnostics and SSH status checks in desktop UI
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

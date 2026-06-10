@@ -1,17 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/byterings/bgit/core/config"
+	coreexport "github.com/byterings/bgit/core/export"
 	coreidentity "github.com/byterings/bgit/core/identity"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/platform"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+const desktopBackupVersion = "desktop"
 
 func loadDesktopStatus() (*DesktopStatus, error) {
 	exists, err := config.ConfigExists()
@@ -61,12 +69,13 @@ func loadDesktopStatus() (*DesktopStatus, error) {
 
 func identityViewFromUser(user config.User, activeAlias string) IdentityView {
 	view := IdentityView{
-		Alias:          user.Alias,
-		Name:           user.Name,
-		Email:          user.Email,
-		GitHubUsername: user.GitHubUsername,
-		SSHKeyPath:     user.SSHKeyPath,
-		Active:         user.Alias == activeAlias,
+		Alias:              user.Alias,
+		Name:               user.Name,
+		Email:              user.Email,
+		GitHubUsername:     user.GitHubUsername,
+		SSHKeyPath:         user.SSHKeyPath,
+		SSHPublicKeyStatus: "not_configured",
+		Active:             user.Alias == activeAlias,
 	}
 
 	if user.SSHKeyPath == "" {
@@ -83,6 +92,13 @@ func identityViewFromUser(user config.User, activeAlias string) IdentityView {
 	}
 
 	view.SSHKeyStatus = "available"
+	publicKey, err := coressh.GetPublicKeyContent(user.SSHKeyPath)
+	if err != nil {
+		view.SSHPublicKeyStatus = "missing"
+		return view
+	}
+	view.SSHPublicKey = strings.TrimSpace(publicKey)
+	view.SSHPublicKeyStatus = "available"
 	return view
 }
 
@@ -319,6 +335,184 @@ func actionResult(message string) (*IdentityActionResult, error) {
 		Message: message,
 		Status:  status,
 	}, nil
+}
+
+func chooseDesktopExportArchivePath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	backupDir, err := config.GetBackupDir()
+	if err != nil {
+		return "", err
+	}
+	if err := platform.MkdirSecure(backupDir); err != nil {
+		return "", fmt.Errorf("failed to create backup directory: %w", err)
+	}
+	defaultName := "bgit-export-" + time.Now().UTC().Format("20060102T150405Z") + coreexport.ArchiveExtension
+
+	return wailsruntime.SaveFileDialog(ctx, wailsruntime.SaveDialogOptions{
+		Title:                "Save bgit backup archive",
+		DefaultDirectory:     backupDir,
+		DefaultFilename:      defaultName,
+		CanCreateDirectories: true,
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "bgit backup archives (*.bgit)", Pattern: "*.bgit"},
+		},
+	})
+}
+
+func chooseDesktopImportArchivePath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	backupDir, _ := config.GetBackupDir()
+	if _, err := os.Stat(backupDir); err != nil {
+		backupDir = ""
+	}
+	return wailsruntime.OpenFileDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title:            "Choose bgit backup archive",
+		DefaultDirectory: backupDir,
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "bgit backup archives (*.bgit)", Pattern: "*.bgit"},
+		},
+	})
+}
+
+func exportDesktopBackup(request BackupExportRequest) (*BackupActionResult, error) {
+	cfg, err := loadExistingDesktopConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	password := strings.TrimSpace(request.Password)
+	if password == "" {
+		return nil, fmt.Errorf("export password is required")
+	}
+	if password != request.ConfirmPassword {
+		return nil, fmt.Errorf("export passwords do not match")
+	}
+
+	result, err := coreexport.CreateArchive(cfg, desktopBackupVersion, password)
+	if err != nil {
+		return nil, err
+	}
+
+	archivePath := result.Path
+	if selectedPath := strings.TrimSpace(request.OutputPath); selectedPath != "" {
+		selectedPath, err = normalizeArchivePath(selectedPath)
+		if err != nil {
+			return nil, err
+		}
+		if selectedPath != archivePath {
+			if err := moveFile(result.Path, selectedPath); err != nil {
+				return nil, fmt.Errorf("failed to save export archive: %w", err)
+			}
+			archivePath = selectedPath
+		}
+	}
+
+	status, err := loadDesktopStatus()
+	if err != nil {
+		return nil, err
+	}
+	doctor, err := loadDoctorStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	return &BackupActionResult{
+		Message:     "Encrypted bgit backup created",
+		ArchivePath: archivePath,
+		Status:      status,
+		Doctor:      doctor,
+	}, nil
+}
+
+func importDesktopBackup(request BackupImportRequest) (*BackupActionResult, error) {
+	archivePath := strings.TrimSpace(request.ArchivePath)
+	if archivePath == "" {
+		return nil, fmt.Errorf("choose a .bgit archive to import")
+	}
+	archivePath, err := normalizeArchivePath(archivePath)
+	if err != nil {
+		return nil, err
+	}
+
+	password := strings.TrimSpace(request.Password)
+	if password == "" {
+		return nil, fmt.Errorf("import password is required")
+	}
+
+	result, err := coreexport.ImportArchive(archivePath, password)
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := loadDesktopStatus()
+	if err != nil {
+		return nil, err
+	}
+	doctor, err := loadDoctorStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	return &BackupActionResult{
+		Message:         "Imported bgit backup",
+		ArchivePath:     archivePath,
+		UsersCount:      result.UsersCount,
+		WorkspacesCount: result.WorkspacesCount,
+		BindingsCount:   result.BindingsCount,
+		ActiveUser:      result.ActiveUser,
+		Status:          status,
+		Doctor:          doctor,
+	}, nil
+}
+
+func normalizeArchivePath(path string) (string, error) {
+	expandedPath, err := platform.ExpandTilde(path)
+	if err != nil {
+		return "", err
+	}
+	if filepath.Ext(expandedPath) != coreexport.ArchiveExtension {
+		expandedPath += coreexport.ArchiveExtension
+	}
+	return filepath.Abs(expandedPath)
+}
+
+func moveFile(source, destination string) error {
+	if err := os.MkdirAll(filepath.Dir(destination), 0700); err != nil {
+		return err
+	}
+	if err := os.Rename(source, destination); err == nil {
+		return nil
+	}
+
+	if err := copyFile(source, destination); err != nil {
+		return err
+	}
+	return os.Remove(source)
+}
+
+func copyFile(source, destination string) error {
+	input, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer input.Close()
+
+	output, err := os.OpenFile(destination, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+
+	if _, err := io.Copy(output, input); err != nil {
+		return err
+	}
+	return output.Sync()
 }
 
 func loadDoctorStatus() (*DoctorStatus, error) {

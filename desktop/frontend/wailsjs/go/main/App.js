@@ -10,8 +10,20 @@ export function AddIdentity(arg1) {
   return window['go']['main']['App']['AddIdentity'](arg1);
 }
 
+export function ChooseExportArchivePath() {
+  return window['go']['main']['App']['ChooseExportArchivePath']();
+}
+
+export function ChooseImportArchivePath() {
+  return window['go']['main']['App']['ChooseImportArchivePath']();
+}
+
 export function DeleteIdentity(arg1) {
   return window['go']['main']['App']['DeleteIdentity'](arg1);
+}
+
+export function ExportBackup(arg1) {
+  return window['go']['main']['App']['ExportBackup'](arg1);
 }
 
 export function GetActiveIdentity() {
@@ -24,6 +36,10 @@ export function GetDoctorStatus() {
 
 export function GetStatus() {
   return window['go']['main']['App']['GetStatus']();
+}
+
+export function ImportBackup(arg1) {
+  return window['go']['main']['App']['ImportBackup'](arg1);
 }
 
 export function ListIdentities() {

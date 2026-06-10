@@ -139,6 +139,41 @@
       .form-grid .wide {
         grid-column: 1 / -1;
       }
+      .backup-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .backup-box {
+        display: grid;
+        gap: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 14px;
+      }
+      .backup-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .backup-path,
+      .backup-summary {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 10px;
+        color: #475569;
+        overflow-wrap: anywhere;
+      }
+      .warning-note {
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        background: #fffbeb;
+        color: #92400e;
+        padding: 10px;
+        line-height: 1.4;
+      }
       .active-card,
       .stack {
         display: grid;
@@ -279,6 +314,29 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .public-key-card {
+        display: grid;
+        gap: 8px;
+        max-width: 420px;
+      }
+      .public-key-preview {
+        display: block;
+        max-width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #f8fafc;
+        padding: 8px;
+        color: #334155;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .key-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
       .actions {
         display: flex;
         flex-wrap: wrap;
@@ -386,7 +444,8 @@
           display: grid;
         }
         .grid,
-        .form-grid {
+        .form-grid,
+        .backup-grid {
           grid-template-columns: 1fr;
         }
         .table {
@@ -471,6 +530,8 @@
       let currentDoctor = null;
       let activeActionText = "";
       let toastCounter = 0;
+      let lastExportPath = "";
+      let lastImportPath = "";
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -605,6 +666,54 @@
         `;
       }
 
+      function backupPanel() {
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Backup & Restore</h2>
+              </div>
+            </div>
+            <div class="backup-grid">
+              <form id="exportForm" class="backup-box">
+                <h3>Export Backup</h3>
+                <div class="warning-note">Keep this password safe. It is required for import and cannot be recovered.</div>
+                <label>
+                  Export password
+                  <input name="password" type="password" autocomplete="new-password" required />
+                </label>
+                <label>
+                  Confirm password
+                  <input name="confirmPassword" type="password" autocomplete="new-password" required />
+                </label>
+                <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
+                <div class="backup-path">${escapeHtml(lastExportPath || "Default backup location")}</div>
+                <div class="backup-actions">
+                  <button type="button" data-action="choose-export">Choose Location</button>
+                  <button type="submit">Export</button>
+                </div>
+              </form>
+
+              <form id="importForm" class="backup-box">
+                <h3>Import Backup</h3>
+                <div class="warning-note">Import replaces the current bgit configuration with the selected archive contents.</div>
+                <input name="archivePath" type="hidden" value="${escapeHtml(lastImportPath)}" required />
+                <div class="backup-path">${escapeHtml(lastImportPath || "No archive selected")}</div>
+                <label>
+                  Import password
+                  <input name="password" type="password" autocomplete="current-password" required />
+                </label>
+                <div class="backup-actions">
+                  <button type="button" data-action="choose-import">Choose Archive</button>
+                  <button type="submit">Import</button>
+                </div>
+                <div id="importSummary" class="backup-summary" hidden></div>
+              </form>
+            </div>
+          </section>
+        `;
+      }
+
       function doctorPanel(doctor) {
         if (!doctor) {
           return `
@@ -685,6 +794,34 @@
         `;
       }
 
+      function publicKeyBlock(identity) {
+        if (identity.sshPublicKeyStatus === "available" && identity.sshPublicKey) {
+          return `
+            <div class="public-key-card">
+              <code class="public-key-preview" title="${escapeHtml(identity.sshPublicKey)}">${escapeHtml(identity.sshPublicKey)}</code>
+              <div class="key-actions">
+                <button type="button" data-action="copy-public-key" data-alias="${escapeHtml(identity.alias)}">Copy Public Key</button>
+                <span class="muted">Add this to GitHub SSH keys.</span>
+              </div>
+            </div>
+          `;
+        }
+        if (identity.sshKeyStatus === "available") {
+          return `
+            <div class="public-key-card">
+              <span class="badge warn">Public key missing</span>
+              <span class="muted">Expected public key file next to the private key.</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="public-key-card">
+            <span class="badge warn">Not configured</span>
+            <span class="muted">Generate or set an SSH key to copy the GitHub public key.</span>
+          </div>
+        `;
+      }
+
       function identityRows(identities) {
         if (identities.length === 0) {
           return `<div class="empty"><p>No identities configured.</p></div>`;
@@ -695,7 +832,7 @@
               <tr>
                 <th>Identity</th>
                 <th>GitHub</th>
-                <th>SSH Key</th>
+                <th>Public Key</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -713,7 +850,7 @@
                         </div>
                       </td>
                       <td>${escapeHtml(identity.githubUsername)}</td>
-                      <td><code class="path" title="${escapeHtml(identity.sshKeyPath)}">${escapeHtml(identity.sshKeyPath || "Not configured")}</code></td>
+                      <td>${publicKeyBlock(identity)}</td>
                       <td>${statusBadge(identity.sshKeyStatus)}</td>
                       <td>
                         <div class="actions">
@@ -741,9 +878,11 @@
           target.innerHTML = `
             <section class="panel empty"><p>bgit is not configured on this machine.</p></section>
             ${addIdentityForm()}
+            ${backupPanel()}
             ${doctorPanel(doctor)}
           `;
           bindForms();
+          bindBackupActions();
           bindDoctorActions();
           return;
         }
@@ -764,10 +903,12 @@
             <h2>Identities</h2>
             ${identityRows(identities)}
           </section>
+          ${backupPanel()}
           ${doctorPanel(doctor)}
         `;
         bindForms();
         bindIdentityActions();
+        bindBackupActions();
         bindDoctorActions();
       }
 
@@ -830,6 +971,9 @@
                 : false;
               await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button, `Deleting ${alias}`);
             }
+            if (button.dataset.action === "copy-public-key") {
+              await copyPublicKey(alias, button);
+            }
           });
         });
       }
@@ -842,8 +986,189 @@
         });
       }
 
+      function bindBackupActions() {
+        const exportForm = document.getElementById("exportForm");
+        if (exportForm) {
+          exportForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const data = new FormData(exportForm);
+            const exported = await runBackupAction(
+              () =>
+                api().ExportBackup({
+                  password: String(data.get("password") || ""),
+                  confirmPassword: String(data.get("confirmPassword") || ""),
+                  outputPath: String(data.get("outputPath") || ""),
+                }),
+              exportForm,
+              "Creating encrypted backup",
+            );
+            if (exported?.archivePath) {
+              lastExportPath = exported.archivePath;
+              exportForm.reset();
+              render(exported.status || currentStatus, exported.doctor || currentDoctor);
+              notify({
+                title: "Backup created",
+                message: exported.archivePath,
+                tone: "success",
+                timeout: 0,
+              });
+            }
+          });
+        }
+
+        const importForm = document.getElementById("importForm");
+        if (importForm) {
+          importForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const data = new FormData(importForm);
+            const archivePath = String(data.get("archivePath") || "");
+            if (!archivePath) {
+              setMessage("Choose a .bgit archive before importing.", true, "Archive required");
+              return;
+            }
+            const confirmed = await confirmAction({
+              title: "Import Backup",
+              message: "Replace the current bgit configuration with this encrypted backup?",
+              warning: "Current identities, bindings, workspaces, and managed SSH config will be replaced by the archive contents.",
+              acceptLabel: "Import",
+              danger: true,
+            });
+            if (!confirmed) {
+              return;
+            }
+            const imported = await runBackupAction(
+              () =>
+                api().ImportBackup({
+                  password: String(data.get("password") || ""),
+                  archivePath,
+                }),
+              importForm,
+              "Importing backup",
+            );
+            if (imported) {
+              lastImportPath = archivePath;
+              render(imported.status || currentStatus, imported.doctor || currentDoctor);
+              showImportSummary(imported);
+            }
+          });
+        }
+
+        document.querySelectorAll("[data-action='choose-export']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseExportPath(button);
+          });
+        });
+        document.querySelectorAll("[data-action='choose-import']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseImportPath(button);
+          });
+        });
+      }
+
+      async function chooseExportPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseExportArchivePath();
+          if (path) {
+            lastExportPath = path;
+            render(currentStatus, currentDoctor);
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose location failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function chooseImportPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseImportArchivePath();
+          if (path) {
+            lastImportPath = path;
+            render(currentStatus, currentDoctor);
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose archive failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function runBackupAction(action, disabledTarget, actionText) {
+        const result = await runAction(action, disabledTarget, actionText);
+        return result;
+      }
+
+      function showImportSummary(result) {
+        const summary = document.getElementById("importSummary");
+        if (!summary) {
+          notify({
+            title: "Backup imported",
+            message: importSummaryText(result),
+            tone: "success",
+            timeout: 0,
+          });
+          return;
+        }
+        summary.hidden = false;
+        summary.innerHTML = escapeHtml(importSummaryText(result));
+        notify({
+          title: "Backup imported",
+          message: importSummaryText(result),
+          tone: "success",
+          timeout: 0,
+        });
+      }
+
+      function importSummaryText(result) {
+        const active = result.activeUser ? ` Active: ${result.activeUser}.` : "";
+        return `Restored ${result.usersCount || 0} identity(s), ${result.workspacesCount || 0} workspace(s), and ${result.bindingsCount || 0} binding(s).${active}`;
+      }
+
       function findIdentity(alias) {
         return (currentStatus?.identities || []).find((identity) => identity.alias === alias);
+      }
+
+      async function copyPublicKey(alias, button) {
+        const identity = findIdentity(alias);
+        if (!identity?.sshPublicKey) {
+          setMessage(`Public key for '${alias}' is not available.`, true, "Public key missing");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        const previousLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Copying...";
+        try {
+          if (window.runtime?.ClipboardSetText) {
+            await window.runtime.ClipboardSetText(identity.sshPublicKey);
+          } else if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(identity.sshPublicKey);
+          } else {
+            throw new Error("clipboard is not available");
+          }
+          notify({
+            title: "Public key copied",
+            message: `Add '${alias}' to GitHub at github.com/settings/keys.`,
+            tone: "success",
+          });
+        } catch (error) {
+          setMessage(`Could not copy public key: ${String(error)}`, true, "Copy failed");
+        } finally {
+          button.disabled = previousDisabled;
+          button.textContent = previousLabel;
+        }
       }
 
       function openEditDialog(alias) {
@@ -936,7 +1261,7 @@
             await load();
           }
           setMessage(result?.message || "Done", false, "Action complete");
-          return true;
+          return result || true;
         } catch (error) {
           setMessage(actionableError(error), true, "Action failed");
           return false;

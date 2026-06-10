@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-10 (Phase 7)
+
+Release packaging update for the Phase 7 desktop beta, adding Linux desktop artifact generation to the GitHub release workflow.
+
+### Added
+- **Linux desktop release artifact** - The GitHub release workflow now builds the Wails desktop application on Linux and uploads bgit-desktop-linux-amd64 alongside the CLI binaries
+
+### Fixed
+- **Desktop asset release coverage** - Ensures the desktop beta binary is attached to the GitHub release instead of shipping only CLI binaries
+- **Release workflow dependencies** - Installs the required Linux GTK, WebKit, Soup, Node, and Wails dependencies before building the desktop artifact
+
 ## [0.7.0-beta] - 2026-06-05 (Phase 7)
 
 Beta milestone release introducing the Wails desktop app foundation, identity dashboard, identity management, and visual diagnostics.

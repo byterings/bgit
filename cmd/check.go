@@ -94,11 +94,25 @@ func runCheck(cmd *cobra.Command, args []string) error {
 
 	useActiveForValidation := false
 	if ownerAlias != "" && cfg.ActiveUser != "" && ownerAlias != cfg.ActiveUser {
-		confirmedMismatch, err := handleActiveOwnerMismatch(cfg.ActiveUser, ownerAlias)
+		repoIdentityMatches, err := gitConfigMatches(repoRoot, expectedUser)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read git config: %w", err)
 		}
-		useActiveForValidation = confirmedMismatch
+		if repoIdentityMatches {
+			if !checkFromHook {
+				ui.Info(fmt.Sprintf("Global active user differs, but repository Git identity matches bound user '%s'", ownerAlias))
+				fmt.Println()
+			}
+		} else {
+			if !isInteractiveSession() {
+				return checkGitConfigMatches(repoRoot, expectedUser, expectedAlias)
+			}
+			confirmedMismatch, err := handleActiveOwnerMismatch(cfg.ActiveUser, ownerAlias)
+			if err != nil {
+				return err
+			}
+			useActiveForValidation = confirmedMismatch
+		}
 	}
 
 	if useActiveForValidation {
@@ -115,7 +129,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if err := checkGitConfigMatches(expectedUser, expectedAlias); err != nil {
+	if err := checkGitConfigMatches(repoRoot, expectedUser, expectedAlias); err != nil {
 		return err
 	}
 
@@ -156,24 +170,32 @@ func handleActiveOwnerMismatch(activeAlias, ownerAlias string) (bool, error) {
 	return true, nil
 }
 
-func checkGitConfigMatches(expectedUser *config.User, expectedAlias string) error {
-	gitName, gitEmail, err := git.GetGlobalUser()
+func checkGitConfigMatches(repoRoot string, expectedUser *config.User, expectedAlias string) error {
+	gitName, gitEmail, err := git.GetUserForRepo(repoRoot)
 	if err != nil {
 		return fmt.Errorf("failed to read git config: %w", err)
 	}
 
 	if strings.TrimSpace(gitName) != expectedUser.Name || strings.TrimSpace(gitEmail) != expectedUser.Email {
-		return fmt.Errorf("git config mismatch for '%s'. Expected %s <%s>, got %s <%s>. Run: bgit use %s",
+		return fmt.Errorf("git config mismatch for '%s'. Expected %s <%s>, got %s <%s>. Run: bgit sync --fix",
 			expectedAlias,
 			expectedUser.Name,
 			expectedUser.Email,
 			strings.TrimSpace(gitName),
 			strings.TrimSpace(gitEmail),
-			expectedAlias,
 		)
 	}
 
 	return nil
+}
+
+func gitConfigMatches(repoRoot string, expectedUser *config.User) (bool, error) {
+	gitName, gitEmail, err := git.GetUserForRepo(repoRoot)
+	if err != nil {
+		return false, err
+	}
+	return strings.TrimSpace(gitName) == expectedUser.Name &&
+		strings.TrimSpace(gitEmail) == expectedUser.Email, nil
 }
 
 func checkOriginRemoteMatches(expectedUser *config.User, expectedAlias string) error {

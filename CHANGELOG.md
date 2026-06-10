@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-06-10 (Phase 7)
+
+Patch release fixing bound repository Git identity enforcement so normal git commits use the repository's bound bgit identity.
+
+### Fixed
+- **Repo-local Git identity for bound repositories** - bgit bind now writes repository-local user.name and user.email for the bound identity so normal git commit uses the correct author even when the global active identity differs
+- **Bound repository safety checks** - bgit check now validates the effective repository Git identity and allows a bound repository to pass when its local Git identity matches the binding
+- **Sync repair for bound repositories** - bgit sync --fix now repairs repo-local Git identity for bound repositories instead of requiring a global identity switch
+
 ## [0.7.1] - 2026-06-10 (Phase 7)
 
 Release packaging update for the Phase 7 desktop beta, adding Linux desktop artifact generation to the GitHub release workflow.

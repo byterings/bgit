@@ -21,6 +21,17 @@ func SetGlobalUser(name, email string) error {
 	return nil
 }
 
+// SetLocalUser sets Git user name and email in a specific repository.
+func SetLocalUser(repoPath, name, email string) error {
+	if err := runGitConfigInRepo(repoPath, "--local", "user.name", name); err != nil {
+		return fmt.Errorf("failed to set local git user.name: %w", err)
+	}
+	if err := runGitConfigInRepo(repoPath, "--local", "user.email", email); err != nil {
+		return fmt.Errorf("failed to set local git user.email: %w", err)
+	}
+	return nil
+}
+
 // GetGlobalUser returns the current global Git user name and email
 func GetGlobalUser() (name, email string, err error) {
 	name, err = getGitConfig("user.name")
@@ -29,6 +40,21 @@ func GetGlobalUser() (name, email string, err error) {
 	}
 
 	email, err = getGitConfig("user.email")
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get git user.email: %w", err)
+	}
+
+	return name, email, nil
+}
+
+// GetUserForRepo returns the effective Git user name and email for a repository.
+func GetUserForRepo(repoPath string) (name, email string, err error) {
+	name, err = getGitConfigInRepo(repoPath, "user.name")
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get git user.name: %w", err)
+	}
+
+	email, err = getGitConfigInRepo(repoPath, "user.email")
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get git user.email: %w", err)
 	}
@@ -46,12 +72,33 @@ func runGitConfig(key, value string) error {
 	return nil
 }
 
+func runGitConfigInRepo(repoPath, scope, key, value string) error {
+	cmd := exec.Command("git", "-C", repoPath, "config", scope, key, value)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git config failed: %s: %w", string(output), err)
+	}
+	return nil
+}
+
 // getGitConfig gets a git config value
 func getGitConfig(key string) (string, error) {
 	cmd := exec.Command("git", "config", "--global", "--get", key)
 	output, err := cmd.Output()
 	if err != nil {
 		// If key doesn't exist, return empty string
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
+			return "", nil
+		}
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func getGitConfigInRepo(repoPath, key string) (string, error) {
+	cmd := exec.Command("git", "-C", repoPath, "config", "--get", key)
+	output, err := cmd.Output()
+	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
 			return "", nil
 		}

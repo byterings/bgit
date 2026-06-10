@@ -141,6 +141,12 @@ git_global() {
   run_env git config --global "$@"
 }
 
+git_repo() {
+  local repo="$1"
+  shift
+  run_env git -C "$repo" config "$@"
+}
+
 write_config() {
   local content="$1"
   mkdir -p "$TEST_HOME/.bgit"
@@ -243,8 +249,12 @@ run_env git -C "$REPO" remote add origin git@github.com:byterings/bgit.git
 cd "$REPO"
 output="$(run_bgit_ok bind --user company)"
 assert_contains "$output" "Bound repository to 'company'"
+assert_contains "$output" "Repository Git identity set to Byterings Admin <byterings@gmail.com>"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
 
 output="$(run_bgit_ok bind --user company)"
+assert_contains "$output" "Repository Git identity set to Byterings Admin <byterings@gmail.com>"
 assert_contains "$output" "Repository already bound to 'company'"
 
 output="$(run_bgit_fail bind --user personal)"
@@ -253,15 +263,21 @@ assert_contains "$output" "repository already bound to 'company'"
 output="$(run_bgit_ok bind --user personal --force)"
 assert_contains "$output" "Overriding existing binding from 'company' to 'personal'"
 assert_contains "$output" "Bound repository to 'personal'"
+assert_equals "Personal User" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "personal@example.com" "$(git_repo "$REPO" --local --get user.email)"
 
 output="$(run_bgit_ok bind --user company --force)"
 assert_contains "$output" "Overriding existing binding from 'personal' to 'company'"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
 
 output="$(run_bgit_ok bind --remove)"
 assert_contains "$output" "Removed binding for 'company'"
 
 output="$(run_bgit_ok bind --user company)"
 assert_contains "$output" "Bound repository to 'company'"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
 
 log "Remote fix and safety check"
 output="$(run_bgit_ok remote fix)"
@@ -273,6 +289,34 @@ assert_contains "$output" "Remote URL already configured for company"
 
 output="$(run_bgit_ok check)"
 assert_contains "$output" "Safety checks passed"
+
+log "Bound repo uses local Git identity when global active user differs"
+output="$(run_bgit_ok use personal)"
+assert_contains "$output" "Switched to identity: personal"
+assert_equals "Personal User" "$(git_global --get user.name)"
+assert_equals "personal@example.com" "$(git_global --get user.email)"
+
+output="$(run_bgit_ok check)"
+assert_contains "$output" "Safety checks passed"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --get user.email)"
+
+git_repo "$REPO" --local --unset user.name
+git_repo "$REPO" --local --unset user.email
+output="$(run_bgit_fail check)"
+assert_contains "$output" "git config mismatch for 'company'"
+assert_contains "$output" "Run: bgit sync --fix"
+
+output="$(run_bgit_ok sync --fix)"
+assert_contains "$output" "Fixed repository Git config"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
+
+output="$(run_bgit_ok check)"
+assert_contains "$output" "Safety checks passed"
+
+output="$(run_bgit_ok use company)"
+assert_contains "$output" "Switched to identity: company"
 
 log "Export archive success and encryption"
 cd "$ROOT_DIR"

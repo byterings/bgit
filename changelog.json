@@ -1,6 +1,29 @@
 {
   "releases": [
     {
+      "version": "0.7.1",
+      "date": "2026-06-10",
+      "phase": 7,
+      "summary": "Release packaging update for the Phase 7 desktop beta, adding Linux desktop artifact generation to the GitHub release workflow.",
+      "features": [
+        {
+          "title": "Linux desktop release artifact",
+          "description": "The GitHub release workflow now builds the Wails desktop application on Linux and uploads bgit-desktop-linux-amd64 alongside the CLI binaries"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Desktop asset release coverage",
+          "description": "Ensures the desktop beta binary is attached to the GitHub release instead of shipping only CLI binaries"
+        },
+        {
+          "title": "Release workflow dependencies",
+          "description": "Installs the required Linux GTK, WebKit, Soup, Node, and Wails dependencies before building the desktop artifact"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.7.0-beta",
       "date": "2026-06-05",
       "phase": 7,

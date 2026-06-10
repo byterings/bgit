@@ -73,6 +73,7 @@ func identityViewFromUser(user config.User, activeAlias string) IdentityView {
 		Name:               user.Name,
 		Email:              user.Email,
 		GitHubUsername:     user.GitHubUsername,
+		GitHubAvatarURL:    githubAvatarURL(user.GitHubUsername),
 		SSHKeyPath:         user.SSHKeyPath,
 		SSHPublicKeyStatus: "not_configured",
 		Active:             user.Alias == activeAlias,
@@ -100,6 +101,14 @@ func identityViewFromUser(user config.User, activeAlias string) IdentityView {
 	view.SSHPublicKey = strings.TrimSpace(publicKey)
 	view.SSHPublicKeyStatus = "available"
 	return view
+}
+
+func githubAvatarURL(username string) string {
+	username = strings.TrimSpace(username)
+	if username == "" {
+		return ""
+	}
+	return fmt.Sprintf("https://github.com/%s.png?size=96", username)
 }
 
 func addDesktopIdentity(request IdentityRequest) (*IdentityActionResult, error) {

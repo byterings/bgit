@@ -17,6 +17,7 @@ type IdentityView struct {
 	Name               string `json:"name"`
 	Email              string `json:"email"`
 	GitHubUsername     string `json:"githubUsername"`
+	GitHubAvatarURL    string `json:"githubAvatarUrl"`
 	SSHKeyPath         string `json:"sshKeyPath"`
 	SSHPublicKey       string `json:"sshPublicKey,omitempty"`
 	SSHPublicKeyStatus string `json:"sshPublicKeyStatus"`

@@ -188,7 +188,7 @@
 - Title: GitHub Avatar Integration
 - Description: Show GitHub profile avatars and identity cards in desktop UI
 - Priority: Low
-- Status: pending
+- Status: done
 
 ---
 

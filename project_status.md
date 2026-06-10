@@ -14,6 +14,7 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - desktop notifications, confirmation dialogs, and action status indicators
 - desktop encrypted backup export/import with file selection, password prompts, and restore summaries
 - desktop SSH public key display and copy action for GitHub setup
+- desktop GitHub avatar display with initials fallback
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
@@ -41,6 +42,11 @@ Recent desktop SSH key update:
 - Desktop identity rows show available SSH public key content with a copy action for GitHub setup.
 - Desktop no longer relies on showing only the private key file path for generated/imported identities.
 - Missing or unconfigured public keys are shown with clear status text.
+
+Recent desktop avatar update:
+
+- Desktop identity rows now show GitHub avatars derived from each configured GitHub username.
+- Avatar rendering uses direct GitHub avatar URLs and initials fallback, without adding GitHub API calls or tokens.
 
 ---
 
@@ -621,6 +627,31 @@ What Changed:
 Why:
 
 - Lets users copy the generated/imported SSH public key directly from the desktop app and add it to GitHub without manually opening key files.
+
+---
+
+### R-017
+
+- Status: done
+
+Files Changed:
+
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/models.ts
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added GitHub avatar URLs to desktop identity views based on configured GitHub usernames.
+- Rendered avatars in desktop identity rows with lazy-loaded GitHub image URLs.
+- Added initials fallback for missing usernames or image load failures.
+
+Why:
+
+- Makes desktop identity cards easier to scan visually while avoiding GitHub API tokens or blocking backend network calls.
 
 ---
 

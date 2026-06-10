@@ -304,8 +304,34 @@
         border-top: 0;
       }
       .identity-cell {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .identity-details {
         display: grid;
         gap: 4px;
+        min-width: 0;
+      }
+      .avatar {
+        display: inline-grid;
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        place-items: center;
+        border: 1px solid #cbd5e1;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+        overflow: hidden;
+      }
+      .avatar img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
       .path {
         display: block;
@@ -822,6 +848,34 @@
         `;
       }
 
+      function initials(identity) {
+        const base = identity.name || identity.alias || identity.githubUsername || "?";
+        return base
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part[0]?.toUpperCase() || "")
+          .join("") || "?";
+      }
+
+      function avatarBlock(identity) {
+        const fallback = escapeHtml(initials(identity));
+        if (!identity.githubAvatarUrl) {
+          return `<span class="avatar" aria-hidden="true">${fallback}</span>`;
+        }
+        return `
+          <span class="avatar" aria-hidden="true">
+            <img
+              src="${escapeHtml(identity.githubAvatarUrl)}"
+              alt=""
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              onerror="this.replaceWith(document.createTextNode('${fallback}'))"
+            />
+          </span>
+        `;
+      }
+
       function identityRows(identities) {
         if (identities.length === 0) {
           return `<div class="empty"><p>No identities configured.</p></div>`;
@@ -844,9 +898,12 @@
                     <tr>
                       <td>
                         <div class="identity-cell">
-                          <strong>${escapeHtml(identity.alias)}${identity.active ? " (active)" : ""}</strong>
-                          <span>${escapeHtml(identity.name)}</span>
-                          <span class="muted">${escapeHtml(identity.email)}</span>
+                          ${avatarBlock(identity)}
+                          <div class="identity-details">
+                            <strong>${escapeHtml(identity.alias)}${identity.active ? " (active)" : ""}</strong>
+                            <span>${escapeHtml(identity.name)}</span>
+                            <span class="muted">${escapeHtml(identity.email)}</span>
+                          </div>
                         </div>
                       </td>
                       <td>${escapeHtml(identity.githubUsername)}</td>

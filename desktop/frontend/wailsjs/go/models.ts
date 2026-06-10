@@ -105,6 +105,7 @@ export namespace main {
 	    name: string;
 	    email: string;
 	    githubUsername: string;
+	    githubAvatarUrl: string;
 	    sshKeyPath: string;
 	    sshPublicKey?: string;
 	    sshPublicKeyStatus: string;
@@ -121,6 +122,7 @@ export namespace main {
 	        this.name = source["name"];
 	        this.email = source["email"];
 	        this.githubUsername = source["githubUsername"];
+	        this.githubAvatarUrl = source["githubAvatarUrl"];
 	        this.sshKeyPath = source["sshKeyPath"];
 	        this.sshPublicKey = source["sshPublicKey"];
 	        this.sshPublicKeyStatus = source["sshPublicKeyStatus"];

@@ -60,6 +60,11 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	activeUser := resolution.User
+	repoRoot := ""
+	if cwd, err := os.Getwd(); err == nil {
+		repoRoot = coreidentity.FindGitRoot(cwd)
+	}
+	useRepoGitConfig := resolution.Source == coreidentity.SourceBinding && repoRoot != ""
 
 	// Show context info
 	sourceInfo := ""
@@ -80,6 +85,9 @@ func runSync(cmd *cobra.Command, args []string) error {
 	// Check Git config
 	fmt.Println("Checking Git config...")
 	gitName, gitEmail, err := git.GetGlobalUser()
+	if useRepoGitConfig {
+		gitName, gitEmail, err = git.GetUserForRepo(repoRoot)
+	}
 	if err != nil {
 		ui.Error(fmt.Sprintf("Failed to get Git config: %v", err))
 		issues = append(issues, "git_config_error")
@@ -162,6 +170,14 @@ func runSync(cmd *cobra.Command, args []string) error {
 	for _, issue := range issues {
 		switch issue {
 		case "git_name_mismatch", "git_email_mismatch", "git_config_error":
+			if useRepoGitConfig {
+				if err := git.SetLocalUser(repoRoot, activeUser.Name, activeUser.Email); err != nil {
+					ui.Error(fmt.Sprintf("Failed to fix repository Git config: %v", err))
+				} else {
+					ui.Success("Fixed repository Git config")
+				}
+				continue
+			}
 			if err := git.SetGlobalUser(activeUser.Name, activeUser.Email); err != nil {
 				ui.Error(fmt.Sprintf("Failed to fix Git config: %v", err))
 			} else {

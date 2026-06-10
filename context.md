@@ -7,7 +7,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - CLI: Cobra commands in `cmd/`.
 - Config: TOML config stored at `~/.bgit/config.toml`.
 - Identity resolution: workspace, then repo binding, then global active user.
-- Git integration: global `user.name`, `user.email`, and `core.hooksPath`.
+- Git integration: global `user.name`, `user.email`, and `core.hooksPath`; bound repositories also get repo-local `user.name` and `user.email` so normal `git commit` uses the bound identity even when the global active identity differs.
 - SSH integration: managed section in `~/.ssh/config` plus optional bgit-generated SSH keys.
 - Database: none.
 - Frontend: Wails desktop app under `desktop/` with a static embedded identity dashboard, management UI, and visual diagnostics.

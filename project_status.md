@@ -6,6 +6,7 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 
 - identity add, list, use, update, delete
 - repo bindings and workspace-based identity resolution
+- repo-local Git identity enforcement for bound repositories
 - managed SSH config entries and SSH key flows
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
@@ -13,6 +14,12 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
+
+Recent fix:
+
+- Bound repositories now write and validate repo-local Git `user.name` and `user.email` for the bound identity.
+- `bgit check` validates the effective Git identity for the repository, so a bound repo can pass even when the global active user differs, provided the repo-local Git identity matches the binding.
+- `bgit sync --fix` repairs repo-local Git identity for bound repositories.
 
 ---
 

@@ -8,6 +8,7 @@ import (
 	"github.com/byterings/bgit/core/config"
 	coreidentity "github.com/byterings/bgit/core/identity"
 	corerepo "github.com/byterings/bgit/core/repo"
+	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -85,6 +86,12 @@ func runBind(cmd *cobra.Command, args []string) error {
 	}
 
 	if result.NoChange {
+		if result.User != nil {
+			if err := git.SetLocalUser(repoRoot, result.User.Name, result.User.Email); err != nil {
+				return fmt.Errorf("failed to set repository git identity: %w", err)
+			}
+			ui.Success(fmt.Sprintf("Repository Git identity set to %s <%s>", result.User.Name, result.User.Email))
+		}
 		ui.Info(fmt.Sprintf("Repository already bound to '%s'. No changes needed.", userAlias))
 		return nil
 	}
@@ -100,6 +107,10 @@ func runBind(cmd *cobra.Command, args []string) error {
 		ui.Info("Explicit binding takes precedence over workspace.")
 	}
 	ui.Success(fmt.Sprintf("Bound repository to '%s' (%s)", userAlias, result.User.GitHubUsername))
+	if err := git.SetLocalUser(repoRoot, result.User.Name, result.User.Email); err != nil {
+		return fmt.Errorf("failed to set repository git identity: %w", err)
+	}
+	ui.Success(fmt.Sprintf("Repository Git identity set to %s <%s>", result.User.Name, result.User.Email))
 	fmt.Printf("  Path: %s\n", repoRoot)
 	fmt.Printf("  Email: %s\n", result.User.Email)
 

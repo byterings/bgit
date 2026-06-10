@@ -1,6 +1,28 @@
 {
   "releases": [
     {
+      "version": "0.7.2",
+      "date": "2026-06-10",
+      "phase": 7,
+      "summary": "Patch release fixing bound repository Git identity enforcement so normal git commits use the repository's bound bgit identity.",
+      "features": [],
+      "fixes": [
+        {
+          "title": "Repo-local Git identity for bound repositories",
+          "description": "bgit bind now writes repository-local user.name and user.email for the bound identity so normal git commit uses the correct author even when the global active identity differs"
+        },
+        {
+          "title": "Bound repository safety checks",
+          "description": "bgit check now validates the effective repository Git identity and allows a bound repository to pass when its local Git identity matches the binding"
+        },
+        {
+          "title": "Sync repair for bound repositories",
+          "description": "bgit sync --fix now repairs repo-local Git identity for bound repositories instead of requiring a global identity switch"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.7.1",
       "date": "2026-06-10",
       "phase": 7,

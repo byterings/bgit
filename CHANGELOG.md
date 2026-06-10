@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-10 (Phase 8)
+
+Milestone release expanding the desktop app with native feedback, encrypted backup and restore, SSH public key copy support, and GitHub avatar identity cards.
+
+### Added
+- **Desktop notification system** - Desktop identity actions now use app-native success, warning, and error notifications, confirmation dialogs, and action loading states
+- **Desktop backup and restore** - Added desktop UI for encrypted .bgit export and import using the existing core archive format, file selection dialogs, password prompts, and restore summaries
+- **Desktop SSH public key copy** - Identity rows now show SSH public key previews with a copy action so users can add generated keys to GitHub without manually opening key files
+- **GitHub avatar identity cards** - Desktop identity rows now show GitHub avatars derived from configured GitHub usernames with initials fallback
+
+### Fixed
+- **Clearer desktop destructive actions** - Identity deletion and backup import now use explicit in-app confirmation dialogs with safety warnings
+- **Actionable desktop error feedback** - Common backend, config, SSH, and identity failures now surface clearer user-facing hints in the desktop app
+
 ## [0.7.2] - 2026-06-10 (Phase 7)
 
 Patch release fixing bound repository Git identity enforcement so normal git commits use the repository's bound bgit identity.

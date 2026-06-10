@@ -1,6 +1,41 @@
 {
   "releases": [
     {
+      "version": "0.8.0",
+      "date": "2026-06-10",
+      "phase": 8,
+      "summary": "Milestone release expanding the desktop app with native feedback, encrypted backup and restore, SSH public key copy support, and GitHub avatar identity cards.",
+      "features": [
+        {
+          "title": "Desktop notification system",
+          "description": "Desktop identity actions now use app-native success, warning, and error notifications, confirmation dialogs, and action loading states"
+        },
+        {
+          "title": "Desktop backup and restore",
+          "description": "Added desktop UI for encrypted .bgit export and import using the existing core archive format, file selection dialogs, password prompts, and restore summaries"
+        },
+        {
+          "title": "Desktop SSH public key copy",
+          "description": "Identity rows now show SSH public key previews with a copy action so users can add generated keys to GitHub without manually opening key files"
+        },
+        {
+          "title": "GitHub avatar identity cards",
+          "description": "Desktop identity rows now show GitHub avatars derived from configured GitHub usernames with initials fallback"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Clearer desktop destructive actions",
+          "description": "Identity deletion and backup import now use explicit in-app confirmation dialogs with safety warnings"
+        },
+        {
+          "title": "Actionable desktop error feedback",
+          "description": "Common backend, config, SSH, and identity failures now surface clearer user-facing hints in the desktop app"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.7.2",
       "date": "2026-06-10",
       "phase": 7,

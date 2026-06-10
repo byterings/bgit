@@ -54,3 +54,19 @@ func (a *App) DeleteIdentity(request DeleteIdentityRequest) (*IdentityActionResu
 func (a *App) GetDoctorStatus() (*DoctorStatus, error) {
 	return loadDoctorStatus()
 }
+
+func (a *App) ChooseExportArchivePath() (string, error) {
+	return chooseDesktopExportArchivePath(a.ctx)
+}
+
+func (a *App) ChooseImportArchivePath() (string, error) {
+	return chooseDesktopImportArchivePath(a.ctx)
+}
+
+func (a *App) ExportBackup(request BackupExportRequest) (*BackupActionResult, error) {
+	return exportDesktopBackup(request)
+}
+
+func (a *App) ImportBackup(request BackupImportRequest) (*BackupActionResult, error) {
+	return importDesktopBackup(request)
+}

@@ -161,7 +161,25 @@
 - Title: Desktop Notification System
 - Description: Replace raw terminal-style output with notifications, dialogs, and status indicators
 - Priority: Medium
-- Status: pending
+- Status: done
+
+---
+
+### R-016A
+
+- Title: Desktop Backup and Restore
+- Description: Add desktop UI for encrypted bgit export/import, including .bgit file selection, password prompts, restore summary, and clear safety messaging.
+- Priority: High
+- Status: done
+
+---
+
+### R-016B
+
+- Title: Desktop SSH Public Key Display
+- Description: Show each identity's SSH public key in the desktop UI with a copy action so users can add the key to GitHub without manually opening key files.
+- Priority: High
+- Status: done
 
 ---
 
@@ -170,7 +188,7 @@
 - Title: GitHub Avatar Integration
 - Description: Show GitHub profile avatars and identity cards in desktop UI
 - Priority: Low
-- Status: pending
+- Status: done
 
 ---
 

@@ -6,13 +6,21 @@ export function ActivateIdentity(arg1:string):Promise<main.IdentityActionResult>
 
 export function AddIdentity(arg1:main.IdentityRequest):Promise<main.IdentityActionResult>;
 
+export function ChooseExportArchivePath():Promise<string>;
+
+export function ChooseImportArchivePath():Promise<string>;
+
 export function DeleteIdentity(arg1:main.DeleteIdentityRequest):Promise<main.IdentityActionResult>;
+
+export function ExportBackup(arg1:main.BackupExportRequest):Promise<main.BackupActionResult>;
 
 export function GetActiveIdentity():Promise<main.IdentityView>;
 
 export function GetDoctorStatus():Promise<main.DoctorStatus>;
 
 export function GetStatus():Promise<main.DesktopStatus>;
+
+export function ImportBackup(arg1:main.BackupImportRequest):Promise<main.BackupActionResult>;
 
 export function ListIdentities():Promise<Array<main.IdentityView>>;
 

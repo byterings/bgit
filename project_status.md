@@ -11,6 +11,10 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
 - uninstall recovery for hooks, remotes, and Git identity
+- desktop notifications, confirmation dialogs, and action status indicators
+- desktop encrypted backup export/import with file selection, password prompts, and restore summaries
+- desktop SSH public key display and copy action for GitHub setup
+- desktop GitHub avatar display with initials fallback
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
@@ -20,6 +24,29 @@ Recent fix:
 - Bound repositories now write and validate repo-local Git `user.name` and `user.email` for the bound identity.
 - `bgit check` validates the effective Git identity for the repository, so a bound repo can pass even when the global active user differs, provided the repo-local Git identity matches the binding.
 - `bgit sync --fix` repairs repo-local Git identity for bound repositories.
+
+Recent desktop update:
+
+- Desktop identity actions now surface success, warning, and error feedback through app-native toast notifications.
+- Identity deletion uses in-app confirmation dialogs instead of browser-native confirmation prompts.
+- Long-running desktop actions show disabled/loading states and diagnostics show actionable error guidance.
+
+Recent desktop backup update:
+
+- Desktop users can create encrypted `.bgit` backups using the existing core export archive flow.
+- Desktop users can import encrypted `.bgit` backups using the existing core import/restore flow.
+- Import/export UI includes archive file selection, password prompts, unrecoverable-password warning, import replacement warning, and restore summaries.
+
+Recent desktop SSH key update:
+
+- Desktop identity rows show available SSH public key content with a copy action for GitHub setup.
+- Desktop no longer relies on showing only the private key file path for generated/imported identities.
+- Missing or unconfigured public keys are shown with clear status text.
+
+Recent desktop avatar update:
+
+- Desktop identity rows now show GitHub avatars derived from each configured GitHub username.
+- Avatar rendering uses direct GitHub avatar URLs and initials fallback, without adding GitHub API calls or tokens.
 
 ---
 
@@ -522,6 +549,109 @@ What Changed:
 Why:
 
 - Completes visual diagnostics in the desktop app without adding desktop auto-fix behavior or changing CLI doctor output.
+
+---
+
+### R-016
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added app-native toast notifications for desktop success, warning, and error feedback.
+- Replaced browser-native confirmation prompts with in-app dialogs for destructive identity actions.
+- Added disabled/loading states for long-running desktop actions and actionable error guidance for common backend/config/SSH failures.
+
+Why:
+
+- Makes desktop feedback easier to understand and closer to bgit's CLI clarity without changing CLI behavior.
+
+---
+
+### R-016A
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added desktop backup export and import backend methods backed by the existing encrypted core archive package.
+- Added Wails file dialogs for choosing export destinations and import archives.
+- Added desktop request/result models for backup export/import status, restored counts, active user, refreshed dashboard state, and diagnostics.
+- Added a Backup & Restore desktop panel with password confirmation, import password entry, password safety warning, import replacement warning, archive path display, and restore summary output.
+
+Why:
+
+- Brings the existing CLI backup/restore capability into the desktop app while preserving the established encrypted archive format and core import/export behavior.
+
+---
+
+### R-016B
+
+- Status: done
+
+Files Changed:
+
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/models.ts
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added SSH public key fields to desktop identity views.
+- Loaded public key content from each configured identity's `.pub` file without exposing private key content.
+- Replaced the identity table's SSH file path display with a public key preview, GitHub-oriented copy action, and missing/unconfigured key states.
+
+Why:
+
+- Lets users copy the generated/imported SSH public key directly from the desktop app and add it to GitHub without manually opening key files.
+
+---
+
+### R-017
+
+- Status: done
+
+Files Changed:
+
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/models.ts
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added GitHub avatar URLs to desktop identity views based on configured GitHub usernames.
+- Rendered avatars in desktop identity rows with lazy-loaded GitHub image URLs.
+- Added initials fallback for missing usernames or image load failures.
+
+Why:
+
+- Makes desktop identity cards easier to scan visually while avoiding GitHub API tokens or blocking backend network calls.
 
 ---
 

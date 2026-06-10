@@ -11,6 +11,7 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
 - uninstall recovery for hooks, remotes, and Git identity
+- desktop notifications, confirmation dialogs, and action status indicators
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
@@ -20,6 +21,12 @@ Recent fix:
 - Bound repositories now write and validate repo-local Git `user.name` and `user.email` for the bound identity.
 - `bgit check` validates the effective Git identity for the repository, so a bound repo can pass even when the global active user differs, provided the repo-local Git identity matches the binding.
 - `bgit sync --fix` repairs repo-local Git identity for bound repositories.
+
+Recent desktop update:
+
+- Desktop identity actions now surface success, warning, and error feedback through app-native toast notifications.
+- Identity deletion uses in-app confirmation dialogs instead of browser-native confirmation prompts.
+- Long-running desktop actions show disabled/loading states and diagnostics show actionable error guidance.
 
 ---
 

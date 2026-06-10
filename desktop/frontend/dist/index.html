@@ -69,6 +69,15 @@
         cursor: not-allowed;
         opacity: 0.6;
       }
+      button.primary {
+        border-color: #172033;
+        color: #ffffff;
+        background: #172033;
+      }
+      button.primary:hover {
+        border-color: #334155;
+        background: #334155;
+      }
       input {
         width: 100%;
         padding: 0 10px;
@@ -149,6 +158,74 @@
       }
       .message.error {
         color: #b91c1c;
+      }
+      .toast-region {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 20;
+        display: grid;
+        width: min(420px, calc(100vw - 32px));
+        gap: 10px;
+      }
+      .toast {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        border: 1px solid #d8dee8;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 18px 40px rgb(15 23 42 / 0.12);
+        padding: 12px;
+      }
+      .toast::before {
+        content: "";
+        width: 8px;
+        height: 100%;
+        min-height: 44px;
+        border-radius: 999px;
+        background: #16a34a;
+      }
+      .toast.warn::before {
+        background: #d97706;
+      }
+      .toast.error::before {
+        background: #dc2626;
+      }
+      .toast-title {
+        margin-bottom: 4px;
+        font-weight: 700;
+      }
+      .toast-message {
+        color: #526071;
+        line-height: 1.4;
+      }
+      .toast-close {
+        min-width: 28px;
+        min-height: 28px;
+        padding: 0;
+      }
+      .action-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 32px;
+        color: #475569;
+        font-size: 13px;
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid #cbd5e1;
+        border-top-color: #172033;
+        border-radius: 999px;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
       .badge {
         display: inline-flex;
@@ -281,6 +358,24 @@
       .dialog-body {
         padding: 20px;
       }
+      .dialog-copy {
+        margin: 10px 0 0;
+        line-height: 1.5;
+      }
+      .dialog-warning {
+        margin-top: 14px;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        background: #fffbeb;
+        color: #92400e;
+        padding: 10px 12px;
+      }
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+      }
       @media (max-width: 820px) {
         main {
           padding: 20px;
@@ -298,6 +393,10 @@
           display: block;
           overflow-x: auto;
         }
+        .toast-region {
+          right: 16px;
+          bottom: 16px;
+        }
       }
     </style>
   </head>
@@ -313,6 +412,7 @@
       <section id="app" class="panel">Loading...</section>
       <p id="message" class="message" aria-live="polite"></p>
     </main>
+    <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
     <dialog id="editDialog">
       <form id="editForm" class="dialog-body" method="dialog">
@@ -343,6 +443,18 @@
       </form>
     </dialog>
 
+    <dialog id="confirmDialog">
+      <form id="confirmForm" class="dialog-body" method="dialog">
+        <h2 id="confirmTitle">Confirm Action</h2>
+        <p id="confirmMessage" class="dialog-copy"></p>
+        <div id="confirmWarning" class="dialog-warning" hidden></div>
+        <div class="dialog-actions">
+          <button id="confirmCancel" type="button">Cancel</button>
+          <button id="confirmAccept" class="primary" type="submit">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       const statusLabels = {
         available: "Available",
@@ -357,6 +469,8 @@
       };
       let currentStatus = null;
       let currentDoctor = null;
+      let activeActionText = "";
+      let toastCounter = 0;
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -371,10 +485,48 @@
         return window.go?.main?.App;
       }
 
-      function setMessage(text, error = false) {
+      function setMessage(text, error = false, title = "") {
         const target = document.getElementById("message");
         target.textContent = text || "";
         target.classList.toggle("error", error);
+        if (text) {
+          notify({
+            title: title || (error ? "Action failed" : "Done"),
+            message: text,
+            tone: error ? "error" : "success",
+          });
+        }
+      }
+
+      function notify({ title, message, tone = "success", timeout = 5200 }) {
+        const region = document.getElementById("toasts");
+        const id = `toast-${++toastCounter}`;
+        const toast = document.createElement("div");
+        toast.id = id;
+        toast.className = `toast ${tone}`;
+        toast.innerHTML = `
+          <div>
+            <div class="toast-title">${escapeHtml(title)}</div>
+            <div class="toast-message">${escapeHtml(message)}</div>
+          </div>
+          <button class="toast-close" type="button" aria-label="Dismiss notification">×</button>
+        `;
+        region.appendChild(toast);
+        const remove = () => toast.remove();
+        toast.querySelector("button").addEventListener("click", remove);
+        if (timeout > 0) {
+          window.setTimeout(remove, timeout);
+        }
+      }
+
+      function setActionText(text) {
+        activeActionText = text || "";
+        const note = document.getElementById("actionNote");
+        if (note) {
+          note.innerHTML = activeActionText
+            ? `<span class="spinner" aria-hidden="true"></span>${escapeHtml(activeActionText)}`
+            : "";
+        }
       }
 
       function statusBadge(status) {
@@ -446,6 +598,7 @@
               </label>
               <div class="wide">
                 <button type="submit">Add Identity</button>
+                <span id="actionNote" class="action-note">${activeActionText ? `<span class="spinner" aria-hidden="true"></span>${escapeHtml(activeActionText)}` : ""}</span>
               </div>
             </form>
           </section>
@@ -637,7 +790,7 @@
         }
         addForm.addEventListener("submit", async (event) => {
           event.preventDefault();
-          await runAction(() => api().AddIdentity(formPayload(addForm)), addForm);
+          await runAction(() => api().AddIdentity(formPayload(addForm)), addForm, "Adding identity");
         });
       }
 
@@ -646,20 +799,36 @@
           button.addEventListener("click", async () => {
             const alias = button.dataset.alias;
             if (button.dataset.action === "activate") {
-              await runAction(() => api().ActivateIdentity(alias), button);
+              await runAction(() => api().ActivateIdentity(alias), button, `Activating ${alias}`);
             }
             if (button.dataset.action === "edit") {
               openEditDialog(alias);
             }
             if (button.dataset.action === "delete") {
               const identity = findIdentity(alias);
-              if (!confirm(`Delete identity '${alias}'?`)) {
+              const confirmed = await confirmAction({
+                title: "Delete Identity",
+                message: `Delete identity '${alias}' from bgit? This removes the profile from bgit configuration.`,
+                warning: identity?.sshKeyPath
+                  ? "SSH key files will be kept unless you choose to delete them in the next step."
+                  : "",
+                acceptLabel: "Delete",
+                danger: true,
+              });
+              if (!confirmed) {
                 return;
               }
               const deleteKeys = identity?.sshKeyPath
-                ? confirm(`Also delete SSH key files for '${alias}'?`)
+                ? await confirmAction({
+                    title: "Delete SSH Keys",
+                    message: `Also delete SSH key files for '${alias}'?`,
+                    warning: "Only choose this if the key is not used anywhere else.",
+                    acceptLabel: "Delete Keys",
+                    cancelLabel: "Keep Keys",
+                    danger: true,
+                  })
                 : false;
-              await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button);
+              await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button, `Deleting ${alias}`);
             }
           });
         });
@@ -680,7 +849,7 @@
       function openEditDialog(alias) {
         const identity = findIdentity(alias);
         if (!identity) {
-          setMessage(`Identity '${alias}' not found`, true);
+          setMessage(`Identity '${alias}' not found`, true, "Identity not found");
           return;
         }
 
@@ -692,14 +861,72 @@
         document.getElementById("editDialog").showModal();
       }
 
-      async function runAction(action, disabledTarget) {
+      function confirmAction({ title, message, warning = "", acceptLabel = "Continue", cancelLabel = "Cancel", danger = false }) {
+        const dialog = document.getElementById("confirmDialog");
+        const form = document.getElementById("confirmForm");
+        const accept = document.getElementById("confirmAccept");
+        const cancel = document.getElementById("confirmCancel");
+        const warningBox = document.getElementById("confirmWarning");
+
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmMessage").textContent = message;
+        warningBox.textContent = warning;
+        warningBox.hidden = !warning;
+        accept.textContent = acceptLabel;
+        accept.classList.toggle("danger", danger);
+        cancel.textContent = cancelLabel;
+
+        return new Promise((resolve) => {
+          let settled = false;
+          const finish = (value) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            form.removeEventListener("submit", onSubmit);
+            cancel.removeEventListener("click", onCancel);
+            dialog.removeEventListener("close", onClose);
+            if (dialog.open) {
+              dialog.close();
+            }
+            resolve(value);
+          };
+          const onSubmit = (event) => {
+            event.preventDefault();
+            finish(true);
+          };
+          const onCancel = () => finish(false);
+          const onClose = () => finish(false);
+
+          form.addEventListener("submit", onSubmit);
+          cancel.addEventListener("click", onCancel);
+          dialog.addEventListener("close", onClose);
+          dialog.showModal();
+        });
+      }
+
+      async function runAction(action, disabledTarget, actionText = "Working") {
         if (!api()) {
-          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true);
-          return;
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return false;
         }
         setMessage("");
-        const previousDisabled = disabledTarget.disabled;
-        disabledTarget.disabled = true;
+        setActionText(actionText);
+        const disabledElements =
+          disabledTarget.tagName === "FORM"
+            ? Array.from(disabledTarget.querySelectorAll("button, input"))
+            : [disabledTarget];
+        const previousStates = disabledElements.map((element) => ({
+          element,
+          disabled: element.disabled,
+          label: element.tagName === "BUTTON" ? element.textContent : "",
+        }));
+        disabledElements.forEach((element) => {
+          element.disabled = true;
+        });
+        if (disabledTarget.tagName === "BUTTON") {
+          disabledTarget.textContent = "Working...";
+        }
         try {
           const result = await action();
           const doctor = await api().GetDoctorStatus();
@@ -708,30 +935,67 @@
           } else {
             await load();
           }
-          setMessage(result?.message || "Done");
+          setMessage(result?.message || "Done", false, "Action complete");
+          return true;
         } catch (error) {
-          setMessage(String(error), true);
+          setMessage(actionableError(error), true, "Action failed");
+          return false;
         } finally {
-          disabledTarget.disabled = previousDisabled;
+          previousStates.forEach(({ element, disabled, label }) => {
+            element.disabled = disabled;
+            if (element.tagName === "BUTTON") {
+              element.textContent = label;
+            }
+          });
+          setActionText("");
         }
       }
 
       async function runDoctorRefresh(button) {
         if (!api()) {
-          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true);
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
           return;
         }
         const previousDisabled = button.disabled;
+        const previousLabel = button.textContent;
         button.disabled = true;
+        button.textContent = "Checking...";
+        setActionText("Running diagnostics");
         try {
           const doctor = await api().GetDoctorStatus();
           render(currentStatus, doctor);
-          setMessage("Doctor checks refreshed");
+          const tone = doctor.errors > 0 ? "error" : doctor.warnings > 0 ? "warn" : "success";
+          notify({
+            title: "Doctor checks refreshed",
+            message:
+              doctor.errors > 0
+                ? `${doctor.errors} issue(s) need attention. Review the fix hints below.`
+                : doctor.warnings > 0
+                  ? `${doctor.warnings} warning(s) found. Review the diagnostics below.`
+                  : "All visible checks are healthy.",
+            tone,
+          });
         } catch (error) {
-          setMessage(String(error), true);
+          setMessage(actionableError(error), true, "Doctor failed");
         } finally {
           button.disabled = previousDisabled;
+          button.textContent = previousLabel;
+          setActionText("");
         }
+      }
+
+      function actionableError(error) {
+        const message = String(error);
+        if (message.includes("not configured")) {
+          return `${message} Add your first identity or run bgit setup from the CLI.`;
+        }
+        if (message.includes("SSH")) {
+          return `${message} Check the SSH key path or run Doctor for details.`;
+        }
+        if (message.includes("git config") || message.includes("identity")) {
+          return `${message} Use bgit sync --fix or activate the expected identity.`;
+        }
+        return message;
       }
 
       async function load() {
@@ -746,6 +1010,12 @@
           render(status, doctor);
         } catch (error) {
           target.textContent = String(error);
+          notify({
+            title: "Desktop unavailable",
+            message: actionableError(error),
+            tone: "error",
+            timeout: 0,
+          });
         }
       }
 
@@ -758,8 +1028,10 @@
         const form = event.currentTarget;
         const payload = formPayload(form);
         payload.generateSSHKey = false;
-        await runAction(() => api().UpdateIdentity(payload), form.querySelector("button[type='submit']"));
-        document.getElementById("editDialog").close();
+        const saved = await runAction(() => api().UpdateIdentity(payload), form, `Saving ${payload.alias}`);
+        if (saved) {
+          document.getElementById("editDialog").close();
+        }
       });
 
       load();

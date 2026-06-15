@@ -24,24 +24,35 @@
         box-sizing: border-box;
       }
       html {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
         scrollbar-gutter: stable;
         scroll-behavior: smooth;
       }
       body {
+        width: 100%;
+        height: 100%;
         margin: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
         background: var(--bg);
-        min-height: 100vh;
       }
       .app-shell {
         display: grid;
         grid-template-columns: 248px minmax(0, 1fr);
-        min-height: 100vh;
+        width: 100%;
+        height: 100vh;
+        min-height: 0;
+        overflow: hidden;
       }
       .sidebar {
         position: sticky;
         top: 0;
         height: 100vh;
         overflow-y: auto;
+        overscroll-behavior: contain;
         border-right: 1px solid var(--border);
         background: #0f172a;
         color: #e2e8f0;
@@ -88,7 +99,9 @@
       }
       .content-shell {
         height: 100vh;
+        min-height: 0;
         overflow-y: auto;
+        overscroll-behavior: none;
         scroll-behavior: smooth;
       }
       main {
@@ -1044,6 +1057,7 @@
       @media (max-width: 820px) {
         .app-shell {
           grid-template-columns: 1fr;
+          grid-template-rows: auto minmax(0, 1fr);
         }
         .sidebar {
           position: sticky;
@@ -1078,11 +1092,12 @@
           padding-inline: 12px;
         }
         .content-shell {
-          height: auto;
-          overflow: visible;
+          height: 100%;
+          min-height: 0;
+          overflow-y: auto;
         }
         .topbar {
-          top: 102px;
+          top: 0;
         }
         .topbar-inner,
         main {

@@ -210,6 +210,24 @@
 
 ---
 
+### R-019-A
+
+- Title: UI Polish & Interaction Improvements
+- Description: Improve desktop spacing, alignment, responsiveness, consistent SVG icon actions, copy affordances, active identity visibility, table readability, and smooth update interactions without changing layout, navigation, or business logic
+- Priority: Medium
+- Status: done
+
+---
+
+### R-019-B
+
+- Title: Desktop UI Redesign & Navigation
+- Description: Reorganize the desktop app into a structured sidebar navigation layout with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages while preserving existing functionality and core behavior
+- Priority: High
+- Status: done
+
+---
+
 ### R-020
 
 - Title: Cross Platform Packaging
@@ -288,6 +306,8 @@ Release after:
 
 - R-018
 - R-019
+- R-019-A
+- R-019-B
 
 ---
 

@@ -65,6 +65,19 @@ Recent desktop identity detection update:
 - Desktop shows whether the relevant Git config currently matches the detected identity.
 - Desktop users can sync the detected identity, using repo-local Git config for bound repositories and global Git config for workspace/global identities.
 
+Recent desktop UI polish update:
+
+- Desktop spacing, control sizing, table row alignment, and long-value truncation were tightened without changing navigation or business logic.
+- Row actions now use compact icon buttons with accessible labels and tooltips for identity and repository binding actions.
+- Panels, rows, controls, and toasts now use subtle transitions to reduce abrupt visual updates.
+- Review fixes added one consistent inline SVG icon set, copy buttons for long values, stronger active identity highlighting, generic copied feedback, and scroll-position preservation during dashboard updates.
+
+Recent desktop navigation update:
+
+- Desktop UI is organized into a sticky sidebar shell with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages.
+- Active identity and quick health indicators are shown in a persistent top area while module content scrolls independently.
+- Add Identity now opens in a modal instead of being permanently displayed on the page.
+
 ---
 
 ## Roadmap Alignment
@@ -732,7 +745,67 @@ Why:
 
 Milestone:
 
-- R-018 and R-019 are now complete, so the v0.9.0 milestone has been reached. Update roadmap/release notes/changelog/version and release a new version before moving to the next milestone.
+- R-018 and R-019 are complete. R-019-A was added as a final UI polish task before the v0.9.0 release.
+
+---
+
+### R-019-A
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Standardized desktop control sizing, spacing, panel radius usage, table alignment, and status badge sizing.
+- Added subtle transitions for controls, panels, table rows, and toast entry to make refreshes and state changes feel less abrupt.
+- Replaced identity and repository binding row text actions with a single inline SVG icon set using consistent sizing, tooltips, hover states, and accessible labels.
+- Added copy buttons, copied tooltip state, and toast feedback for copyable long values including public keys, repository paths, backup paths, and detection paths.
+- Added stronger active identity highlighting in the dashboard and identity list with a green indicator, active badge, and highlighted row.
+- Added truncation and title tooltips for long identity values, repository paths, backup paths, detection paths, and public key values.
+- Preserved scroll position across dashboard re-renders to reduce abrupt update jumps.
+- Improved table row spacing and hover states while preserving existing section order and page structure.
+- Improved Doctor section spacing and visual grouping without changing diagnostics behavior.
+
+Why:
+
+- Improves desktop readability and interaction quality without changing business logic, navigation, or backend behavior.
+
+Milestone:
+
+- R-018, R-019, and R-019-A are complete. R-019-B was added as a desktop navigation redesign task before the v0.9.0 release.
+
+---
+
+### R-019-B
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Reorganized the desktop app from one long management page into a structured shell with sticky sidebar navigation and independently scrolling content.
+- Added dedicated pages for Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor while reusing existing frontend actions and backend calls.
+- Added a persistent top area that shows active identity details, identity/binding counts, doctor health status, and refresh action.
+- Moved Add Identity into a modal/popup form instead of showing it permanently.
+- Added dashboard quick actions and kept existing identity detection, repository binding, backup/import, and doctor functionality available through dedicated pages.
+
+Why:
+
+- Improves desktop application structure and navigation while preserving existing functionality, import/export behavior, identity handling, and core logic.
+
+Milestone:
+
+- R-018, R-019, R-019-A, and R-019-B are now complete, so the v0.9.0 milestone has been reached. Update roadmap/release notes/changelog/version and release a new version before moving to the next milestone.
 
 ---
 

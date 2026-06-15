@@ -8,6 +8,14 @@
       :root {
         color: #172033;
         background: #f8fafc;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --border: #d8dee8;
+        --border-soft: #e2e8f0;
+        --text: #172033;
+        --muted: #64748b;
+        --control-height: 36px;
+        --radius: 8px;
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
           "Segoe UI", sans-serif;
@@ -15,13 +23,120 @@
       * {
         box-sizing: border-box;
       }
+      html {
+        scrollbar-gutter: stable;
+        scroll-behavior: smooth;
+      }
       body {
         margin: 0;
+        background: var(--bg);
+        min-height: 100vh;
+      }
+      .app-shell {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        border-right: 1px solid var(--border);
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 24px 16px;
+      }
+      .brand {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 24px;
+        padding: 0 8px;
+      }
+      .brand strong {
+        color: #ffffff;
+        font-size: 22px;
+      }
+      .brand span {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+      .nav {
+        display: grid;
+        gap: 6px;
+      }
+      .nav button {
+        justify-content: flex-start;
+        width: 100%;
+        border-color: transparent;
+        background: transparent;
+        color: #cbd5e1;
+      }
+      .nav button:hover,
+      .nav button.active {
+        border-color: rgb(148 163 184 / 0.24);
+        background: rgb(255 255 255 / 0.08);
+        color: #ffffff;
+      }
+      .content-shell {
+        height: 100vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
       }
       main {
-        max-width: 1120px;
+        max-width: 1180px;
         margin: 0 auto;
-        padding: 32px;
+        padding: 28px 32px 40px;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--border);
+        background: rgb(248 250 252 / 0.94);
+        backdrop-filter: blur(10px);
+      }
+      .topbar-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 16px 32px;
+      }
+      .top-active {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+      }
+      .top-active-details {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+      .top-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .page-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+      .page-heading h1 {
+        margin-bottom: 6px;
+      }
+      .page-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
       header,
       .section-heading,
@@ -39,32 +154,52 @@
       h2 {
         margin: 0 0 16px;
         font-size: 16px;
+        line-height: 1.3;
       }
       h3 {
         margin: 0 0 12px;
         font-size: 14px;
+        line-height: 1.3;
       }
       p {
         margin: 0;
         color: #526071;
+        line-height: 1.45;
       }
       button,
       input,
       select {
         border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #ffffff;
-        color: #172033;
-        min-height: 36px;
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--text);
+        min-height: var(--control-height);
         font: inherit;
+        transition:
+          border-color 140ms ease,
+          background-color 140ms ease,
+          box-shadow 140ms ease,
+          opacity 140ms ease;
       }
       button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         padding: 0 14px;
         cursor: pointer;
+        white-space: nowrap;
       }
       button:hover {
         border-color: #94a3b8;
         background: #f8fafc;
+        box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #93c5fd;
+        outline-offset: 2px;
       }
       button:disabled {
         cursor: not-allowed;
@@ -106,10 +241,18 @@
       }
       .panel {
         margin-top: 24px;
-        border: 1px solid #d8dee8;
-        border-radius: 8px;
-        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
         padding: 20px;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
+      }
+      .panel.active-card.active {
+        border-color: #86efac;
+        box-shadow: 0 0 0 3px rgb(134 239 172 / 0.22);
       }
       .summary {
         display: grid;
@@ -124,8 +267,9 @@
       }
       .metric {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         padding: 12px;
+        min-height: 76px;
       }
       .metric strong {
         display: block;
@@ -135,6 +279,33 @@
         display: grid;
         grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
         gap: 20px;
+      }
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .identity-card {
+        display: grid;
+        gap: 12px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        padding: 14px;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          background-color 160ms ease;
+      }
+      .identity-card.active {
+        border-color: #86efac;
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
+      .card-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
       }
       .form-grid {
         display: grid;
@@ -153,7 +324,7 @@
         display: grid;
         gap: 12px;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         padding: 14px;
       }
       .backup-actions {
@@ -166,15 +337,17 @@
       .backup-summary,
       .repo-path {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: #f8fafc;
         padding: 10px;
         color: #475569;
-        overflow-wrap: anywhere;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .warning-note {
         border: 1px solid #fde68a;
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: #fffbeb;
         color: #92400e;
         padding: 10px;
@@ -185,12 +358,44 @@
         display: grid;
         gap: 10px;
       }
+      .active-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
       .active-name {
+        display: flex;
+        gap: 10px;
+        align-items: center;
         font-size: 22px;
         font-weight: 700;
       }
+      .active-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #16a34a;
+        box-shadow: 0 0 0 4px rgb(22 163 74 / 0.14);
+      }
       .muted {
         color: #64748b;
+      }
+      .truncate {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+        white-space: nowrap;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
       }
       .message {
         margin-top: 16px;
@@ -219,6 +424,17 @@
         background: #ffffff;
         box-shadow: 0 18px 40px rgb(15 23 42 / 0.12);
         padding: 12px;
+        animation: toast-in 160ms ease-out;
+      }
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .toast::before {
         content: "";
@@ -272,13 +488,25 @@
         display: inline-flex;
         width: fit-content;
         align-items: center;
+        justify-content: center;
         min-height: 24px;
+        min-width: 72px;
         border-radius: 999px;
         border: 1px solid #cbd5e1;
         padding: 0 10px;
         font-size: 12px;
         color: #334155;
         background: #f8fafc;
+      }
+      .badge.active {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .badge.error {
+        border-color: #fecaca;
+        color: #991b1b;
+        background: #fef2f2;
       }
       .badge.good {
         border-color: #86efac;
@@ -293,13 +521,14 @@
       .table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
       .table th,
       .table td {
         border-top: 1px solid #eef2f7;
-        padding: 12px 10px;
+        padding: 14px 10px;
         text-align: left;
-        vertical-align: top;
+        vertical-align: middle;
       }
       .table th {
         color: #64748b;
@@ -309,14 +538,31 @@
       .table tr:first-child th {
         border-top: 0;
       }
+      .table tbody tr {
+        transition: background-color 140ms ease;
+      }
+      .table tbody tr:hover {
+        background: #f8fafc;
+      }
+      .table tbody tr.active-row {
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
       .identity-cell {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
+        min-width: 0;
       }
       .identity-details {
         display: grid;
         gap: 4px;
+        min-width: 0;
+      }
+      .identity-details strong {
+        display: flex;
+        gap: 8px;
+        align-items: center;
         min-width: 0;
       }
       .avatar {
@@ -349,7 +595,7 @@
       .public-key-card {
         display: grid;
         gap: 8px;
-        max-width: 420px;
+        max-width: 100%;
       }
       .public-key-preview {
         display: block;
@@ -372,7 +618,44 @@
       .actions {
         display: flex;
         flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .icon-btn {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+      }
+      .icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        color: currentColor;
+        flex: 0 0 16px;
+      }
+      .icon svg {
+        display: block;
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+      }
+      .copyable {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px;
         gap: 8px;
+        align-items: center;
+        max-width: 100%;
+      }
+      .copyable .backup-path,
+      .copyable .repo-path,
+      .copyable code,
+      .copyable span {
+        min-width: 0;
+      }
+      .copy-btn.copied {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
       }
       .binding-form {
         display: grid;
@@ -407,11 +690,14 @@
       }
       .check-list {
         display: grid;
-        gap: 14px;
+        gap: 18px;
       }
       .check-section {
         display: grid;
-        gap: 8px;
+        gap: 10px;
+        border: 1px solid #eef2f7;
+        border-radius: var(--radius);
+        padding: 12px;
       }
       .check-section h3 {
         margin: 0;
@@ -420,9 +706,9 @@
         display: grid;
         grid-template-columns: 76px minmax(0, 1fr);
         gap: 12px;
-        align-items: start;
+        align-items: center;
         border-top: 1px solid #eef2f7;
-        padding-top: 8px;
+        padding-top: 10px;
       }
       .check-level {
         display: inline-flex;
@@ -497,7 +783,37 @@
         gap: 10px;
         margin-top: 18px;
       }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
       @media (max-width: 820px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          position: static;
+          height: auto;
+        }
+        .content-shell {
+          height: auto;
+          overflow: visible;
+        }
+        .topbar {
+          position: static;
+        }
+        .topbar-inner,
+        main {
+          padding-inline: 20px;
+        }
         main {
           padding: 20px;
         }
@@ -525,18 +841,59 @@
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <div>
-          <h1>bgit</h1>
-          <p>Identity dashboard for this machine.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>bgit</strong>
+          <span>Identity manager</span>
         </div>
-        <button id="refresh" type="button">Refresh</button>
-      </header>
-      <section id="app" class="panel">Loading...</section>
-      <p id="message" class="message" aria-live="polite"></p>
-    </main>
+        <nav id="sidebarNav" class="nav" aria-label="Desktop navigation"></nav>
+      </aside>
+      <div id="contentShell" class="content-shell">
+        <div id="topbar" class="topbar"></div>
+        <main>
+          <section id="app" class="panel">Loading...</section>
+          <p id="message" class="message" aria-live="polite"></p>
+        </main>
+      </div>
+    </div>
     <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+    <dialog id="addDialog">
+      <form id="addForm" class="dialog-body" method="dialog">
+        <h2>Add Identity</h2>
+        <div class="form-grid">
+          <label>
+            Alias
+            <input name="alias" autocomplete="off" required />
+          </label>
+          <label>
+            GitHub username
+            <input name="githubUsername" autocomplete="username" required />
+          </label>
+          <label>
+            Name
+            <input name="name" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input name="email" autocomplete="email" required />
+          </label>
+          <label class="wide">
+            Existing SSH private key path
+            <input name="sshKeyPath" placeholder="Optional" />
+          </label>
+          <label class="check wide">
+            <input name="generateSSHKey" type="checkbox" />
+            Generate new SSH key
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button id="cancelAdd" type="button">Cancel</button>
+          <button class="primary" type="submit">Add Identity</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="editDialog">
       <form id="editForm" class="dialog-body" method="dialog">
@@ -600,6 +957,14 @@
       let selectedRepoPath = "";
       let selectedDetectPath = "";
       let currentDetection = null;
+      let currentPage = "dashboard";
+      const pages = [
+        { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+        { id: "identities", label: "Identities", icon: "users" },
+        { id: "bindings", label: "Repository Bindings", icon: "link" },
+        { id: "backup", label: "Backup & Restore", icon: "archive" },
+        { id: "doctor", label: "Doctor", icon: "shield" },
+      ];
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -664,6 +1029,127 @@
         return `<span class="badge ${tone}">${label}</span>`;
       }
 
+      function iconSvg(name) {
+        const icons = {
+          edit: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+          trash: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+          copy: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+          check: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+          refresh: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+          search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+          sync: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 3v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 21v-5h5"/></svg>',
+          folder: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
+          use: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+          dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+          users: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+          link: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>',
+          archive: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>',
+          shield: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>',
+        };
+        return icons[name] || icons.check;
+      }
+
+      function iconButton({ action, icon, label, alias = "", path = "", disabled = false, danger = false }) {
+        const attrs = [
+          `type="button"`,
+          `class="icon-btn ${danger ? "danger" : ""}"`,
+          `data-action="${escapeHtml(action)}"`,
+          `title="${escapeHtml(label)}"`,
+          `aria-label="${escapeHtml(label)}"`,
+          alias ? `data-alias="${escapeHtml(alias)}"` : "",
+          path ? `data-path="${escapeHtml(path)}"` : "",
+          disabled ? "disabled" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return `<button ${attrs}><span class="icon" aria-hidden="true">${iconSvg(icon)}</span><span class="sr-only">${escapeHtml(label)}</span></button>`;
+      }
+
+      function copyButton(value, label = "Copy") {
+        return iconButton({
+          action: "copy-value",
+          icon: "copy",
+          label,
+          path: value,
+        }).replace("icon-btn", "icon-btn copy-btn");
+      }
+
+      function copyableValue(value, className = "", label = "Copy") {
+        const safe = escapeHtml(value || "");
+        return `
+          <div class="copyable">
+            <span class="${escapeHtml(className)} truncate" title="${safe}">${safe}</span>
+            ${copyButton(value || "", label)}
+          </div>
+        `;
+      }
+
+      function renderNavigation() {
+        const nav = document.getElementById("sidebarNav");
+        nav.innerHTML = pages
+          .map(
+            (page) => `
+              <button type="button" data-page="${escapeHtml(page.id)}" class="${currentPage === page.id ? "active" : ""}">
+                <span class="icon" aria-hidden="true">${iconSvg(page.icon)}</span>
+                ${escapeHtml(page.label)}
+              </button>
+            `,
+          )
+          .join("");
+        nav.querySelectorAll("[data-page]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentPage = button.dataset.page || "dashboard";
+            render(currentStatus, currentDoctor);
+          });
+        });
+      }
+
+      function renderTopbar(status, doctor) {
+        const topbar = document.getElementById("topbar");
+        const active = status?.activeIdentity;
+        const health = doctor
+          ? doctor.errors > 0
+            ? "Errors"
+            : doctor.warnings > 0
+              ? "Warnings"
+              : "Healthy"
+          : "Not checked";
+        topbar.innerHTML = `
+          <div class="topbar-inner">
+            <div class="top-active">
+              ${active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}
+              <div class="top-active-details">
+                <strong class="truncate" title="${escapeHtml(active?.alias || "No active identity")}">${escapeHtml(active?.alias || "No active identity")}</strong>
+                <span class="muted truncate" title="${escapeHtml(active?.email || "Set an active identity")}">${escapeHtml(active?.email || "Set an active identity")}</span>
+              </div>
+            </div>
+            <div class="top-actions">
+              <span class="badge ${active ? "active" : "warn"}">${active ? "Active" : "No Active"}</span>
+              <span class="badge">${status?.identityCount || 0} identities</span>
+              <span class="badge">${status?.bindingCount || 0} bindings</span>
+              <span class="badge ${doctor?.errors ? "error" : doctor?.warnings ? "warn" : "good"}">${escapeHtml(health)}</span>
+              <button id="refresh" type="button" title="Refresh dashboard">
+                <span class="icon" aria-hidden="true">${iconSvg("refresh")}</span>
+                Refresh
+              </button>
+            </div>
+          </div>
+        `;
+        document.getElementById("refresh").addEventListener("click", load);
+      }
+
+      function pageHeading(title, copy = "", actions = "") {
+        return `
+          <div class="page-heading">
+            <div>
+              <h1>${escapeHtml(title)}</h1>
+              ${copy ? `<p>${escapeHtml(copy)}</p>` : ""}
+            </div>
+            ${actions ? `<div class="page-actions">${actions}</div>` : ""}
+          </div>
+        `;
+      }
+
       function activePanel(status) {
         const active = status.activeIdentity;
         if (!active) {
@@ -676,9 +1162,12 @@
         }
         const effective = status.effectiveIdentity;
         return `
-          <section class="panel active-card">
-            <h2>Active Profile</h2>
-            <div class="active-name">${escapeHtml(active.alias)}</div>
+          <section class="panel active-card active">
+            <div class="active-heading">
+              <h2>Active Profile</h2>
+              <span class="badge active">Active</span>
+            </div>
+            <div class="active-name"><span class="active-dot" aria-hidden="true"></span>${escapeHtml(active.alias)}</div>
             <div>${escapeHtml(active.name)}</div>
             <div class="muted">${escapeHtml(active.email)}</div>
             <div class="muted">GitHub: ${escapeHtml(active.githubUsername)}</div>
@@ -692,46 +1181,8 @@
         `;
       }
 
-      function addIdentityForm() {
-        return `
-          <section class="panel">
-            <div class="section-heading">
-              <div>
-                <h2>Add Identity</h2>
-              </div>
-            </div>
-            <form id="addForm" class="form-grid">
-              <label>
-                Alias
-                <input name="alias" autocomplete="off" required />
-              </label>
-              <label>
-                GitHub username
-                <input name="githubUsername" autocomplete="username" required />
-              </label>
-              <label>
-                Name
-                <input name="name" autocomplete="name" required />
-              </label>
-              <label>
-                Email
-                <input name="email" autocomplete="email" required />
-              </label>
-              <label class="wide">
-                Existing SSH private key path
-                <input name="sshKeyPath" placeholder="Optional" />
-              </label>
-              <label class="check wide">
-                <input name="generateSSHKey" type="checkbox" />
-                Generate new SSH key
-              </label>
-              <div class="wide">
-                <button type="submit">Add Identity</button>
-                <span id="actionNote" class="action-note">${activeActionText ? `<span class="spinner" aria-hidden="true"></span>${escapeHtml(activeActionText)}` : ""}</span>
-              </div>
-            </form>
-          </section>
-        `;
+      function addIdentityButton() {
+        return `<button type="button" class="primary" data-action="open-add-identity"><span class="icon" aria-hidden="true">${iconSvg("users")}</span>Add Identity</button>`;
       }
 
       function backupPanel() {
@@ -755,9 +1206,9 @@
                   <input name="confirmPassword" type="password" autocomplete="new-password" required />
                 </label>
                 <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
-                <div class="backup-path">${escapeHtml(lastExportPath || "Default backup location")}</div>
+                ${copyableValue(lastExportPath || "Default backup location", "backup-path", "Copy backup location")}
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-export">Choose Location</button>
+                  <button type="button" data-action="choose-export"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Location</button>
                   <button type="submit">Export</button>
                 </div>
               </form>
@@ -766,13 +1217,13 @@
                 <h3>Import Backup</h3>
                 <div class="warning-note">Import replaces the current bgit configuration with the selected archive contents.</div>
                 <input name="archivePath" type="hidden" value="${escapeHtml(lastImportPath)}" required />
-                <div class="backup-path">${escapeHtml(lastImportPath || "No archive selected")}</div>
+                ${copyableValue(lastImportPath || "No archive selected", "backup-path", "Copy archive location")}
                 <label>
                   Import password
                   <input name="password" type="password" autocomplete="current-password" required />
                 </label>
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-import">Choose Archive</button>
+                  <button type="button" data-action="choose-import"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Archive</button>
                   <button type="submit">Import</button>
                 </div>
                 <div id="importSummary" class="backup-summary" hidden></div>
@@ -809,7 +1260,7 @@
                     .join("")}
                 </select>
               </label>
-              <button type="button" data-action="choose-repo">Choose Repo</button>
+              <button type="button" data-action="choose-repo"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Repo</button>
               <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>Bind</button>
             </form>
             ${repoBindingRows(status.bindings || [])}
@@ -836,20 +1287,20 @@
                 .map(
                   (binding) => `
                     <tr>
-                      <td><code class="repo-path">${escapeHtml(binding.path)}</code></td>
+                      <td>${copyableValue(binding.path, "repo-path", "Copy repository path")}</td>
                       <td>
                         <strong>${escapeHtml(binding.alias)}</strong>
                         ${
                           binding.missingIdentity
                             ? ""
-                            : `<div class="muted">${escapeHtml(binding.name)} · ${escapeHtml(binding.email)}</div>`
+                            : `<div class="muted truncate" title="${escapeHtml(`${binding.name} · ${binding.email}`)}">${escapeHtml(binding.name)} · ${escapeHtml(binding.email)}</div>`
                         }
                       </td>
                       <td>${binding.missingIdentity ? `<span class="badge warn">Identity missing</span>` : `<span class="badge good">Ready</span>`}</td>
                       <td>
                         <div class="actions">
-                          <button type="button" data-action="edit-binding" data-path="${escapeHtml(binding.path)}" data-alias="${escapeHtml(binding.alias)}">Change</button>
-                          <button class="danger" type="button" data-action="remove-binding" data-path="${escapeHtml(binding.path)}" data-alias="${escapeHtml(binding.alias)}">Remove</button>
+                          ${iconButton({ action: "edit-binding", icon: "edit", label: `Change ${binding.alias} binding`, alias: binding.alias, path: binding.path })}
+                          ${iconButton({ action: "remove-binding", icon: "trash", label: `Remove ${binding.alias} binding`, alias: binding.alias, path: binding.path, danger: true })}
                         </div>
                       </td>
                     </tr>
@@ -875,8 +1326,8 @@
                 Repository or workspace path
                 <input name="path" value="${escapeHtml(selectedDetectPath)}" placeholder="/path/to/repo-or-workspace" required />
               </label>
-              <button type="button" data-action="choose-detect-path">Choose Path</button>
-              <button type="submit" class="primary">Detect</button>
+              <button type="button" data-action="choose-detect-path"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Path</button>
+              <button type="submit" class="primary"><span class="icon" aria-hidden="true">${iconSvg("search")}</span>Detect</button>
             </form>
             ${identityDetectionDetails(detection)}
           </section>
@@ -926,7 +1377,7 @@
             </div>
             <div class="detection-item">
               <span>Repository</span>
-              <code>${escapeHtml(detection.repoRoot || detection.path)}</code>
+              ${copyableValue(detection.repoRoot || detection.path, "", "Copy detected path")}
             </div>
           </div>
           <div class="backup-actions" style="margin-top: 12px">
@@ -934,7 +1385,7 @@
               type="button"
               data-action="sync-detected-identity"
               ${!detection.syncAvailable || detection.gitMatches ? "disabled" : ""}
-            >Sync Identity</button>
+            ><span class="icon" aria-hidden="true">${iconSvg("sync")}</span>Sync Identity</button>
             <span class="muted">${escapeHtml(detection.message || "")}</span>
           </div>
         `;
@@ -1024,9 +1475,8 @@
         if (identity.sshPublicKeyStatus === "available" && identity.sshPublicKey) {
           return `
             <div class="public-key-card">
-              <code class="public-key-preview" title="${escapeHtml(identity.sshPublicKey)}">${escapeHtml(identity.sshPublicKey)}</code>
+              ${copyableValue(identity.sshPublicKey, "public-key-preview", `Copy public key for ${identity.alias}`)}
               <div class="key-actions">
-                <button type="button" data-action="copy-public-key" data-alias="${escapeHtml(identity.alias)}">Copy Public Key</button>
                 <span class="muted">Add this to GitHub SSH keys.</span>
               </div>
             </div>
@@ -1095,25 +1545,30 @@
               ${identities
                 .map(
                   (identity) => `
-                    <tr>
+                    <tr class="${identity.active ? "active-row" : ""}">
                       <td>
                         <div class="identity-cell">
                           ${avatarBlock(identity)}
                           <div class="identity-details">
-                            <strong>${escapeHtml(identity.alias)}${identity.active ? " (active)" : ""}</strong>
-                            <span>${escapeHtml(identity.name)}</span>
-                            <span class="muted">${escapeHtml(identity.email)}</span>
+                            <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
+                            <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+                            <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
                           </div>
                         </div>
                       </td>
-                      <td>${escapeHtml(identity.githubUsername)}</td>
+                      <td><span class="truncate" title="${escapeHtml(identity.githubUsername)}">${escapeHtml(identity.githubUsername)}</span></td>
                       <td>${publicKeyBlock(identity)}</td>
-                      <td>${statusBadge(identity.sshKeyStatus)}</td>
                       <td>
                         <div class="actions">
-                          <button type="button" data-action="activate" data-alias="${escapeHtml(identity.alias)}" ${identity.active ? "disabled" : ""}>Use</button>
-                          <button type="button" data-action="edit" data-alias="${escapeHtml(identity.alias)}">Edit</button>
-                          <button class="danger" type="button" data-action="delete" data-alias="${escapeHtml(identity.alias)}">Delete</button>
+                          ${identity.active ? `<span class="badge active">Active</span>` : ""}
+                          ${statusBadge(identity.sshKeyStatus)}
+                        </div>
+                      </td>
+                      <td>
+                        <div class="actions">
+                          ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
+                          ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
+                          ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
                         </div>
                       </td>
                     </tr>
@@ -1125,54 +1580,166 @@
         `;
       }
 
-      function render(status, doctor = currentDoctor) {
-        currentStatus = status;
-        currentDoctor = doctor;
-        const target = document.getElementById("app");
-        target.className = "";
-
-        if (!status.configured) {
-          target.innerHTML = `
-            <section class="panel empty"><p>bgit is not configured on this machine.</p></section>
-            ${addIdentityForm()}
-            ${backupPanel()}
-            ${repoBindingPanel(status)}
-            ${doctorPanel(doctor)}
-          `;
-          bindForms();
-          bindBackupActions();
-          bindRepoBindingActions();
-          bindDoctorActions();
-          return;
+      function identityCards(identities) {
+        if (identities.length === 0) {
+          return `<section class="panel empty"><p>No identities configured.</p></section>`;
         }
+        return `
+          <div class="card-grid">
+            ${identities
+              .map(
+                (identity) => `
+                  <article class="identity-card ${identity.active ? "active" : ""}">
+                    <div class="card-actions">
+                      <div class="identity-cell">
+                        ${avatarBlock(identity)}
+                        <div class="identity-details">
+                          <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
+                          <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+                          <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+                        </div>
+                      </div>
+                      ${identity.active ? `<span class="badge active">Active</span>` : statusBadge(identity.sshKeyStatus)}
+                    </div>
+                    <div class="muted truncate" title="${escapeHtml(identity.githubUsername)}">GitHub: ${escapeHtml(identity.githubUsername)}</div>
+                    ${publicKeyBlock(identity)}
+                    <div class="actions">
+                      ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
+                      ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
+                    </div>
+                  </article>
+                `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
 
-        const identities = status.identities || [];
-        target.innerHTML = `
+      function dashboardPage(status, doctor) {
+        const passCount = doctor ? doctorSuccessCount(doctor) : 0;
+        const health = doctor
+          ? doctor.errors > 0
+            ? "Needs attention"
+            : doctor.warnings > 0
+              ? "Warnings"
+              : "Healthy"
+          : "Not checked";
+        return `
+          ${pageHeading("Dashboard", "A quick view of identity, repository, backup, and health status.")}
           <section class="panel summary">
-            <div class="metric"><span>Identities</span><strong>${status.identityCount}</strong></div>
-            <div class="metric"><span>Workspaces</span><strong>${status.workspaceCount}</strong></div>
-            <div class="metric"><span>Bindings</span><strong>${status.bindingCount}</strong></div>
-            <div class="metric"><span>Setup</span><strong>${status.setupCompleted ? "Ready" : "Pending"}</strong></div>
+            <div class="metric"><span>Identities</span><strong>${status.identityCount || 0}</strong></div>
+            <div class="metric"><span>Repository Bindings</span><strong>${status.bindingCount || 0}</strong></div>
+            <div class="metric"><span>Backup Status</span><strong>${lastExportPath || lastImportPath ? "Recent" : "Ready"}</strong></div>
+            <div class="metric"><span>Doctor</span><strong>${escapeHtml(health)}</strong></div>
           </section>
           <div class="grid">
             ${activePanel(status)}
-            ${addIdentityForm()}
+            <section class="panel active-card">
+              <h2>Quick Actions</h2>
+              <div class="actions">
+                ${addIdentityButton()}
+                <button type="button" data-page-jump="backup"><span class="icon" aria-hidden="true">${iconSvg("archive")}</span>Backup</button>
+                <button type="button" data-page-jump="doctor"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Run Doctor</button>
+                <button type="button" data-page-jump="bindings"><span class="icon" aria-hidden="true">${iconSvg("link")}</span>Bindings</button>
+              </div>
+              <div class="doctor-summary">
+                <span class="badge good">${passCount} passing</span>
+                <span class="badge warn">${doctor?.warnings || 0} warning(s)</span>
+                <span class="badge ${doctor?.errors ? "error" : ""}">${doctor?.errors || 0} error(s)</span>
+              </div>
+            </section>
           </div>
           ${identityDetectionPanel()}
-          <section class="panel">
-            <h2>Identities</h2>
-            ${identityRows(identities)}
-          </section>
+        `;
+      }
+
+      function identitiesPage(status) {
+        return `
+          ${pageHeading("Identities", "Manage Git profiles and copy SSH public keys.", addIdentityButton())}
+          ${identityCards(status.identities || [])}
+        `;
+      }
+
+      function bindingsPage(status) {
+        return `
+          ${pageHeading("Repository Bindings", "Map local repositories to the identity they must use.")}
           ${repoBindingPanel(status)}
+        `;
+      }
+
+      function backupPage() {
+        return `
+          ${pageHeading("Backup & Restore", "Export encrypted backups or import an existing .bgit archive.")}
           ${backupPanel()}
+        `;
+      }
+
+      function doctorPage(doctor) {
+        return `
+          ${pageHeading("Doctor", "Review configuration, SSH, and Git identity health.", `<button type="button" data-action="doctor-refresh"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Run Checks</button>`)}
           ${doctorPanel(doctor)}
         `;
+      }
+
+      function currentPageContent(status, doctor) {
+        if (!status.configured) {
+          return `
+            ${pageHeading("Setup", "bgit is not configured on this machine.", addIdentityButton())}
+            ${backupPage()}
+            ${doctorPage(doctor)}
+          `;
+        }
+        switch (currentPage) {
+          case "identities":
+            return identitiesPage(status);
+          case "bindings":
+            return bindingsPage(status);
+          case "backup":
+            return backupPage(status);
+          case "doctor":
+            return doctorPage(doctor);
+          default:
+            return dashboardPage(status, doctor);
+        }
+      }
+
+      function render(status, doctor = currentDoctor) {
+        const shell = document.getElementById("contentShell");
+        const previousScrollY = shell ? shell.scrollTop : window.scrollY;
+        currentStatus = status;
+        currentDoctor = doctor;
+        const target = document.getElementById("app");
+        const hadRendered = target.dataset.rendered === "true";
+        target.className = "";
+        renderNavigation();
+        renderTopbar(status, doctor);
+        target.innerHTML = currentPageContent(status, doctor);
         bindForms();
         bindIdentityActions();
         bindIdentityDetectionActions();
         bindRepoBindingActions();
         bindBackupActions();
+        bindCopyActions();
         bindDoctorActions();
+        bindPageActions();
+        finishRender(target, hadRendered, previousScrollY);
+      }
+
+      function finishRender(target, preserveScroll, previousScrollY) {
+        target.dataset.rendered = "true";
+        if (!preserveScroll) {
+          return;
+        }
+        requestAnimationFrame(() => {
+          const shell = document.getElementById("contentShell");
+          if (shell) {
+            shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
+            return;
+          }
+          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          window.scrollTo({ top: Math.min(previousScrollY, maxScroll), left: 0, behavior: "auto" });
+        });
       }
 
       function formPayload(form) {
@@ -1192,9 +1759,27 @@
         if (!addForm) {
           return;
         }
-        addForm.addEventListener("submit", async (event) => {
+        addForm.onsubmit = async (event) => {
           event.preventDefault();
-          await runAction(() => api().AddIdentity(formPayload(addForm)), addForm, "Adding identity");
+          const added = await runAction(() => api().AddIdentity(formPayload(addForm)), addForm, "Adding identity");
+          if (added) {
+            addForm.reset();
+            document.getElementById("addDialog").close();
+          }
+        };
+      }
+
+      function bindPageActions() {
+        document.querySelectorAll("[data-action='open-add-identity']").forEach((button) => {
+          button.addEventListener("click", () => {
+            document.getElementById("addDialog").showModal();
+          });
+        });
+        document.querySelectorAll("[data-page-jump]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentPage = button.dataset.pageJump || "dashboard";
+            render(currentStatus, currentDoctor);
+          });
         });
       }
 
@@ -1234,9 +1819,14 @@
                 : false;
               await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button, `Deleting ${alias}`);
             }
-            if (button.dataset.action === "copy-public-key") {
-              await copyPublicKey(alias, button);
-            }
+          });
+        });
+      }
+
+      function bindCopyActions() {
+        document.querySelectorAll("[data-action='copy-value']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await copyTextValue(button.dataset.path || "", button);
           });
         });
       }
@@ -1584,34 +2174,37 @@
         return (currentStatus?.identities || []).find((identity) => identity.alias === alias);
       }
 
-      async function copyPublicKey(alias, button) {
-        const identity = findIdentity(alias);
-        if (!identity?.sshPublicKey) {
-          setMessage(`Public key for '${alias}' is not available.`, true, "Public key missing");
+      async function copyTextValue(value, button, message = "Copied to clipboard") {
+        if (!value || value === "Default backup location" || value === "No archive selected") {
+          setMessage("No value available to copy.", true, "Copy unavailable");
           return;
         }
         const previousDisabled = button.disabled;
-        const previousLabel = button.textContent;
+        const previousTitle = button.title;
         button.disabled = true;
-        button.textContent = "Copying...";
+        button.title = "Copied";
+        button.classList.add("copied");
         try {
           if (window.runtime?.ClipboardSetText) {
-            await window.runtime.ClipboardSetText(identity.sshPublicKey);
+            await window.runtime.ClipboardSetText(value);
           } else if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(identity.sshPublicKey);
+            await navigator.clipboard.writeText(value);
           } else {
             throw new Error("clipboard is not available");
           }
           notify({
-            title: "Public key copied",
-            message: `Add '${alias}' to GitHub at github.com/settings/keys.`,
+            title: "Copied",
+            message,
             tone: "success",
           });
         } catch (error) {
-          setMessage(`Could not copy public key: ${String(error)}`, true, "Copy failed");
+          setMessage(`Could not copy value: ${String(error)}`, true, "Copy failed");
         } finally {
-          button.disabled = previousDisabled;
-          button.textContent = previousLabel;
+          window.setTimeout(() => {
+            button.disabled = previousDisabled;
+            button.title = previousTitle || "Copy";
+            button.classList.remove("copied");
+          }, 900);
         }
       }
 
@@ -1788,9 +2381,11 @@
         }
       }
 
-      document.getElementById("refresh").addEventListener("click", load);
       document.getElementById("cancelEdit").addEventListener("click", () => {
         document.getElementById("editDialog").close();
+      });
+      document.getElementById("cancelAdd").addEventListener("click", () => {
+        document.getElementById("addDialog").close();
       });
       document.getElementById("editForm").addEventListener("submit", async (event) => {
         event.preventDefault();

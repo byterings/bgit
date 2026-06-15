@@ -79,6 +79,30 @@ Recent desktop navigation update:
 - Add Identity now opens in a modal instead of being permanently displayed on the page.
 - Navigation refinements added page transition animation, cleaner page scroll behavior, and simplified identity cards with secondary SSH key details behind a compact disclosure.
 
+Recent desktop UX polish update:
+
+- Sidebar navigation now updates active state without rebuilding the full sidebar on every render.
+- Page scroll position is preserved per section, while page switches restore the target section's prior scroll position.
+- Topbar rendering is cached to avoid unnecessary DOM replacement during routine data refreshes.
+- Dashboard now emphasizes the active identity and includes recent activity for identity, backup, repository, and doctor actions.
+- Doctor results default to summary-first collapsible sections so long pass lists do not dominate the page.
+- Button loading states preserve icon markup and stable button sizing to reduce layout jumps.
+
+Recent desktop UI refinement update:
+
+- Dashboard header was simplified to show only the active identity avatar, alias, and email as the persistent header item.
+- The header now includes a circular back action using desktop page navigation history, with active identity alias and email aligned from the same left edge.
+- The back action is positioned at the far left of the header while active identity information remains aligned at the far right.
+- The Dashboard hides the back action because it is the root desktop page.
+- Dashboard duplicate Active Profile card was removed and Quick Actions now use an equal 2x2 launchpad layout.
+- Recent Activity now shows only recorded desktop actions, limited to the latest five entries, without generated placeholder timestamps.
+- Identities now render as full-width horizontal records with avatar, alias, name, email, GitHub username, SSH key copy action, status, and icon-only actions.
+- Identity records now display the SSH public key directly instead of its filesystem path, use stable aligned columns, and avoid duplicating the active badge in the status column.
+- A read-only identity details modal displays and copies the SSH public key instead of exposing its filesystem path.
+- Successful identity creation now prompts the user to copy the generated public key and add it to GitHub SSH keys.
+- Doctor now exposes a single page-level Run Checks action and no longer duplicates aggregate pass, warning, and error badges inside the results panel.
+- Desktop responsiveness now includes tablet and mobile layouts for horizontal navigation, identity records, forms, dialogs, diagnostics, long values, action controls, and notifications.
+
 ---
 
 ## Roadmap Alignment
@@ -822,6 +846,7 @@ Milestone:
 - removal of unused manual Windows installer packaging
 - comprehensive BGIT import/export automated coverage for encrypted export, import restore, wrong-password failure, corrupted/empty archive rejection, isolated temporary environment use, SSH config regeneration, and config round-trip validation
   tested on local machine A and remote machine B
+- R-019-C desktop UX polish for smoother navigation, per-page scroll preservation, recent activity, summary-first Doctor details, cached topbar/sidebar updates, and stable action loading states
 
 ---
 

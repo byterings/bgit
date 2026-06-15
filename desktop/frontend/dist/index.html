@@ -117,12 +117,26 @@
         display: flex;
         gap: 12px;
         align-items: center;
+        margin-left: auto;
         min-width: 0;
+      }
+      .top-back {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        padding: 0;
+      }
+      .top-active .avatar {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
       }
       .top-active-details {
         display: grid;
         gap: 2px;
         min-width: 0;
+        text-align: left;
       }
       .top-actions {
         display: flex;
@@ -148,6 +162,14 @@
       }
       .page-view {
         animation: page-in 220ms ease-out;
+        min-height: 320px;
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease;
+      }
+      .page-view.page-exit {
+        opacity: 0;
+        transform: translateY(6px);
       }
       @keyframes page-in {
         from {
@@ -337,6 +359,94 @@
         display: grid;
         gap: 6px;
       }
+      .quick-launchpad {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .quick-launchpad button {
+        justify-content: flex-start;
+        min-height: 64px;
+        padding: 0 18px;
+        font-weight: 700;
+      }
+      .identity-records {
+        display: grid;
+        gap: 10px;
+      }
+      .identity-record {
+        display: grid;
+        grid-template-columns:
+          minmax(240px, 1.3fr)
+          minmax(140px, 0.7fr)
+          minmax(260px, 1.3fr)
+          minmax(100px, 0.45fr)
+          170px;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 14px;
+        transition:
+          background-color 160ms ease,
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
+      }
+      .identity-record:hover {
+        border-color: #cbd5e1;
+        background: #fbfdff;
+        box-shadow: 0 8px 20px rgb(15 23 42 / 0.06);
+        transform: translateY(-1px);
+      }
+      .identity-record.active {
+        border-color: #86efac;
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
+      .record-field {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+      .record-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+      .record-value {
+        min-width: 0;
+        color: #334155;
+      }
+      .identity-record-actions {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+      }
+      .detail-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .detail-row {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        border-top: 1px solid #eef2f7;
+        padding-top: 12px;
+      }
+      .detail-row:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .detail-row span:first-child {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+      }
       details.compact-details {
         border-top: 1px solid #e2e8f0;
         padding-top: 8px;
@@ -441,12 +551,72 @@
         white-space: nowrap;
       }
       .message {
-        margin-top: 16px;
-        min-height: 20px;
-        color: #166534;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
       }
       .message.error {
         color: #b91c1c;
+      }
+      .hero-active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid #86efac;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 72%);
+        padding: 20px;
+        box-shadow: 0 14px 34px rgb(22 163 74 / 0.12);
+      }
+      .hero-active-title {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+      }
+      .hero-active-title strong {
+        font-size: 30px;
+        line-height: 1.1;
+      }
+      .hero-active-meta {
+        display: grid;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .activity-list {
+        display: grid;
+        gap: 10px;
+      }
+      .activity-item {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        border: 1px solid #eef2f7;
+        border-radius: var(--radius);
+        padding: 10px;
+        background: #ffffff;
+      }
+      .activity-dot {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 999px;
+        background: #f0fdf4;
+        color: #166534;
+      }
+      .activity-item.warn .activity-dot {
+        background: #fffbeb;
+        color: #92400e;
+      }
+      .activity-item.error .activity-dot {
+        background: #fef2f2;
+        color: #991b1b;
       }
       .toast-region {
         position: fixed;
@@ -742,6 +912,17 @@
         border-radius: var(--radius);
         padding: 12px;
       }
+      details.check-section summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        cursor: pointer;
+        list-style: none;
+      }
+      details.check-section summary::-webkit-details-marker {
+        display: none;
+      }
       .check-section h3 {
         margin: 0;
       }
@@ -795,6 +976,10 @@
         display: grid;
         place-items: center;
         text-align: center;
+        border: 1px dashed #cbd5e1;
+        border-radius: var(--radius);
+        background: #f8fafc;
+        padding: 24px;
       }
       dialog {
         width: min(640px, calc(100vw - 32px));
@@ -838,27 +1023,80 @@
           transition-duration: 0.01ms !important;
         }
       }
+      @media (max-width: 1100px) {
+        .identity-record {
+          grid-template-columns: minmax(220px, 1.2fr) minmax(140px, 0.8fr);
+        }
+        .identity-record .record-field,
+        .identity-record-actions {
+          min-width: 0;
+        }
+        .identity-record-actions {
+          justify-content: flex-start;
+        }
+        .binding-form {
+          grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+        }
+        .binding-form button {
+          width: 100%;
+        }
+      }
       @media (max-width: 820px) {
         .app-shell {
           grid-template-columns: 1fr;
         }
         .sidebar {
-          position: static;
+          position: sticky;
+          top: 0;
+          z-index: 30;
           height: auto;
+          overflow: hidden;
+          border-right: 0;
+          border-bottom: 1px solid rgb(148 163 184 / 0.24);
+          padding: 12px 16px;
+        }
+        .brand {
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
+          margin-bottom: 10px;
+          padding: 0 4px;
+        }
+        .brand strong {
+          font-size: 18px;
+        }
+        .nav {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          scrollbar-width: thin;
+        }
+        .nav button {
+          width: auto;
+          flex: 0 0 auto;
+          padding-inline: 12px;
         }
         .content-shell {
           height: auto;
           overflow: visible;
         }
         .topbar {
-          position: static;
+          top: 102px;
         }
         .topbar-inner,
         main {
           padding-inline: 20px;
         }
+        .topbar-inner {
+          min-height: 64px;
+          padding-block: 12px;
+        }
         main {
           padding: 20px;
+        }
+        .page-heading {
+          align-items: center;
         }
         header,
         .section-heading,
@@ -866,19 +1104,144 @@
           display: grid;
         }
         .grid,
+        .quick-launchpad,
+        .identity-record,
+        .detail-row,
         .form-grid,
         .backup-grid,
         .binding-form,
         .detection-form {
           grid-template-columns: 1fr;
         }
+        .identity-record {
+          gap: 12px;
+        }
+        .identity-record-actions {
+          justify-content: flex-start;
+        }
+        .copyable {
+          width: 100%;
+        }
+        .backup-actions,
+        .page-actions {
+          align-items: stretch;
+        }
+        .backup-actions > button,
+        .page-actions > button {
+          flex: 1 1 auto;
+        }
+        details.check-section summary {
+          align-items: flex-start;
+        }
+        details.check-section summary .actions {
+          justify-content: flex-end;
+        }
         .table {
           display: block;
+          max-width: 100%;
           overflow-x: auto;
+        }
+        dialog {
+          max-height: calc(100vh - 24px);
+          overflow-y: auto;
         }
         .toast-region {
           right: 16px;
           bottom: 16px;
+        }
+      }
+      @media (max-width: 560px) {
+        .sidebar {
+          padding-inline: 10px;
+        }
+        .brand span {
+          display: none;
+        }
+        .nav button {
+          min-height: 34px;
+          padding-inline: 10px;
+          font-size: 13px;
+        }
+        .topbar {
+          top: 82px;
+        }
+        .topbar-inner,
+        main {
+          padding-inline: 14px;
+        }
+        main {
+          padding-block: 16px 28px;
+        }
+        .top-active {
+          max-width: calc(100% - 52px);
+        }
+        .top-active-details {
+          max-width: min(230px, 58vw);
+        }
+        .page-heading {
+          display: grid;
+          gap: 12px;
+        }
+        .page-actions,
+        .page-actions button {
+          width: 100%;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        .summary,
+        .quick-launchpad {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .metric {
+          min-width: 0;
+        }
+        .metric strong {
+          overflow-wrap: anywhere;
+          font-size: 18px;
+        }
+        .quick-launchpad button {
+          min-height: 56px;
+          padding-inline: 12px;
+        }
+        .panel,
+        .identity-record {
+          padding: 14px;
+        }
+        .identity-cell {
+          align-items: flex-start;
+        }
+        .identity-record-actions {
+          display: grid;
+          grid-template-columns: repeat(4, 36px);
+        }
+        .detail-row {
+          gap: 6px;
+        }
+        .dialog-body {
+          padding: 16px;
+        }
+        .dialog-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dialog-actions button {
+          width: 100%;
+        }
+        details.check-section summary {
+          display: grid;
+        }
+        details.check-section summary .actions {
+          justify-content: flex-start;
+        }
+        .check-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .toast-region {
+          right: 10px;
+          bottom: 10px;
+          width: calc(100vw - 20px);
         }
       }
     </style>
@@ -967,6 +1330,15 @@
       </form>
     </dialog>
 
+    <dialog id="viewDialog">
+      <div class="dialog-body">
+        <div id="viewIdentityContent"></div>
+        <div class="dialog-actions">
+          <button id="closeView" type="button">Close</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="confirmDialog">
       <form id="confirmForm" class="dialog-body" method="dialog">
         <h2 id="confirmTitle">Confirm Action</h2>
@@ -1001,7 +1373,13 @@
       let selectedDetectPath = "";
       let currentDetection = null;
       let currentPage = "dashboard";
+      let pageHistory = [];
       let lastRenderedPage = "";
+      let navInitialized = false;
+      let topbarKey = "";
+      let pageScrollPositions = {};
+      let activityLog = [];
+      let lastDoctorRunAt = "";
       const pages = [
         { id: "dashboard", label: "Dashboard", icon: "dashboard" },
         { id: "identities", label: "Identities", icon: "users" },
@@ -1042,9 +1420,10 @@
         const toast = document.createElement("div");
         toast.id = id;
         toast.className = `toast ${tone}`;
+        const marker = tone === "error" ? "!" : tone === "warn" ? "!" : "✓";
         toast.innerHTML = `
           <div>
-            <div class="toast-title">${escapeHtml(title)}</div>
+            <div class="toast-title">${marker} ${escapeHtml(title)}</div>
             <div class="toast-message">${escapeHtml(message)}</div>
           </div>
           <button class="toast-close" type="button" aria-label="Dismiss notification">×</button>
@@ -1055,6 +1434,15 @@
         if (timeout > 0) {
           window.setTimeout(remove, timeout);
         }
+      }
+
+      function addActivity(title, message = "", tone = "success") {
+        activityLog.unshift({
+          title,
+          message,
+          tone,
+        });
+        activityLog = activityLog.slice(0, 5);
       }
 
       function setActionText(text) {
@@ -1080,6 +1468,8 @@
           copy: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
           check: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
           refresh: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+          back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>',
+          eye: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
           search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
           sync: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 3v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 21v-5h5"/></svg>',
           folder: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
@@ -1130,21 +1520,26 @@
 
       function renderNavigation() {
         const nav = document.getElementById("sidebarNav");
-        nav.innerHTML = pages
-          .map(
-            (page) => `
-              <button type="button" data-page="${escapeHtml(page.id)}" class="${currentPage === page.id ? "active" : ""}">
-                <span class="icon" aria-hidden="true">${iconSvg(page.icon)}</span>
-                ${escapeHtml(page.label)}
-              </button>
-            `,
-          )
-          .join("");
-        nav.querySelectorAll("[data-page]").forEach((button) => {
-          button.addEventListener("click", () => {
-            setCurrentPage(button.dataset.page || "dashboard");
-            render(currentStatus, currentDoctor);
+        if (!navInitialized) {
+          nav.innerHTML = pages
+            .map(
+              (page) => `
+                <button type="button" data-page="${escapeHtml(page.id)}">
+                  <span class="icon" aria-hidden="true">${iconSvg(page.icon)}</span>
+                  ${escapeHtml(page.label)}
+                </button>
+              `,
+            )
+            .join("");
+          nav.querySelectorAll("[data-page]").forEach((button) => {
+            button.addEventListener("click", () => {
+              transitionToPage(button.dataset.page || "dashboard");
+            });
           });
+          navInitialized = true;
+        }
+        nav.querySelectorAll("[data-page]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.page === currentPage);
         });
       }
 
@@ -1156,38 +1551,72 @@
         return true;
       }
 
+      function transitionToPage(page, rememberCurrent = true) {
+        const previousPage = currentPage;
+        if (!setCurrentPage(page)) {
+          return;
+        }
+        if (rememberCurrent) {
+          pageHistory.push(previousPage);
+        }
+        const shell = document.getElementById("contentShell");
+        if (shell && lastRenderedPage) {
+          pageScrollPositions[lastRenderedPage] = shell.scrollTop;
+        }
+        const view = document.querySelector(".page-view");
+        if (!view) {
+          render(currentStatus, currentDoctor);
+          return;
+        }
+        view.classList.add("page-exit");
+        window.setTimeout(() => render(currentStatus, currentDoctor), 120);
+      }
+
       function renderTopbar(status, doctor) {
         const topbar = document.getElementById("topbar");
         const active = status?.activeIdentity;
-        const health = doctor
-          ? doctor.errors > 0
-            ? "Errors"
-            : doctor.warnings > 0
-              ? "Warnings"
-              : "Healthy"
-          : "Not checked";
+        const nextKey = [
+          currentPage,
+          pageHistory.length,
+          active?.alias || "",
+          active?.email || "",
+          active?.githubAvatarUrl || "",
+        ].join("|");
+        if (topbarKey === nextKey) {
+          return;
+        }
+        topbarKey = nextKey;
         topbar.innerHTML = `
           <div class="topbar-inner">
+            ${
+              currentPage === "dashboard"
+                ? `<span aria-hidden="true"></span>`
+                : `<button
+                    id="headerBack"
+                    type="button"
+                    class="top-back"
+                    title="Go back"
+                    aria-label="Go back"
+                  >
+                    <span class="icon" aria-hidden="true">${iconSvg("back")}</span>
+                  </button>`
+            }
             <div class="top-active">
-              ${active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}
+              ${active ? avatarBlock(active) : `<span class="avatar" aria-hidden="true">?</span>`}
               <div class="top-active-details">
                 <strong class="truncate" title="${escapeHtml(active?.alias || "No active identity")}">${escapeHtml(active?.alias || "No active identity")}</strong>
                 <span class="muted truncate" title="${escapeHtml(active?.email || "Set an active identity")}">${escapeHtml(active?.email || "Set an active identity")}</span>
               </div>
             </div>
-            <div class="top-actions">
-              <span class="badge ${active ? "active" : "warn"}">${active ? "Active" : "No Active"}</span>
-              <span class="badge">${status?.identityCount || 0} identities</span>
-              <span class="badge">${status?.bindingCount || 0} bindings</span>
-              <span class="badge ${doctor?.errors ? "error" : doctor?.warnings ? "warn" : "good"}">${escapeHtml(health)}</span>
-              <button id="refresh" type="button" title="Refresh dashboard">
-                <span class="icon" aria-hidden="true">${iconSvg("refresh")}</span>
-                Refresh
-              </button>
-            </div>
           </div>
         `;
-        document.getElementById("refresh").addEventListener("click", load);
+        const backButton = document.getElementById("headerBack");
+        if (backButton) {
+          backButton.addEventListener("click", () => {
+            const previousPage = pageHistory.pop() || "dashboard";
+            transitionToPage(previousPage, false);
+          });
+        }
       }
 
       function pageHeading(title, copy = "", actions = "") {
@@ -1206,29 +1635,38 @@
         const active = status.activeIdentity;
         if (!active) {
           return `
-            <section class="panel active-card">
-              <h2>Active Profile</h2>
-              <p class="muted">No active identity set.</p>
+            <section class="hero-active">
+              <div>
+                <div class="hero-active-title">
+                  <span class="active-dot" aria-hidden="true"></span>
+                  <strong>No active identity</strong>
+                </div>
+                <div class="hero-active-meta">
+                  <span class="muted">Set an identity before working with repositories.</span>
+                </div>
+              </div>
+              ${addIdentityButton()}
             </section>
           `;
         }
         const effective = status.effectiveIdentity;
         return `
-          <section class="panel active-card active">
-            <div class="active-heading">
-              <h2>Active Profile</h2>
-              <span class="badge active">Active</span>
+          <section class="hero-active">
+            <div>
+              <div class="hero-active-title">
+                <span class="active-dot" aria-hidden="true"></span>
+                <strong class="truncate" title="${escapeHtml(active.alias)}">${escapeHtml(active.alias)}</strong>
+              </div>
+              <div class="hero-active-meta">
+                <span class="truncate" title="${escapeHtml(active.name)}">${escapeHtml(active.name)}</span>
+                <span class="muted truncate" title="${escapeHtml(active.email)}">${escapeHtml(active.email)}</span>
+                <span class="muted truncate" title="${escapeHtml(active.githubUsername)}">GitHub: ${escapeHtml(active.githubUsername)}</span>
+              </div>
             </div>
-            <div class="active-name"><span class="active-dot" aria-hidden="true"></span>${escapeHtml(active.alias)}</div>
-            <div>${escapeHtml(active.name)}</div>
-            <div class="muted">${escapeHtml(active.email)}</div>
-            <div class="muted">GitHub: ${escapeHtml(active.githubUsername)}</div>
-            ${statusBadge(active.sshKeyStatus)}
-            ${
-              effective
-                ? `<div class="muted">Effective source: ${escapeHtml(effective.source)}</div>`
-                : ""
-            }
+            <div class="actions">
+              <span class="badge active">Active</span>
+              ${effective ? `<span class="badge">${escapeHtml(effective.source)}</span>` : ""}
+            </div>
           </section>
         `;
       }
@@ -1322,7 +1760,7 @@
 
       function repoBindingRows(bindings) {
         if (bindings.length === 0) {
-          return `<div class="empty"><p>No repository bindings configured.</p></div>`;
+          return `<div class="empty"><p>No repository bindings configured. Bind a repository to keep its Git identity aligned automatically.</p></div>`;
         }
         return `
           <table class="table">
@@ -1447,10 +1885,6 @@
         if (!doctor) {
           return `
             <section class="panel">
-              <div class="section-heading">
-                <h2>Doctor</h2>
-                <button type="button" data-action="doctor-refresh">Run Checks</button>
-              </div>
               <p class="muted">Diagnostics not loaded.</p>
             </section>
           `;
@@ -1467,15 +1901,9 @@
           <section class="panel">
             <div class="section-heading">
               <div>
-                <h2>Doctor</h2>
+                <h2>Overall Health</h2>
                 <p>${escapeHtml(state)}</p>
               </div>
-              <button type="button" data-action="doctor-refresh">Run Checks</button>
-            </div>
-            <div class="doctor-summary">
-              <span class="badge good">${doctorSuccessCount(doctor)} passing</span>
-              <span class="badge warn">${doctor.warnings || 0} warning(s)</span>
-              <span class="badge ${doctor.errors > 0 ? "warn" : ""}">${doctor.errors || 0} error(s)</span>
             </div>
             ${doctorSections(doctor.sections || [])}
           </section>
@@ -1498,12 +1926,26 @@
           <div class="check-list">
             ${sections
               .map(
-                (section) => `
-                  <div class="check-section">
-                    <h3>${escapeHtml(section.title)}</h3>
-                    ${(section.checks || []).map(doctorCheckRow).join("")}
-                  </div>
-                `,
+                (section) => {
+                  const checks = section.checks || [];
+                  const errors = checks.filter((check) => check.level === "fail").length;
+                  const warnings = checks.filter((check) => check.level === "warn").length;
+                  const passes = checks.filter((check) => check.level === "pass").length;
+                  const open = errors > 0 || warnings > 0 ? "open" : "";
+                  return `
+                    <details class="check-section" ${open}>
+                      <summary>
+                        <h3>${escapeHtml(section.title)}</h3>
+                        <span class="actions">
+                          <span class="badge good">${passes} pass</span>
+                          <span class="badge warn">${warnings} warn</span>
+                          <span class="badge ${errors > 0 ? "error" : ""}">${errors} error</span>
+                        </span>
+                      </summary>
+                      ${checks.map(doctorCheckRow).join("")}
+                    </details>
+                  `;
+                },
               )
               .join("")}
           </div>
@@ -1550,6 +1992,28 @@
         `;
       }
 
+      function sshKeySummary(identity) {
+        const canCopy = identity.sshPublicKeyStatus === "available" && identity.sshPublicKey;
+        const keyValue = canCopy
+          ? identity.sshPublicKey
+          : identity.sshKeyStatus === "available"
+            ? "Public key unavailable"
+            : "No SSH key configured";
+        return `
+          <div class="record-field">
+            <span class="record-label">SSH Key</span>
+            <div class="copyable">
+              <span class="record-value truncate" title="${escapeHtml(keyValue)}">${escapeHtml(keyValue)}</span>
+              ${
+                canCopy
+                  ? copyButton(identity.sshPublicKey, `Copy SSH key for ${identity.alias}`)
+                  : `<button type="button" class="icon-btn" title="SSH public key unavailable" aria-label="SSH public key unavailable" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+              }
+            </div>
+          </div>
+        `;
+      }
+
       function initials(identity) {
         const base = identity.name || identity.alias || identity.githubUsername || "?";
         return base
@@ -1580,61 +2044,50 @@
 
       function identityRows(identities) {
         if (identities.length === 0) {
-          return `<div class="empty"><p>No identities configured.</p></div>`;
+          return `<section class="panel empty"><p>No identities configured. Add your first profile to start managing Git identities.</p></section>`;
         }
         return `
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Identity</th>
-                <th>GitHub</th>
-                <th>Public Key</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${identities
-                .map(
-                  (identity) => `
-                    <tr class="${identity.active ? "active-row" : ""}">
-                      <td>
-                        <div class="identity-cell">
-                          ${avatarBlock(identity)}
-                          <div class="identity-details">
-                            <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
-                            <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
-                            <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td><span class="truncate" title="${escapeHtml(identity.githubUsername)}">${escapeHtml(identity.githubUsername)}</span></td>
-                      <td>${publicKeyBlock(identity)}</td>
-                      <td>
-                        <div class="actions">
-                          ${identity.active ? `<span class="badge active">Active</span>` : ""}
-                          ${statusBadge(identity.sshKeyStatus)}
-                        </div>
-                      </td>
-                      <td>
-                        <div class="actions">
-                          ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
-                          ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
-                          ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
-                        </div>
-                      </td>
-                    </tr>
-                  `,
-                )
-                .join("")}
-            </tbody>
-          </table>
+          <section class="identity-records">
+            ${identities
+              .map(
+                (identity) => `
+                  <article class="identity-record ${identity.active ? "active" : ""}">
+                    <div class="identity-cell">
+                      ${avatarBlock(identity)}
+                      <div class="identity-details">
+                        <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
+                        <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+                        <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+                      </div>
+                    </div>
+                    <div class="record-field">
+                      <span class="record-label">GitHub</span>
+                      <span class="record-value truncate" title="${escapeHtml(identity.githubUsername || "Not set")}">${escapeHtml(identity.githubUsername || "Not set")}</span>
+                    </div>
+                    ${sshKeySummary(identity)}
+                    <div class="record-field">
+                      <span class="record-label">Status</span>
+                      <div class="actions">
+                        ${statusBadge(identity.sshKeyStatus)}
+                      </div>
+                    </div>
+                    <div class="actions identity-record-actions">
+                      ${iconButton({ action: "view", icon: "eye", label: `View ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
+                      ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
+                    </div>
+                  </article>
+                `,
+              )
+              .join("")}
+          </section>
         `;
       }
 
       function identityCards(identities) {
         if (identities.length === 0) {
-          return `<section class="panel empty"><p>No identities configured.</p></section>`;
+          return `<section class="panel empty"><p>No identities configured. Add your first profile to start managing Git identities.</p></section>`;
         }
         return `
           <div class="card-grid">
@@ -1675,7 +2128,6 @@
       }
 
       function dashboardPage(status, doctor) {
-        const passCount = doctor ? doctorSuccessCount(doctor) : 0;
         const health = doctor
           ? doctor.errors > 0
             ? "Needs attention"
@@ -1691,30 +2143,57 @@
             <div class="metric"><span>Backup Status</span><strong>${lastExportPath || lastImportPath ? "Recent" : "Ready"}</strong></div>
             <div class="metric"><span>Doctor</span><strong>${escapeHtml(health)}</strong></div>
           </section>
-          <div class="grid">
-            ${activePanel(status)}
-            <section class="panel active-card">
-              <h2>Quick Actions</h2>
-              <div class="actions">
-                ${addIdentityButton()}
-                <button type="button" data-page-jump="backup"><span class="icon" aria-hidden="true">${iconSvg("archive")}</span>Backup</button>
-                <button type="button" data-page-jump="doctor"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Run Doctor</button>
-                <button type="button" data-page-jump="bindings"><span class="icon" aria-hidden="true">${iconSvg("link")}</span>Bindings</button>
+          <section class="panel">
+            <h2>Quick Actions</h2>
+            <div class="quick-launchpad">
+              <button type="button" data-page-jump="identities"><span class="icon" aria-hidden="true">${iconSvg("users")}</span>Identities</button>
+              <button type="button" data-page-jump="backup"><span class="icon" aria-hidden="true">${iconSvg("archive")}</span>Backup</button>
+              <button type="button" data-page-jump="doctor"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Doctor</button>
+              <button type="button" data-page-jump="bindings"><span class="icon" aria-hidden="true">${iconSvg("link")}</span>Bindings</button>
+            </div>
+          </section>
+          ${activityPanel()}
+        `;
+      }
+
+      function activityPanel() {
+        const items = activityLog.slice(0, 5);
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Recent Activity</h2>
+                <p>Latest desktop actions on this machine.</p>
               </div>
-              <div class="doctor-summary">
-                <span class="badge good">${passCount} passing</span>
-                <span class="badge warn">${doctor?.warnings || 0} warning(s)</span>
-                <span class="badge ${doctor?.errors ? "error" : ""}">${doctor?.errors || 0} error(s)</span>
-              </div>
-            </section>
-          </div>
+            </div>
+            ${
+              items.length === 0
+                ? `<div class="empty"><p>No recent activity yet. Actions you perform in this desktop app will appear here.</p></div>`
+                : `<div class="activity-list">
+                    ${items
+                      .map(
+                        (item) => `
+                          <div class="activity-item ${escapeHtml(item.tone || "")}">
+                            <span class="activity-dot" aria-hidden="true">${item.tone === "error" ? "!" : item.tone === "warn" ? "!" : "✓"}</span>
+                            <div>
+                              <strong>${escapeHtml(item.title)}</strong>
+                              ${item.message ? `<div class="muted">${escapeHtml(item.message)}</div>` : ""}
+                              ${item.time ? `<div class="muted">${escapeHtml(item.time)}</div>` : ""}
+                            </div>
+                          </div>
+                        `,
+                      )
+                      .join("")}
+                  </div>`
+            }
+          </section>
         `;
       }
 
       function identitiesPage(status) {
         return `
           ${pageHeading("Identities", "Manage Git profiles and copy SSH public keys.", addIdentityButton())}
-          ${identityCards(status.identities || [])}
+          ${identityRows(status.identities || [])}
         `;
       }
 
@@ -1764,7 +2243,7 @@
       function render(status, doctor = currentDoctor) {
         const shell = document.getElementById("contentShell");
         const pageChanged = lastRenderedPage !== "" && lastRenderedPage !== currentPage;
-        const previousScrollY = pageChanged ? 0 : shell ? shell.scrollTop : window.scrollY;
+        const previousScrollY = pageChanged ? pageScrollPositions[currentPage] || 0 : shell ? shell.scrollTop : window.scrollY;
         currentStatus = status;
         currentDoctor = doctor;
         const target = document.getElementById("app");
@@ -1820,10 +2299,17 @@
         }
         addForm.onsubmit = async (event) => {
           event.preventDefault();
-          const added = await runAction(() => api().AddIdentity(formPayload(addForm)), addForm, "Adding identity");
+          const payload = formPayload(addForm);
+          const added = await runAction(() => api().AddIdentity(payload), addForm, "Adding identity");
           if (added) {
             addForm.reset();
             document.getElementById("addDialog").close();
+            notify({
+              title: "Add SSH key to GitHub",
+              message: `Open '${payload.alias}' in Identities, copy its SSH public key, and add it to your GitHub SSH keys.`,
+              tone: "success",
+              timeout: 0,
+            });
           }
         };
       }
@@ -1836,8 +2322,7 @@
         });
         document.querySelectorAll("[data-page-jump]").forEach((button) => {
           button.addEventListener("click", () => {
-            setCurrentPage(button.dataset.pageJump || "dashboard");
-            render(currentStatus, currentDoctor);
+            transitionToPage(button.dataset.pageJump || "dashboard");
           });
         });
       }
@@ -1846,6 +2331,9 @@
         document.querySelectorAll("[data-action]").forEach((button) => {
           button.addEventListener("click", async () => {
             const alias = button.dataset.alias;
+            if (button.dataset.action === "view") {
+              openViewDialog(alias);
+            }
             if (button.dataset.action === "activate") {
               await runAction(() => api().ActivateIdentity(alias), button, `Activating ${alias}`);
             }
@@ -2282,6 +2770,74 @@
         document.getElementById("editDialog").showModal();
       }
 
+      function openViewDialog(alias) {
+        const identity = findIdentity(alias);
+        if (!identity) {
+          setMessage(`Identity '${alias}' not found`, true, "Identity not found");
+          return;
+        }
+        const copyAvailable = identity.sshPublicKeyStatus === "available" && identity.sshPublicKey;
+        const publicKey = copyAvailable
+          ? identity.sshPublicKey
+          : identity.sshKeyStatus === "available"
+            ? "Public key unavailable"
+            : "No SSH key configured";
+        const content = document.getElementById("viewIdentityContent");
+        content.innerHTML = `
+          <h2>Identity Details</h2>
+          <div class="identity-cell" style="margin-top: 12px">
+            ${avatarBlock(identity)}
+            <div class="identity-details">
+              <strong class="truncate" title="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</strong>
+              <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+            </div>
+          </div>
+          <div class="detail-list">
+            <div class="detail-row">
+              <span>Alias</span>
+              <strong class="truncate" title="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</strong>
+            </div>
+            <div class="detail-row">
+              <span>Name</span>
+              <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+            </div>
+            <div class="detail-row">
+              <span>Email</span>
+              <span class="truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+            </div>
+            <div class="detail-row">
+              <span>GitHub Username</span>
+              <span class="truncate" title="${escapeHtml(identity.githubUsername || "Not set")}">${escapeHtml(identity.githubUsername || "Not set")}</span>
+            </div>
+            <div class="detail-row">
+              <span>SSH Public Key</span>
+              <div class="copyable">
+                <span class="truncate" title="${escapeHtml(publicKey)}">${escapeHtml(publicKey)}</span>
+                ${
+                  copyAvailable
+                    ? `<button id="viewCopyKey" type="button" class="icon-btn copy-btn" title="Copy SSH key" aria-label="Copy SSH key"><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                    : `<button type="button" class="icon-btn" title="SSH public key unavailable" aria-label="SSH public key unavailable" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                }
+              </div>
+            </div>
+            <div class="detail-row">
+              <span>Status</span>
+              <div class="actions">
+                ${identity.active ? `<span class="badge active">Active</span>` : ""}
+                ${statusBadge(identity.sshKeyStatus)}
+              </div>
+            </div>
+          </div>
+        `;
+        const copy = document.getElementById("viewCopyKey");
+        if (copy) {
+          copy.addEventListener("click", async () => {
+            await copyTextValue(identity.sshPublicKey, copy, `Copied SSH key for ${identity.alias}`);
+          });
+        }
+        document.getElementById("viewDialog").showModal();
+      }
+
       function confirmAction({ title, message, warning = "", acceptLabel = "Continue", cancelLabel = "Cancel", danger = false }) {
         const dialog = document.getElementById("confirmDialog");
         const form = document.getElementById("confirmForm");
@@ -2340,32 +2896,37 @@
         const previousStates = disabledElements.map((element) => ({
           element,
           disabled: element.disabled,
-          label: element.tagName === "BUTTON" ? element.textContent : "",
+          html: element.tagName === "BUTTON" ? element.innerHTML : "",
         }));
         disabledElements.forEach((element) => {
           element.disabled = true;
         });
-        if (disabledTarget.tagName === "BUTTON") {
-          disabledTarget.textContent = "Working...";
+        if (disabledTarget.tagName === "BUTTON" && !disabledTarget.classList.contains("icon-btn")) {
+          disabledTarget.innerHTML = `<span class="spinner" aria-hidden="true"></span>${escapeHtml(actionText)}`;
         }
         try {
           const result = await action();
-          const doctor = await api().GetDoctorStatus();
+          const shouldRefreshDoctor = currentPage === "doctor";
+          const doctor = shouldRefreshDoctor ? await api().GetDoctorStatus() : currentDoctor;
           if (result?.status) {
             render(result.status, doctor);
           } else {
             await load();
           }
-          setMessage(result?.message || "Done", false, "Action complete");
+          const message = result?.message || "Done";
+          addActivity(message, actionText, "success");
+          setMessage(message, false, "Action complete");
           return result || true;
         } catch (error) {
-          setMessage(actionableError(error), true, "Action failed");
+          const message = actionableError(error);
+          addActivity("Action failed", message, "error");
+          setMessage(message, true, "Action failed");
           return false;
         } finally {
-          previousStates.forEach(({ element, disabled, label }) => {
+          previousStates.forEach(({ element, disabled, html }) => {
             element.disabled = disabled;
             if (element.tagName === "BUTTON") {
-              element.textContent = label;
+              element.innerHTML = html;
             }
           });
           setActionText("");
@@ -2378,16 +2939,18 @@
           return;
         }
         const previousDisabled = button.disabled;
-        const previousLabel = button.textContent;
+        const previousHTML = button.innerHTML;
         button.disabled = true;
-        button.textContent = "Checking...";
+        button.innerHTML = `<span class="spinner" aria-hidden="true"></span>Running checks`;
         setActionText("Running diagnostics");
         try {
           const doctor = await api().GetDoctorStatus();
+          lastDoctorRunAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           render(currentStatus, doctor);
           const tone = doctor.errors > 0 ? "error" : doctor.warnings > 0 ? "warn" : "success";
+          addActivity("Doctor completed", `${doctor.errors || 0} error(s), ${doctor.warnings || 0} warning(s)`, tone);
           notify({
-            title: "Doctor checks refreshed",
+            title: "Doctor completed",
             message:
               doctor.errors > 0
                 ? `${doctor.errors} issue(s) need attention. Review the fix hints below.`
@@ -2400,7 +2963,7 @@
           setMessage(actionableError(error), true, "Doctor failed");
         } finally {
           button.disabled = previousDisabled;
-          button.textContent = previousLabel;
+          button.innerHTML = previousHTML;
           setActionText("");
         }
       }
@@ -2422,8 +2985,10 @@
       async function load() {
         const target = document.getElementById("app");
         try {
-          target.className = "panel";
-          target.textContent = "Loading...";
+          if (!currentStatus) {
+            target.className = "panel";
+            target.textContent = "Loading...";
+          }
           if (!api()) {
             throw new Error("Desktop backend is not available. Open this screen in the Wails app window.");
           }
@@ -2445,6 +3010,9 @@
       });
       document.getElementById("cancelAdd").addEventListener("click", () => {
         document.getElementById("addDialog").close();
+      });
+      document.getElementById("closeView").addEventListener("click", () => {
+        document.getElementById("viewDialog").close();
       });
       document.getElementById("editForm").addEventListener("submit", async (event) => {
         event.preventDefault();

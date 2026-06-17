@@ -102,6 +102,10 @@ Recent desktop UI refinement update:
 - Successful identity creation now prompts the user to copy the generated public key and add it to GitHub SSH keys.
 - Doctor now exposes a single page-level Run Checks action and no longer duplicates aggregate pass, warning, and error badges inside the results panel.
 - Desktop responsiveness now includes tablet and mobile layouts for horizontal navigation, identity records, forms, dialogs, diagnostics, long values, action controls, and notifications.
+- Desktop chooser controls are now attached to their related fields for repository binding, identity detection, backup export/import, and SSH private-key selection.
+- Add Identity now prevents conflicting SSH key choices by making generated keys and existing private-key paths mutually exclusive.
+- Repository binding edit mode now shows an explicit editing state with Update Binding and Cancel actions.
+- Backup, binding, detection, and edit/save actions now use consistent primary action styling and explicit submit flows.
 
 ---
 

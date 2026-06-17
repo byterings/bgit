@@ -481,6 +481,52 @@
       .form-grid .wide {
         grid-column: 1 / -1;
       }
+      .field-group {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+      .field-group > span:first-child {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .field-control {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+      }
+      .field-control button {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+      }
+      .field-hint {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.35;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        align-items: center;
+      }
+      .editing-banner {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid #bfdbfe;
+        border-radius: var(--radius);
+        background: #eff6ff;
+        color: #1e3a8a;
+        padding: 10px 12px;
+      }
       .backup-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -885,14 +931,14 @@
       }
       .binding-form {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) auto auto;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
         gap: 10px;
         align-items: end;
         margin-bottom: 16px;
       }
       .detection-form {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 10px;
         align-items: end;
         margin-bottom: 16px;
@@ -1050,9 +1096,6 @@
         .binding-form {
           grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
         }
-        .binding-form button {
-          width: 100%;
-        }
       }
       @media (max-width: 820px) {
         .app-shell {
@@ -1137,6 +1180,12 @@
         .copyable {
           width: 100%;
         }
+        .form-actions {
+          justify-content: stretch;
+        }
+        .form-actions button {
+          flex: 1 1 auto;
+        }
         .backup-actions,
         .page-actions {
           align-items: stretch;
@@ -1178,7 +1227,7 @@
           font-size: 13px;
         }
         .topbar {
-          top: 82px;
+          top: 0;
         }
         .topbar-inner,
         main {
@@ -1300,10 +1349,16 @@
             Email
             <input name="email" autocomplete="email" required />
           </label>
-          <label class="wide">
-            Existing SSH private key path
-            <input name="sshKeyPath" placeholder="Optional" />
-          </label>
+          <div class="field-group wide">
+            <span>Existing SSH private key</span>
+            <div class="field-control">
+              <input name="sshKeyPath" placeholder="Select a private key file (optional)" />
+              <button type="button" data-action="choose-add-ssh-key" title="Choose SSH private key" aria-label="Choose SSH private key">
+                <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span>
+              </button>
+            </div>
+            <span class="field-hint">Choose an existing private key file, or generate a new key below.</span>
+          </div>
           <label class="check wide">
             <input name="generateSSHKey" type="checkbox" />
             Generate new SSH key
@@ -1333,14 +1388,20 @@
             GitHub username
             <input id="editGitHub" name="githubUsername" required />
           </label>
-          <label>
-            SSH private key path
-            <input id="editSSHKey" name="sshKeyPath" />
-          </label>
+          <div class="field-group">
+            <span>SSH private key</span>
+            <div class="field-control">
+              <input id="editSSHKey" name="sshKeyPath" placeholder="Select a private key file" />
+              <button type="button" data-action="choose-edit-ssh-key" title="Choose SSH private key" aria-label="Choose SSH private key">
+                <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span>
+              </button>
+            </div>
+            <span class="field-hint">Select the private key file used by this identity.</span>
+          </div>
         </div>
         <div class="row-actions" style="margin-top: 18px">
           <button id="cancelEdit" type="button">Cancel</button>
-          <button type="submit">Save</button>
+          <button class="primary" type="submit">Save</button>
         </div>
       </form>
     </dialog>
@@ -1387,6 +1448,7 @@
       let selectedRepoPath = "";
       let selectedDetectPath = "";
       let currentDetection = null;
+      let editingBindingPath = "";
       let currentPage = "dashboard";
       let pageHistory = [];
       let lastRenderedPage = "";
@@ -1525,10 +1587,30 @@
 
       function copyableValue(value, className = "", label = "Copy") {
         const safe = escapeHtml(value || "");
+        const copyDisabled = !value || value === "Default backup location" || value === "No archive selected";
         return `
           <div class="copyable">
             <span class="${escapeHtml(className)} truncate" title="${safe}">${safe}</span>
-            ${copyButton(value || "", label)}
+            ${
+              copyDisabled
+                ? `<button type="button" class="icon-btn copy-btn" title="Nothing to copy" aria-label="Nothing to copy" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                : copyButton(value || "", label)
+            }
+          </div>
+        `;
+      }
+
+      function fieldWithChooser({ label, name, value = "", placeholder = "", action, title, hint = "", required = false, className = "" }) {
+        return `
+          <div class="field-group ${escapeHtml(className)}">
+            <span>${escapeHtml(label)}</span>
+            <div class="field-control">
+              <input name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" ${required ? "required" : ""} />
+              <button type="button" data-action="${escapeHtml(action)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+                <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+              </button>
+            </div>
+            ${hint ? `<span class="field-hint">${escapeHtml(hint)}</span>` : ""}
           </div>
         `;
       }
@@ -1702,6 +1784,17 @@
               <form id="exportForm" class="backup-box">
                 <h3>Export Backup</h3>
                 <div class="warning-note">Keep this password safe. It is required for import and cannot be recovered.</div>
+                <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
+                <div class="field-group">
+                  <span>Backup location</span>
+                  <div class="field-control">
+                    <span class="backup-path truncate" title="${escapeHtml(lastExportPath || "Default backup location")}">${escapeHtml(lastExportPath || "Default backup location")}</span>
+                    <button type="button" data-action="choose-export" title="Choose backup location" aria-label="Choose backup location">
+                      <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+                    </button>
+                  </div>
+                  <span class="field-hint">Choose where the encrypted .bgit archive will be saved.</span>
+                </div>
                 <label>
                   Export password
                   <input name="password" type="password" autocomplete="new-password" required />
@@ -1710,11 +1803,8 @@
                   Confirm password
                   <input name="confirmPassword" type="password" autocomplete="new-password" required />
                 </label>
-                <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
-                ${copyableValue(lastExportPath || "Default backup location", "backup-path", "Copy backup location")}
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-export"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Location</button>
-                  <button type="submit">Export</button>
+                  <button type="submit" class="primary">Export</button>
                 </div>
               </form>
 
@@ -1722,14 +1812,22 @@
                 <h3>Import Backup</h3>
                 <div class="warning-note">Import replaces the current bgit configuration with the selected archive contents.</div>
                 <input name="archivePath" type="hidden" value="${escapeHtml(lastImportPath)}" required />
-                ${copyableValue(lastImportPath || "No archive selected", "backup-path", "Copy archive location")}
+                <div class="field-group">
+                  <span>Backup archive</span>
+                  <div class="field-control">
+                    <span class="backup-path truncate" title="${escapeHtml(lastImportPath || "No archive selected")}">${escapeHtml(lastImportPath || "No archive selected")}</span>
+                    <button type="button" data-action="choose-import" title="Choose .bgit archive" aria-label="Choose .bgit archive">
+                      <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+                    </button>
+                  </div>
+                  <span class="field-hint">Select an encrypted .bgit archive to restore.</span>
+                </div>
                 <label>
                   Import password
                   <input name="password" type="password" autocomplete="current-password" required />
                 </label>
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-import"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Archive</button>
-                  <button type="submit">Import</button>
+                  <button type="submit" class="primary">Import</button>
                 </div>
                 <div id="importSummary" class="backup-summary" hidden></div>
               </form>
@@ -1749,10 +1847,24 @@
               </div>
             </div>
             <form id="repoBindingForm" class="binding-form">
-              <label>
-                Repository path
-                <input name="path" value="${escapeHtml(selectedRepoPath)}" placeholder="/path/to/git/repo" required />
-              </label>
+              ${
+                editingBindingPath
+                  ? `<div class="editing-banner">
+                      <strong>Editing binding</strong>
+                      <button type="button" data-action="cancel-binding-edit">Cancel</button>
+                    </div>`
+                  : ""
+              }
+              ${fieldWithChooser({
+                label: "Repository path",
+                name: "path",
+                value: selectedRepoPath,
+                placeholder: "/path/to/git/repo",
+                action: "choose-repo",
+                title: "Choose Git repository",
+                hint: "Select a local Git repository directory.",
+                required: true,
+              })}
               <label>
                 Identity
                 <select name="alias" required ${identities.length === 0 ? "disabled" : ""}>
@@ -1765,8 +1877,9 @@
                     .join("")}
                 </select>
               </label>
-              <button type="button" data-action="choose-repo"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Repo</button>
-              <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>Bind</button>
+              <div class="form-actions">
+                <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>${editingBindingPath ? "Update Binding" : "Bind"}</button>
+              </div>
             </form>
             ${repoBindingRows(status.bindings || [])}
           </section>
@@ -1827,12 +1940,19 @@
               </div>
             </div>
             <form id="identityDetectionForm" class="detection-form">
-              <label>
-                Repository or workspace path
-                <input name="path" value="${escapeHtml(selectedDetectPath)}" placeholder="/path/to/repo-or-workspace" required />
-              </label>
-              <button type="button" data-action="choose-detect-path"><span class="icon" aria-hidden="true">${iconSvg("folder")}</span>Choose Path</button>
-              <button type="submit" class="primary"><span class="icon" aria-hidden="true">${iconSvg("search")}</span>Detect</button>
+              ${fieldWithChooser({
+                label: "Repository or workspace path",
+                name: "path",
+                value: selectedDetectPath,
+                placeholder: "/path/to/repo-or-workspace",
+                action: "choose-detect-path",
+                title: "Choose repository or workspace",
+                hint: "Select a path, then run detection.",
+                required: true,
+              })}
+              <div class="form-actions">
+                <button type="submit" class="primary"><span class="icon" aria-hidden="true">${iconSvg("search")}</span>Detect</button>
+              </div>
             </form>
             ${identityDetectionDetails(detection)}
           </section>
@@ -2312,6 +2432,7 @@
         if (!addForm) {
           return;
         }
+        bindSSHKeyChoice(addForm);
         addForm.onsubmit = async (event) => {
           event.preventDefault();
           const payload = formPayload(addForm);
@@ -2327,6 +2448,54 @@
             });
           }
         };
+        document.querySelectorAll("[data-action='choose-add-ssh-key']").forEach((button) => {
+          button.onclick = async () => {
+            await chooseSSHPrivateKey(button, addForm.elements.sshKeyPath);
+            syncSSHKeyChoice(addForm);
+          };
+        });
+        document.querySelectorAll("[data-action='choose-edit-ssh-key']").forEach((button) => {
+          button.onclick = async () => {
+            await chooseSSHPrivateKey(button, document.getElementById("editSSHKey"));
+          };
+        });
+      }
+
+      function bindSSHKeyChoice(form) {
+        const pathInput = form.elements.sshKeyPath;
+        const generate = form.elements.generateSSHKey;
+        if (!pathInput || !generate) {
+          return;
+        }
+        const sync = () => syncSSHKeyChoice(form);
+        pathInput.oninput = sync;
+        generate.onchange = sync;
+        sync();
+      }
+
+      function syncSSHKeyChoice(form) {
+        const pathInput = form.elements.sshKeyPath;
+        const generate = form.elements.generateSSHKey;
+        if (!pathInput || !generate) {
+          return;
+        }
+        const chooseButton = form.querySelector("[data-action='choose-add-ssh-key']");
+        const hasPath = String(pathInput.value || "").trim() !== "";
+        if (hasPath) {
+          generate.checked = false;
+        }
+        if (generate.checked) {
+          pathInput.value = "";
+          pathInput.disabled = true;
+          if (chooseButton) {
+            chooseButton.disabled = true;
+          }
+          return;
+        }
+        pathInput.disabled = false;
+        if (chooseButton) {
+          chooseButton.disabled = false;
+        }
       }
 
       function bindPageActions() {
@@ -2343,7 +2512,7 @@
       }
 
       function bindIdentityActions() {
-        document.querySelectorAll("[data-action]").forEach((button) => {
+        document.querySelectorAll("[data-action='view'], [data-action='activate'], [data-action='edit'], [data-action='delete']").forEach((button) => {
           button.addEventListener("click", async () => {
             const alias = button.dataset.alias;
             if (button.dataset.action === "view") {
@@ -2516,7 +2685,6 @@
           if (path) {
             selectedDetectPath = path;
             render(currentStatus, currentDoctor);
-            await detectIdentityPath(path, document.getElementById("identityDetectionForm"));
           }
         } catch (error) {
           setMessage(actionableError(error), true, "Choose path failed");
@@ -2591,7 +2759,16 @@
             event.preventDefault();
             const payload = repoBindingPayload(form);
             selectedRepoPath = payload.path;
-            await runAction(() => api().BindRepository(payload), form, "Binding repository");
+            const actionText = editingBindingPath ? "Updating binding" : "Binding repository";
+            const previousEditPath = editingBindingPath;
+            if (previousEditPath) {
+              editingBindingPath = "";
+            }
+            const result = await runAction(() => api().BindRepository(payload), form, actionText);
+            if (!result && previousEditPath) {
+              editingBindingPath = previousEditPath;
+              render(currentStatus, currentDoctor);
+            }
           });
         }
 
@@ -2604,6 +2781,7 @@
         document.querySelectorAll("[data-action='edit-binding']").forEach((button) => {
           button.addEventListener("click", () => {
             selectedRepoPath = button.dataset.path || "";
+            editingBindingPath = selectedRepoPath;
             render(currentStatus, currentDoctor);
             const form = document.getElementById("repoBindingForm");
             if (form) {
@@ -2611,6 +2789,14 @@
               form.elements.alias.value = button.dataset.alias || "";
               form.elements.path.focus();
             }
+          });
+        });
+
+        document.querySelectorAll("[data-action='cancel-binding-edit']").forEach((button) => {
+          button.addEventListener("click", () => {
+            editingBindingPath = "";
+            selectedRepoPath = "";
+            render(currentStatus, currentDoctor);
           });
         });
 
@@ -2627,6 +2813,10 @@
             });
             if (!confirmed) {
               return;
+            }
+            if (editingBindingPath === path) {
+              editingBindingPath = "";
+              selectedRepoPath = "";
             }
             await runAction(() => api().RemoveRepositoryBinding(path), button, "Removing repository binding");
           });
@@ -2656,6 +2846,26 @@
           }
         } catch (error) {
           setMessage(actionableError(error), true, "Choose repository failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function chooseSSHPrivateKey(button, input) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseSSHPrivateKeyPath();
+          if (path && input) {
+            input.value = path;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose SSH key failed");
         } finally {
           button.disabled = previousDisabled;
         }

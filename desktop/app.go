@@ -67,6 +67,10 @@ func (a *App) ChooseIdentityPath() (string, error) {
 	return chooseDesktopIdentityPath(a.ctx)
 }
 
+func (a *App) ChooseSSHPrivateKeyPath() (string, error) {
+	return chooseDesktopSSHPrivateKeyPath(a.ctx)
+}
+
 func (a *App) DetectIdentity(request IdentityDetectionRequest) (*IdentityDetectionResult, error) {
 	return detectDesktopIdentity(request)
 }

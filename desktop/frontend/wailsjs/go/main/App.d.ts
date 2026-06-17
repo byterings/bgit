@@ -16,6 +16,8 @@ export function ChooseImportArchivePath():Promise<string>;
 
 export function ChooseRepositoryPath():Promise<string>;
 
+export function ChooseSSHPrivateKeyPath():Promise<string>;
+
 export function DeleteIdentity(arg1:main.DeleteIdentityRequest):Promise<main.IdentityActionResult>;
 
 export function DetectIdentity(arg1:main.IdentityDetectionRequest):Promise<main.IdentityDetectionResult>;

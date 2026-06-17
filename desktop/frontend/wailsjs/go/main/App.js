@@ -30,6 +30,10 @@ export function ChooseRepositoryPath() {
   return window['go']['main']['App']['ChooseRepositoryPath']();
 }
 
+export function ChooseSSHPrivateKeyPath() {
+  return window['go']['main']['App']['ChooseSSHPrivateKeyPath']();
+}
+
 export function DeleteIdentity(arg1) {
   return window['go']['main']['App']['DeleteIdentity'](arg1);
 }

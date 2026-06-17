@@ -297,6 +297,28 @@ func chooseDesktopIdentityPath(ctx context.Context) (string, error) {
 	})
 }
 
+func chooseDesktopSSHPrivateKeyPath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	sshDir, _ := os.UserHomeDir()
+	if sshDir != "" {
+		sshDir = filepath.Join(sshDir, ".ssh")
+		if _, err := os.Stat(sshDir); err != nil {
+			sshDir = ""
+		}
+	}
+
+	return wailsruntime.OpenFileDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title:            "Choose SSH private key",
+		DefaultDirectory: sshDir,
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "SSH private key files", Pattern: "*"},
+		},
+	})
+}
+
 func bindDesktopRepository(request RepoBindingRequest) (*RepoBindingActionResult, error) {
 	cfg, err := loadExistingDesktopConfig()
 	if err != nil {

@@ -206,7 +206,7 @@
 - Title: Automatic Identity Switching
 - Description: Detect repositories and switch identities automatically
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

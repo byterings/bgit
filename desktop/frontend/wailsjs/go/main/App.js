@@ -18,6 +18,10 @@ export function ChooseExportArchivePath() {
   return window['go']['main']['App']['ChooseExportArchivePath']();
 }
 
+export function ChooseIdentityPath() {
+  return window['go']['main']['App']['ChooseIdentityPath']();
+}
+
 export function ChooseImportArchivePath() {
   return window['go']['main']['App']['ChooseImportArchivePath']();
 }
@@ -28,6 +32,10 @@ export function ChooseRepositoryPath() {
 
 export function DeleteIdentity(arg1) {
   return window['go']['main']['App']['DeleteIdentity'](arg1);
+}
+
+export function DetectIdentity(arg1) {
+  return window['go']['main']['App']['DetectIdentity'](arg1);
 }
 
 export function ExportBackup(arg1) {
@@ -56,6 +64,10 @@ export function ListIdentities() {
 
 export function RemoveRepositoryBinding(arg1) {
   return window['go']['main']['App']['RemoveRepositoryBinding'](arg1);
+}
+
+export function SyncDetectedIdentity(arg1) {
+  return window['go']['main']['App']['SyncDetectedIdentity'](arg1);
 }
 
 export function UpdateIdentity(arg1) {

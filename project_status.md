@@ -59,6 +59,12 @@ Recent desktop activation fix:
 
 - Global Git config commands now run from a stable existing directory so desktop identity activation does not fail when the app process current working directory is unavailable.
 
+Recent desktop identity detection update:
+
+- Desktop users can choose a repository or workspace path and see the effective bgit identity resolved from existing workspace, binding, and global identity rules.
+- Desktop shows whether the relevant Git config currently matches the detected identity.
+- Desktop users can sync the detected identity, using repo-local Git config for bound repositories and global Git config for workspace/global identities.
+
 ---
 
 ## Roadmap Alignment
@@ -696,6 +702,40 @@ Why:
 
 ---
 
+### R-019
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added desktop identity detection models and Wails backend methods for choosing a repository/workspace path, detecting the effective identity, and syncing the detected identity.
+- Reused existing core identity resolution rules instead of changing CLI/core resolution behavior.
+- Added an Identity Detection desktop panel that shows detected source, resolved identity, repository path, Git config scope, Git config values, and match status.
+- Added a desktop Sync Identity action that fixes repo-local Git identity for bound repositories and global Git identity for workspace/global resolution.
+
+Why:
+
+- Completes automatic identity switching visibility and correction in the desktop app while preserving existing CLI behavior.
+
+Milestone:
+
+- R-018 and R-019 are now complete, so the v0.9.0 milestone has been reached. Update roadmap/release notes/changelog/version and release a new version before moving to the next milestone.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -717,7 +757,7 @@ None
 
 ## Pending
 
-- R-019 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-020 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

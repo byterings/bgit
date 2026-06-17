@@ -63,6 +63,18 @@ func (a *App) RemoveRepositoryBinding(path string) (*RepoBindingActionResult, er
 	return removeDesktopRepositoryBinding(path)
 }
 
+func (a *App) ChooseIdentityPath() (string, error) {
+	return chooseDesktopIdentityPath(a.ctx)
+}
+
+func (a *App) DetectIdentity(request IdentityDetectionRequest) (*IdentityDetectionResult, error) {
+	return detectDesktopIdentity(request)
+}
+
+func (a *App) SyncDetectedIdentity(request IdentityDetectionRequest) (*IdentityDetectionActionResult, error) {
+	return syncDesktopDetectedIdentity(request)
+}
+
 func (a *App) GetDoctorStatus() (*DoctorStatus, error) {
 	return loadDoctorStatus()
 }

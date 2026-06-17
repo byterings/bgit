@@ -381,6 +381,30 @@
         align-items: end;
         margin-bottom: 16px;
       }
+      .detection-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+      .detection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .detection-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .detection-item span {
+        display: block;
+        margin-bottom: 4px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+      }
       .check-list {
         display: grid;
         gap: 14px;
@@ -485,7 +509,8 @@
         .grid,
         .form-grid,
         .backup-grid,
-        .binding-form {
+        .binding-form,
+        .detection-form {
           grid-template-columns: 1fr;
         }
         .table {
@@ -573,6 +598,8 @@
       let lastExportPath = "";
       let lastImportPath = "";
       let selectedRepoPath = "";
+      let selectedDetectPath = "";
+      let currentDetection = null;
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -834,6 +861,85 @@
         `;
       }
 
+      function identityDetectionPanel(detection = currentDetection) {
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Identity Detection</h2>
+                <p>Check which bgit identity applies to a repository or workspace path.</p>
+              </div>
+            </div>
+            <form id="identityDetectionForm" class="detection-form">
+              <label>
+                Repository or workspace path
+                <input name="path" value="${escapeHtml(selectedDetectPath)}" placeholder="/path/to/repo-or-workspace" required />
+              </label>
+              <button type="button" data-action="choose-detect-path">Choose Path</button>
+              <button type="submit" class="primary">Detect</button>
+            </form>
+            ${identityDetectionDetails(detection)}
+          </section>
+        `;
+      }
+
+      function identityDetectionDetails(detection) {
+        if (!detection) {
+          return `<p class="muted">Choose a path to see the effective identity and Git config state.</p>`;
+        }
+        if (!detection.alias) {
+          return `
+            <div class="warning-note">${escapeHtml(detection.message || "No identity detected for this path.")}</div>
+          `;
+        }
+        const sourceLabel = detection.source === "binding"
+          ? "Bound repository"
+          : detection.source === "workspace"
+            ? "Workspace"
+            : "Global active identity";
+        const matchBadge = detection.gitConfigChecked
+          ? detection.gitMatches
+            ? `<span class="badge good">Git config matches</span>`
+            : `<span class="badge warn">Git config needs sync</span>`
+          : `<span class="badge warn">Git config not checked</span>`;
+        return `
+          <div class="detection-grid">
+            <div class="detection-item">
+              <span>Detected Source</span>
+              <strong>${escapeHtml(sourceLabel)}</strong>
+              ${detection.sourcePath ? `<div class="muted">${escapeHtml(detection.sourcePath)}</div>` : ""}
+            </div>
+            <div class="detection-item">
+              <span>Identity</span>
+              <strong>${escapeHtml(detection.alias)}</strong>
+              <div class="muted">${escapeHtml(detection.email)}</div>
+            </div>
+            <div class="detection-item">
+              <span>Git Config</span>
+              ${matchBadge}
+              <div class="muted">${escapeHtml(detection.gitConfigScope || "unknown")}</div>
+              ${
+                detection.gitConfigChecked
+                  ? `<div class="muted">${escapeHtml(detection.gitName)} &lt;${escapeHtml(detection.gitEmail)}&gt;</div>`
+                  : ""
+              }
+            </div>
+            <div class="detection-item">
+              <span>Repository</span>
+              <code>${escapeHtml(detection.repoRoot || detection.path)}</code>
+            </div>
+          </div>
+          <div class="backup-actions" style="margin-top: 12px">
+            <button
+              type="button"
+              data-action="sync-detected-identity"
+              ${!detection.syncAvailable || detection.gitMatches ? "disabled" : ""}
+            >Sync Identity</button>
+            <span class="muted">${escapeHtml(detection.message || "")}</span>
+          </div>
+        `;
+      }
+
       function doctorPanel(doctor) {
         if (!doctor) {
           return `
@@ -1052,6 +1158,7 @@
             ${activePanel(status)}
             ${addIdentityForm()}
           </div>
+          ${identityDetectionPanel()}
           <section class="panel">
             <h2>Identities</h2>
             ${identityRows(identities)}
@@ -1062,6 +1169,7 @@
         `;
         bindForms();
         bindIdentityActions();
+        bindIdentityDetectionActions();
         bindRepoBindingActions();
         bindBackupActions();
         bindDoctorActions();
@@ -1218,6 +1326,110 @@
             await chooseImportPath(button);
           });
         });
+      }
+
+      function bindIdentityDetectionActions() {
+        const form = document.getElementById("identityDetectionForm");
+        if (form) {
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const path = String(new FormData(form).get("path") || "").trim();
+            selectedDetectPath = path;
+            await detectIdentityPath(path, form);
+          });
+        }
+
+        document.querySelectorAll("[data-action='choose-detect-path']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseIdentityPath(button);
+          });
+        });
+
+        document.querySelectorAll("[data-action='sync-detected-identity']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await syncDetectedIdentity(button);
+          });
+        });
+      }
+
+      async function chooseIdentityPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseIdentityPath();
+          if (path) {
+            selectedDetectPath = path;
+            render(currentStatus, currentDoctor);
+            await detectIdentityPath(path, document.getElementById("identityDetectionForm"));
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose path failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function detectIdentityPath(path, disabledTarget) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return false;
+        }
+        setMessage("");
+        setActionText("Detecting identity");
+        const elements = disabledTarget
+          ? Array.from(disabledTarget.querySelectorAll("button, input, select"))
+          : [];
+        const previousStates = elements.map((element) => ({ element, disabled: element.disabled }));
+        elements.forEach((element) => {
+          element.disabled = true;
+        });
+        try {
+          currentDetection = await api().DetectIdentity({ path });
+          render(currentStatus, currentDoctor);
+          const tone = currentDetection.alias
+            ? currentDetection.gitMatches
+              ? "success"
+              : "warn"
+            : "warn";
+          notify({
+            title: "Identity detected",
+            message: currentDetection.message || "Detection complete.",
+            tone,
+          });
+          return true;
+        } catch (error) {
+          setMessage(actionableError(error), true, "Detection failed");
+          return false;
+        } finally {
+          previousStates.forEach(({ element, disabled }) => {
+            element.disabled = disabled;
+          });
+          setActionText("");
+        }
+      }
+
+      async function syncDetectedIdentity(button) {
+        if (!currentDetection?.path) {
+          setMessage("Detect an identity before syncing.", true, "Detection required");
+          return;
+        }
+        const result = await runAction(
+          () => api().SyncDetectedIdentity({ path: currentDetection.path }),
+          button,
+          "Syncing detected identity",
+        );
+        if (result?.detected) {
+          currentDetection = result.detected;
+          if (result.status) {
+            render(result.status, currentDoctor);
+          } else {
+            render(currentStatus, currentDoctor);
+          }
+        }
       }
 
       function bindRepoBindingActions() {

@@ -325,6 +325,93 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class IdentityDetectionResult {
+	    path: string;
+	    repoRoot?: string;
+	    alias?: string;
+	    source?: string;
+	    sourcePath?: string;
+	    name?: string;
+	    email?: string;
+	    githubUsername?: string;
+	    gitConfigScope?: string;
+	    gitName?: string;
+	    gitEmail?: string;
+	    gitMatches: boolean;
+	    gitConfigChecked: boolean;
+	    syncAvailable: boolean;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.repoRoot = source["repoRoot"];
+	        this.alias = source["alias"];
+	        this.source = source["source"];
+	        this.sourcePath = source["sourcePath"];
+	        this.name = source["name"];
+	        this.email = source["email"];
+	        this.githubUsername = source["githubUsername"];
+	        this.gitConfigScope = source["gitConfigScope"];
+	        this.gitName = source["gitName"];
+	        this.gitEmail = source["gitEmail"];
+	        this.gitMatches = source["gitMatches"];
+	        this.gitConfigChecked = source["gitConfigChecked"];
+	        this.syncAvailable = source["syncAvailable"];
+	        this.message = source["message"];
+	    }
+	}
+	export class IdentityDetectionActionResult {
+	    message: string;
+	    detected?: IdentityDetectionResult;
+	    status?: DesktopStatus;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionActionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.message = source["message"];
+	        this.detected = this.convertValues(source["detected"], IdentityDetectionResult);
+	        this.status = this.convertValues(source["status"], DesktopStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class IdentityDetectionRequest {
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	
 	export class IdentityRequest {
 	    alias: string;
 	    name: string;

@@ -1,6 +1,53 @@
 {
   "releases": [
     {
+      "version": "0.9.0",
+      "date": "2026-06-17",
+      "phase": 9,
+      "summary": "Milestone release completing desktop repository mapping, identity detection, UI polish, structured navigation, and repository-local Git identity cleanup across CLI and desktop flows.",
+      "features": [
+        {
+          "title": "Desktop repository bindings",
+          "description": "Added desktop repository binding management with repository selection, identity assignment, binding updates, and removal actions"
+        },
+        {
+          "title": "Desktop identity detection and sync",
+          "description": "Added desktop identity detection for repository and workspace paths, showing the effective bgit identity and allowing Git config sync from the UI"
+        },
+        {
+          "title": "Desktop interaction polish",
+          "description": "Improved desktop spacing, alignment, copy actions, truncation, active-state highlighting, hover states, and smoother refresh behavior without changing backend logic"
+        },
+        {
+          "title": "Desktop structured navigation",
+          "description": "Reorganized the desktop app into dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages with sticky sidebar navigation"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Repo-local Git identity consistency",
+          "description": "Bound repositories are now re-synced on identity activation and update, binding removal clears stale local Git identity, and deleting an identity removes dependent bindings/workspaces and clears affected repositories"
+        },
+        {
+          "title": "Scriptable confirmation flows",
+          "description": "CLI yes/no confirmation prompts now accept non-TTY input so automated validation and scripted flows work reliably"
+        },
+        {
+          "title": "Desktop binding cleanup parity",
+          "description": "Desktop binding removal and identity deletion now follow the same repository-local Git cleanup behavior as the CLI"
+        },
+        {
+          "title": "Desktop identity workflow clarity",
+          "description": "Desktop add/view flows now show SSH public keys directly and guide users to add generated keys to GitHub"
+        },
+        {
+          "title": "Desktop doctor and responsive cleanup",
+          "description": "Doctor page duplication was removed and desktop layouts were tightened for smaller window sizes"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.8.0",
       "date": "2026-06-10",
       "phase": 8,

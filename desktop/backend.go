@@ -220,6 +220,9 @@ func updateDesktopIdentity(request UpdateIdentityRequest) (*IdentityActionResult
 	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		return nil, err
 	}
+	if err := syncBoundRepositoriesForAlias(cfg, alias); err != nil {
+		return nil, err
+	}
 
 	return actionResult(fmt.Sprintf("Identity '%s' updated", alias))
 }
@@ -239,7 +242,28 @@ func activateDesktopIdentity(alias string) (*IdentityActionResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := syncBoundRepositoriesForAlias(cfg, result.User.Alias); err != nil {
+		return nil, err
+	}
 	return actionResult(fmt.Sprintf("Identity '%s' activated", result.User.Alias))
+}
+
+func syncBoundRepositoriesForAlias(cfg *config.Config, alias string) error {
+	user := cfg.FindUserByAlias(alias)
+	if user == nil {
+		return fmt.Errorf("identity '%s' not found", alias)
+	}
+
+	for _, binding := range cfg.GetBindings() {
+		if binding.User != alias {
+			continue
+		}
+		if err := git.SetLocalUser(binding.Path, user.Name, user.Email); err != nil {
+			return fmt.Errorf("failed to sync repository git identity for '%s': %w", binding.Path, err)
+		}
+	}
+
+	return nil
 }
 
 func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult, error) {
@@ -263,6 +287,11 @@ func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult
 	if err != nil {
 		return nil, err
 	}
+	for _, repoPath := range result.RemovedBindings {
+		if err := git.UnsetLocalUser(repoPath); err != nil {
+			return nil, fmt.Errorf("failed to clear repository Git identity for '%s': %w", repoPath, err)
+		}
+	}
 
 	if request.DeleteKeys && sshKeyPath != "" {
 		if err := removeIdentityKeyFiles(sshKeyPath); err != nil {
@@ -273,6 +302,12 @@ func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult
 	message := fmt.Sprintf("Identity '%s' deleted", result.User.Alias)
 	if result.ActiveCleared {
 		message += "; active identity cleared"
+	}
+	if len(result.RemovedBindings) > 0 {
+		message += fmt.Sprintf("; removed %d binding(s)", len(result.RemovedBindings))
+	}
+	if len(result.RemovedWorkspaces) > 0 {
+		message += fmt.Sprintf("; removed %d workspace binding(s)", len(result.RemovedWorkspaces))
 	}
 	return actionResult(message)
 }
@@ -374,7 +409,28 @@ func removeDesktopRepositoryBinding(path string) (*RepoBindingActionResult, erro
 	if result.Binding == nil {
 		return repoBindingActionResult("No binding found for this repository", repoRoot)
 	}
-	return repoBindingActionResult(fmt.Sprintf("Removed binding for '%s'", result.Binding.User), repoRoot)
+	if err := restoreDesktopRepoGitIdentity(cfg, repoRoot); err != nil {
+		return nil, err
+	}
+	message := fmt.Sprintf("Removed binding for '%s'; repository local Git identity cleared", result.Binding.User)
+	if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceWorkspace {
+		message += fmt.Sprintf("; bgit still resolves workspace identity '%s' here", resolution.Alias)
+	}
+	return repoBindingActionResult(message, repoRoot)
+}
+
+func restoreDesktopRepoGitIdentity(cfg *config.Config, repoRoot string) error {
+	if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceBinding && resolution.User != nil {
+		if err := git.SetLocalUser(repoRoot, resolution.User.Name, resolution.User.Email); err != nil {
+			return fmt.Errorf("failed to restore repository Git identity: %w", err)
+		}
+		return nil
+	}
+
+	if err := git.UnsetLocalUser(repoRoot); err != nil {
+		return fmt.Errorf("failed to clear repository Git identity: %w", err)
+	}
+	return nil
 }
 
 func normalizeDesktopRepoPath(path string) (string, error) {

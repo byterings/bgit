@@ -94,6 +94,22 @@ func PromptExistingKeyPath() (string, error) {
 
 // PromptConfirmation prompts for yes/no confirmation
 func PromptConfirmation(message string) (bool, error) {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Fprintf(os.Stderr, "%s (y/N) ", message)
+		value, err := nonTTYSecretReader.ReadString('\n')
+		if err != nil {
+			return false, err
+		}
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "y", "yes":
+			return true, nil
+		case "", "n", "no":
+			return false, nil
+		default:
+			return false, fmt.Errorf("invalid confirmation response")
+		}
+	}
+
 	var confirmed bool
 	prompt := &survey.Confirm{
 		Message: message,

@@ -24,6 +24,10 @@ Recent fix:
 - Bound repositories now write and validate repo-local Git `user.name` and `user.email` for the bound identity.
 - `bgit check` validates the effective Git identity for the repository, so a bound repo can pass even when the global active user differs, provided the repo-local Git identity matches the binding.
 - `bgit sync --fix` repairs repo-local Git identity for bound repositories.
+- `bgit use` now re-syncs repo-local Git identity for repositories already bound to the activated alias, so stale bound repos are repaired during normal CLI identity switches.
+- Removing a binding now clears stale repo-local Git identity so the repository no longer keeps committing as the old bound user.
+- Deleting an identity now automatically removes its dependent repo bindings and workspace bindings, and clears repo-local Git identity from the affected repositories.
+- CLI confirmation prompts now accept non-TTY yes/no input, so scripted validation can cover delete, remote, check, and sync confirmation flows reliably.
 
 Recent desktop update:
 
@@ -54,6 +58,7 @@ Recent desktop repo binding update:
 - Desktop users can choose or enter a local Git repository path and bind it to an identity.
 - Desktop repository binding uses the existing core repo binding flow and writes repo-local Git identity settings for the selected identity.
 - Desktop users can change or remove existing repository bindings with in-app confirmation.
+- Desktop activation and identity update flows now resync repo-local Git identity for repositories bound to the affected alias, so bound repositories keep using their bound commit identity even when the global active user differs.
 
 Recent desktop activation fix:
 

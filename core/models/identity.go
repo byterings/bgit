@@ -19,8 +19,10 @@ type Resolution struct {
 
 // DeleteResult describes the result of removing an identity.
 type DeleteResult struct {
-	User          User
-	ActiveCleared bool
+	User              User
+	ActiveCleared     bool
+	RemovedBindings   []string
+	RemovedWorkspaces []string
 }
 
 // ActivateResult describes the result of switching identities.

@@ -33,6 +33,17 @@ func SetLocalUser(repoPath, name, email string) error {
 	return nil
 }
 
+// UnsetLocalUser removes local Git user name and email from a specific repository.
+func UnsetLocalUser(repoPath string) error {
+	if err := unsetGitConfigInRepo(repoPath, "user.name"); err != nil {
+		return fmt.Errorf("failed to unset local git user.name: %w", err)
+	}
+	if err := unsetGitConfigInRepo(repoPath, "user.email"); err != nil {
+		return fmt.Errorf("failed to unset local git user.email: %w", err)
+	}
+	return nil
+}
+
 // GetGlobalUser returns the current global Git user name and email
 func GetGlobalUser() (name, email string, err error) {
 	name, err = getGitConfig("user.name")
@@ -78,6 +89,21 @@ func runGitConfigInRepo(repoPath, scope, key, value string) error {
 	cmd := exec.Command("git", "-C", repoPath, "config", scope, key, value)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		return fmt.Errorf("git config failed: %s: %w", string(output), err)
+	}
+	return nil
+}
+
+func unsetGitConfigInRepo(repoPath, key string) error {
+	cmd := exec.Command("git", "-C", repoPath, "config", "--local", "--unset", key)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 5 {
+			return nil
+		}
+		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
+			return nil
+		}
 		return fmt.Errorf("git config failed: %s: %w", string(output), err)
 	}
 	return nil

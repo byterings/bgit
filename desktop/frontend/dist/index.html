@@ -2526,12 +2526,18 @@
             }
             if (button.dataset.action === "delete") {
               const identity = findIdentity(alias);
+              const bindingCount = (currentStatus?.bindings || []).filter((binding) => binding.alias === alias).length;
+              const cleanupWarning = [
+                bindingCount > 0 ? `${bindingCount} repository binding(s) for this identity will be removed.` : "",
+                "Any workspace bindings for this identity will also be removed.",
+                identity?.sshKeyPath ? "SSH key files will be kept unless you choose to delete them in the next step." : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
               const confirmed = await confirmAction({
                 title: "Delete Identity",
                 message: `Delete identity '${alias}' from bgit? This removes the profile from bgit configuration.`,
-                warning: identity?.sshKeyPath
-                  ? "SSH key files will be kept unless you choose to delete them in the next step."
-                  : "",
+                warning: cleanupWarning,
                 acceptLabel: "Delete",
                 danger: true,
               });

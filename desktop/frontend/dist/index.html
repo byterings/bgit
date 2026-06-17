@@ -71,12 +71,20 @@
         border-color: transparent;
         background: transparent;
         color: #cbd5e1;
+        transition:
+          background-color 180ms ease,
+          color 180ms ease,
+          border-color 180ms ease,
+          transform 180ms ease;
       }
       .nav button:hover,
       .nav button.active {
         border-color: rgb(148 163 184 / 0.24);
         background: rgb(255 255 255 / 0.08);
         color: #ffffff;
+      }
+      .nav button:hover {
+        transform: translateX(2px);
       }
       .content-shell {
         height: 100vh;
@@ -137,6 +145,19 @@
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+      }
+      .page-view {
+        animation: page-in 220ms ease-out;
+      }
+      @keyframes page-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       header,
       .section-heading,
@@ -287,14 +308,19 @@
       }
       .identity-card {
         display: grid;
-        gap: 12px;
+        gap: 10px;
         border: 1px solid var(--border-soft);
         border-radius: var(--radius);
-        padding: 14px;
+        padding: 16px;
         transition:
           border-color 160ms ease,
           box-shadow 160ms ease,
-          background-color 160ms ease;
+          background-color 160ms ease,
+          transform 160ms ease;
+      }
+      .identity-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
       }
       .identity-card.active {
         border-color: #86efac;
@@ -306,6 +332,23 @@
         justify-content: space-between;
         gap: 10px;
         align-items: center;
+      }
+      .identity-meta {
+        display: grid;
+        gap: 6px;
+      }
+      details.compact-details {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 8px;
+      }
+      details.compact-details summary {
+        cursor: pointer;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      details.compact-details summary:hover {
+        color: #172033;
       }
       .form-grid {
         display: grid;
@@ -958,6 +1001,7 @@
       let selectedDetectPath = "";
       let currentDetection = null;
       let currentPage = "dashboard";
+      let lastRenderedPage = "";
       const pages = [
         { id: "dashboard", label: "Dashboard", icon: "dashboard" },
         { id: "identities", label: "Identities", icon: "users" },
@@ -1098,10 +1142,18 @@
           .join("");
         nav.querySelectorAll("[data-page]").forEach((button) => {
           button.addEventListener("click", () => {
-            currentPage = button.dataset.page || "dashboard";
+            setCurrentPage(button.dataset.page || "dashboard");
             render(currentStatus, currentDoctor);
           });
         });
+      }
+
+      function setCurrentPage(page) {
+        if (currentPage === page) {
+          return false;
+        }
+        currentPage = page;
+        return true;
       }
 
       function renderTopbar(status, doctor) {
@@ -1601,8 +1653,14 @@
                       </div>
                       ${identity.active ? `<span class="badge active">Active</span>` : statusBadge(identity.sshKeyStatus)}
                     </div>
-                    <div class="muted truncate" title="${escapeHtml(identity.githubUsername)}">GitHub: ${escapeHtml(identity.githubUsername)}</div>
-                    ${publicKeyBlock(identity)}
+                    <div class="identity-meta">
+                      <div class="muted truncate" title="${escapeHtml(identity.githubUsername)}">GitHub: ${escapeHtml(identity.githubUsername)}</div>
+                      <div>${statusBadge(identity.sshKeyStatus)}</div>
+                    </div>
+                    <details class="compact-details">
+                      <summary>SSH public key</summary>
+                      <div style="margin-top: 10px">${publicKeyBlock(identity)}</div>
+                    </details>
                     <div class="actions">
                       ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
                       ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
@@ -1627,7 +1685,7 @@
           : "Not checked";
         return `
           ${pageHeading("Dashboard", "A quick view of identity, repository, backup, and health status.")}
-          <section class="panel summary">
+          <section class="summary">
             <div class="metric"><span>Identities</span><strong>${status.identityCount || 0}</strong></div>
             <div class="metric"><span>Repository Bindings</span><strong>${status.bindingCount || 0}</strong></div>
             <div class="metric"><span>Backup Status</span><strong>${lastExportPath || lastImportPath ? "Recent" : "Ready"}</strong></div>
@@ -1650,7 +1708,6 @@
               </div>
             </section>
           </div>
-          ${identityDetectionPanel()}
         `;
       }
 
@@ -1706,7 +1763,8 @@
 
       function render(status, doctor = currentDoctor) {
         const shell = document.getElementById("contentShell");
-        const previousScrollY = shell ? shell.scrollTop : window.scrollY;
+        const pageChanged = lastRenderedPage !== "" && lastRenderedPage !== currentPage;
+        const previousScrollY = pageChanged ? 0 : shell ? shell.scrollTop : window.scrollY;
         currentStatus = status;
         currentDoctor = doctor;
         const target = document.getElementById("app");
@@ -1714,7 +1772,8 @@
         target.className = "";
         renderNavigation();
         renderTopbar(status, doctor);
-        target.innerHTML = currentPageContent(status, doctor);
+        target.innerHTML = `<div class="page-view">${currentPageContent(status, doctor)}</div>`;
+        lastRenderedPage = currentPage;
         bindForms();
         bindIdentityActions();
         bindIdentityDetectionActions();
@@ -1777,7 +1836,7 @@
         });
         document.querySelectorAll("[data-page-jump]").forEach((button) => {
           button.addEventListener("click", () => {
-            currentPage = button.dataset.pageJump || "dashboard";
+            setCurrentPage(button.dataset.pageJump || "dashboard");
             render(currentStatus, currentDoctor);
           });
         });

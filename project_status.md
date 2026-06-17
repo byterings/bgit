@@ -77,6 +77,7 @@ Recent desktop navigation update:
 - Desktop UI is organized into a sticky sidebar shell with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages.
 - Active identity and quick health indicators are shown in a persistent top area while module content scrolls independently.
 - Add Identity now opens in a modal instead of being permanently displayed on the page.
+- Navigation refinements added page transition animation, cleaner page scroll behavior, and simplified identity cards with secondary SSH key details behind a compact disclosure.
 
 ---
 
@@ -798,6 +799,8 @@ What Changed:
 - Added a persistent top area that shows active identity details, identity/binding counts, doctor health status, and refresh action.
 - Moved Add Identity into a modal/popup form instead of showing it permanently.
 - Added dashboard quick actions and kept existing identity detection, repository binding, backup/import, and doctor functionality available through dedicated pages.
+- Refined page switching with smooth content transitions, cleaner scroll reset on navigation, and preserved scroll behavior for data refreshes.
+- Reduced identity card density by showing core identity details first and moving SSH public key details into a compact expandable section.
 
 Why:
 

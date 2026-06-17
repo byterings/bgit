@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-17 (Phase 9)
+
+Milestone release completing desktop repository mapping, identity detection, UI polish, structured navigation, and repository-local Git identity cleanup across CLI and desktop flows.
+
+### Added
+- **Desktop repository bindings** - Added desktop repository binding management with repository selection, identity assignment, binding updates, and removal actions
+- **Desktop identity detection and sync** - Added desktop identity detection for repository and workspace paths, showing the effective bgit identity and allowing Git config sync from the UI
+- **Desktop interaction polish** - Improved desktop spacing, alignment, copy actions, truncation, active-state highlighting, hover states, and smoother refresh behavior without changing backend logic
+- **Desktop structured navigation** - Reorganized the desktop app into dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages with sticky sidebar navigation
+
+### Fixed
+- **Repo-local Git identity consistency** - Bound repositories are now re-synced on identity activation and update, binding removal clears stale local Git identity, and deleting an identity removes dependent bindings/workspaces and clears affected repositories
+- **Scriptable confirmation flows** - CLI yes/no confirmation prompts now accept non-TTY input so automated validation and scripted flows work reliably
+- **Desktop binding cleanup parity** - Desktop binding removal and identity deletion now follow the same repository-local Git cleanup behavior as the CLI
+- **Desktop identity workflow clarity** - Desktop add/view flows now show SSH public keys directly and guide users to add generated keys to GitHub
+- **Desktop doctor and responsive cleanup** - Doctor page duplication was removed and desktop layouts were tightened for smaller window sizes
+
 ## [0.8.0] - 2026-06-10 (Phase 8)
 
 Milestone release expanding the desktop app with native feedback, encrypted backup and restore, SSH public key copy support, and GitHub avatar identity cards.
@@ -166,4 +183,3 @@ Initial release with core identity management features.
 - **Configuration sync** - Validate and sync bgit configuration (`bgit sync`)
 - **Safe uninstall** - Safely uninstall bgit and restore all repositories (`bgit uninstall`)
 - **Cross-platform support** - Works on Linux, macOS, and Windows
-

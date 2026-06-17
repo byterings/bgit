@@ -197,7 +197,7 @@
 - Title: Repo Identity Mapping
 - Description: Add repository-to-identity binding and management
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

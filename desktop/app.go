@@ -51,6 +51,18 @@ func (a *App) DeleteIdentity(request DeleteIdentityRequest) (*IdentityActionResu
 	return deleteDesktopIdentity(request)
 }
 
+func (a *App) ChooseRepositoryPath() (string, error) {
+	return chooseDesktopRepositoryPath(a.ctx)
+}
+
+func (a *App) BindRepository(request RepoBindingRequest) (*RepoBindingActionResult, error) {
+	return bindDesktopRepository(request)
+}
+
+func (a *App) RemoveRepositoryBinding(path string) (*RepoBindingActionResult, error) {
+	return removeDesktopRepositoryBinding(path)
+}
+
 func (a *App) GetDoctorStatus() (*DoctorStatus, error) {
 	return loadDoctorStatus()
 }

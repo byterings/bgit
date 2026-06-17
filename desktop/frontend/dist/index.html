@@ -49,7 +49,8 @@
         color: #526071;
       }
       button,
-      input {
+      input,
+      select {
         border: 1px solid #cbd5e1;
         border-radius: 8px;
         background: #ffffff;
@@ -79,6 +80,10 @@
         background: #334155;
       }
       input {
+        width: 100%;
+        padding: 0 10px;
+      }
+      select {
         width: 100%;
         padding: 0 10px;
       }
@@ -158,7 +163,8 @@
         align-items: center;
       }
       .backup-path,
-      .backup-summary {
+      .backup-summary,
+      .repo-path {
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         background: #f8fafc;
@@ -368,6 +374,13 @@
         flex-wrap: wrap;
         gap: 8px;
       }
+      .binding-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) auto auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
       .check-list {
         display: grid;
         gap: 14px;
@@ -471,7 +484,8 @@
         }
         .grid,
         .form-grid,
-        .backup-grid {
+        .backup-grid,
+        .binding-form {
           grid-template-columns: 1fr;
         }
         .table {
@@ -558,6 +572,7 @@
       let toastCounter = 0;
       let lastExportPath = "";
       let lastImportPath = "";
+      let selectedRepoPath = "";
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -737,6 +752,85 @@
               </form>
             </div>
           </section>
+        `;
+      }
+
+      function repoBindingPanel(status) {
+        const identities = status.identities || [];
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Repository Bindings</h2>
+                <p>Pin local Git repositories to the identity they must use.</p>
+              </div>
+            </div>
+            <form id="repoBindingForm" class="binding-form">
+              <label>
+                Repository path
+                <input name="path" value="${escapeHtml(selectedRepoPath)}" placeholder="/path/to/git/repo" required />
+              </label>
+              <label>
+                Identity
+                <select name="alias" required ${identities.length === 0 ? "disabled" : ""}>
+                  <option value="">Select identity</option>
+                  ${identities
+                    .map(
+                      (identity) =>
+                        `<option value="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </label>
+              <button type="button" data-action="choose-repo">Choose Repo</button>
+              <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>Bind</button>
+            </form>
+            ${repoBindingRows(status.bindings || [])}
+          </section>
+        `;
+      }
+
+      function repoBindingRows(bindings) {
+        if (bindings.length === 0) {
+          return `<div class="empty"><p>No repository bindings configured.</p></div>`;
+        }
+        return `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Identity</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${bindings
+                .map(
+                  (binding) => `
+                    <tr>
+                      <td><code class="repo-path">${escapeHtml(binding.path)}</code></td>
+                      <td>
+                        <strong>${escapeHtml(binding.alias)}</strong>
+                        ${
+                          binding.missingIdentity
+                            ? ""
+                            : `<div class="muted">${escapeHtml(binding.name)} · ${escapeHtml(binding.email)}</div>`
+                        }
+                      </td>
+                      <td>${binding.missingIdentity ? `<span class="badge warn">Identity missing</span>` : `<span class="badge good">Ready</span>`}</td>
+                      <td>
+                        <div class="actions">
+                          <button type="button" data-action="edit-binding" data-path="${escapeHtml(binding.path)}" data-alias="${escapeHtml(binding.alias)}">Change</button>
+                          <button class="danger" type="button" data-action="remove-binding" data-path="${escapeHtml(binding.path)}" data-alias="${escapeHtml(binding.alias)}">Remove</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `,
+                )
+                .join("")}
+            </tbody>
+          </table>
         `;
       }
 
@@ -936,10 +1030,12 @@
             <section class="panel empty"><p>bgit is not configured on this machine.</p></section>
             ${addIdentityForm()}
             ${backupPanel()}
+            ${repoBindingPanel(status)}
             ${doctorPanel(doctor)}
           `;
           bindForms();
           bindBackupActions();
+          bindRepoBindingActions();
           bindDoctorActions();
           return;
         }
@@ -960,11 +1056,13 @@
             <h2>Identities</h2>
             ${identityRows(identities)}
           </section>
+          ${repoBindingPanel(status)}
           ${backupPanel()}
           ${doctorPanel(doctor)}
         `;
         bindForms();
         bindIdentityActions();
+        bindRepoBindingActions();
         bindBackupActions();
         bindDoctorActions();
       }
@@ -1120,6 +1218,83 @@
             await chooseImportPath(button);
           });
         });
+      }
+
+      function bindRepoBindingActions() {
+        const form = document.getElementById("repoBindingForm");
+        if (form) {
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const payload = repoBindingPayload(form);
+            selectedRepoPath = payload.path;
+            await runAction(() => api().BindRepository(payload), form, "Binding repository");
+          });
+        }
+
+        document.querySelectorAll("[data-action='choose-repo']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseRepositoryPath(button);
+          });
+        });
+
+        document.querySelectorAll("[data-action='edit-binding']").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedRepoPath = button.dataset.path || "";
+            render(currentStatus, currentDoctor);
+            const form = document.getElementById("repoBindingForm");
+            if (form) {
+              form.elements.path.value = selectedRepoPath;
+              form.elements.alias.value = button.dataset.alias || "";
+              form.elements.path.focus();
+            }
+          });
+        });
+
+        document.querySelectorAll("[data-action='remove-binding']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const path = button.dataset.path || "";
+            const alias = button.dataset.alias || "";
+            const confirmed = await confirmAction({
+              title: "Remove Repository Binding",
+              message: `Remove the binding between this repository and '${alias}'?`,
+              warning: "The repository will fall back to workspace identity or the global active identity.",
+              acceptLabel: "Remove",
+              danger: true,
+            });
+            if (!confirmed) {
+              return;
+            }
+            await runAction(() => api().RemoveRepositoryBinding(path), button, "Removing repository binding");
+          });
+        });
+      }
+
+      function repoBindingPayload(form) {
+        const data = new FormData(form);
+        return {
+          path: String(data.get("path") || "").trim(),
+          alias: String(data.get("alias") || "").trim(),
+        };
+      }
+
+      async function chooseRepositoryPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseRepositoryPath();
+          if (path) {
+            selectedRepoPath = path;
+            render(currentStatus, currentDoctor);
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose repository failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
       }
 
       async function chooseExportPath(button) {

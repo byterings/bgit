@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -65,6 +66,7 @@ func GetUserForRepo(repoPath string) (name, email string, err error) {
 // runGitConfig runs git config --global to set a value
 func runGitConfig(key, value string) error {
 	cmd := exec.Command("git", "config", "--global", key, value)
+	setStableCommandDir(cmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git config failed: %s: %w", string(output), err)
@@ -84,6 +86,7 @@ func runGitConfigInRepo(repoPath, scope, key, value string) error {
 // getGitConfig gets a git config value
 func getGitConfig(key string) (string, error) {
 	cmd := exec.Command("git", "config", "--global", "--get", key)
+	setStableCommandDir(cmd)
 	output, err := cmd.Output()
 	if err != nil {
 		// If key doesn't exist, return empty string
@@ -110,5 +113,17 @@ func getGitConfigInRepo(repoPath, key string) (string, error) {
 // IsGitInstalled checks if git is installed
 func IsGitInstalled() bool {
 	cmd := exec.Command("git", "--version")
+	setStableCommandDir(cmd)
 	return cmd.Run() == nil
+}
+
+func setStableCommandDir(cmd *exec.Cmd) {
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		if info, statErr := os.Stat(home); statErr == nil && info.IsDir() {
+			cmd.Dir = home
+			return
+		}
+	}
+	cmd.Dir = string(os.PathSeparator)
 }

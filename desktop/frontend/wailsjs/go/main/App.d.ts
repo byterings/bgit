@@ -6,9 +6,13 @@ export function ActivateIdentity(arg1:string):Promise<main.IdentityActionResult>
 
 export function AddIdentity(arg1:main.IdentityRequest):Promise<main.IdentityActionResult>;
 
+export function BindRepository(arg1:main.RepoBindingRequest):Promise<main.RepoBindingActionResult>;
+
 export function ChooseExportArchivePath():Promise<string>;
 
 export function ChooseImportArchivePath():Promise<string>;
+
+export function ChooseRepositoryPath():Promise<string>;
 
 export function DeleteIdentity(arg1:main.DeleteIdentityRequest):Promise<main.IdentityActionResult>;
 
@@ -23,5 +27,7 @@ export function GetStatus():Promise<main.DesktopStatus>;
 export function ImportBackup(arg1:main.BackupImportRequest):Promise<main.BackupActionResult>;
 
 export function ListIdentities():Promise<Array<main.IdentityView>>;
+
+export function RemoveRepositoryBinding(arg1:string):Promise<main.RepoBindingActionResult>;
 
 export function UpdateIdentity(arg1:main.UpdateIdentityRequest):Promise<main.IdentityActionResult>;

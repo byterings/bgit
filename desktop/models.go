@@ -8,6 +8,7 @@ type DesktopStatus struct {
 	WorkspaceCount    int                    `json:"workspaceCount"`
 	BindingCount      int                    `json:"bindingCount"`
 	Identities        []IdentityView         `json:"identities"`
+	Bindings          []RepoBindingView      `json:"bindings"`
 	ActiveIdentity    *IdentityView          `json:"activeIdentity,omitempty"`
 	EffectiveIdentity *EffectiveIdentityView `json:"effectiveIdentity,omitempty"`
 }
@@ -29,6 +30,15 @@ type EffectiveIdentityView struct {
 	Alias  string `json:"alias"`
 	Source string `json:"source"`
 	Path   string `json:"path,omitempty"`
+}
+
+type RepoBindingView struct {
+	Path            string `json:"path"`
+	Alias           string `json:"alias"`
+	Name            string `json:"name,omitempty"`
+	Email           string `json:"email,omitempty"`
+	GitHubUsername  string `json:"githubUsername,omitempty"`
+	MissingIdentity bool   `json:"missingIdentity"`
 }
 
 type IdentityRequest struct {
@@ -55,6 +65,17 @@ type DeleteIdentityRequest struct {
 
 type IdentityActionResult struct {
 	Message string         `json:"message"`
+	Status  *DesktopStatus `json:"status"`
+}
+
+type RepoBindingRequest struct {
+	Path  string `json:"path"`
+	Alias string `json:"alias"`
+}
+
+type RepoBindingActionResult struct {
+	Message string         `json:"message"`
+	Path    string         `json:"path,omitempty"`
 	Status  *DesktopStatus `json:"status"`
 }
 

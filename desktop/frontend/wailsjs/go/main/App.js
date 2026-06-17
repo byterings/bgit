@@ -10,12 +10,20 @@ export function AddIdentity(arg1) {
   return window['go']['main']['App']['AddIdentity'](arg1);
 }
 
+export function BindRepository(arg1) {
+  return window['go']['main']['App']['BindRepository'](arg1);
+}
+
 export function ChooseExportArchivePath() {
   return window['go']['main']['App']['ChooseExportArchivePath']();
 }
 
 export function ChooseImportArchivePath() {
   return window['go']['main']['App']['ChooseImportArchivePath']();
+}
+
+export function ChooseRepositoryPath() {
+  return window['go']['main']['App']['ChooseRepositoryPath']();
 }
 
 export function DeleteIdentity(arg1) {
@@ -44,6 +52,10 @@ export function ImportBackup(arg1) {
 
 export function ListIdentities() {
   return window['go']['main']['App']['ListIdentities']();
+}
+
+export function RemoveRepositoryBinding(arg1) {
+  return window['go']['main']['App']['RemoveRepositoryBinding'](arg1);
 }
 
 export function UpdateIdentity(arg1) {

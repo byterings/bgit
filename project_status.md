@@ -48,6 +48,17 @@ Recent desktop avatar update:
 - Desktop identity rows now show GitHub avatars derived from each configured GitHub username.
 - Avatar rendering uses direct GitHub avatar URLs and initials fallback, without adding GitHub API calls or tokens.
 
+Recent desktop repo binding update:
+
+- Desktop users can view configured repository bindings.
+- Desktop users can choose or enter a local Git repository path and bind it to an identity.
+- Desktop repository binding uses the existing core repo binding flow and writes repo-local Git identity settings for the selected identity.
+- Desktop users can change or remove existing repository bindings with in-app confirmation.
+
+Recent desktop activation fix:
+
+- Global Git config commands now run from a stable existing directory so desktop identity activation does not fail when the app process current working directory is unavailable.
+
 ---
 
 ## Roadmap Alignment
@@ -655,6 +666,36 @@ Why:
 
 ---
 
+### R-018
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added desktop repository binding models, status rows, and action results.
+- Added Wails backend methods to choose a repository directory, bind a repository to an identity, and remove a repository binding.
+- Reused the existing core repo binding implementation and refreshed repo-local Git `user.name` and `user.email` when binding through the desktop app.
+- Added a Repository Bindings desktop panel with path entry, directory picker, identity selector, binding list, change action, and remove confirmation.
+
+Why:
+
+- Completes desktop repository-to-identity mapping while preserving existing CLI behavior and core repo ownership.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -676,7 +717,7 @@ None
 
 ## Pending
 
-- R-016 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-019 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

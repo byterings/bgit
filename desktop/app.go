@@ -51,6 +51,34 @@ func (a *App) DeleteIdentity(request DeleteIdentityRequest) (*IdentityActionResu
 	return deleteDesktopIdentity(request)
 }
 
+func (a *App) ChooseRepositoryPath() (string, error) {
+	return chooseDesktopRepositoryPath(a.ctx)
+}
+
+func (a *App) BindRepository(request RepoBindingRequest) (*RepoBindingActionResult, error) {
+	return bindDesktopRepository(request)
+}
+
+func (a *App) RemoveRepositoryBinding(path string) (*RepoBindingActionResult, error) {
+	return removeDesktopRepositoryBinding(path)
+}
+
+func (a *App) ChooseIdentityPath() (string, error) {
+	return chooseDesktopIdentityPath(a.ctx)
+}
+
+func (a *App) ChooseSSHPrivateKeyPath() (string, error) {
+	return chooseDesktopSSHPrivateKeyPath(a.ctx)
+}
+
+func (a *App) DetectIdentity(request IdentityDetectionRequest) (*IdentityDetectionResult, error) {
+	return detectDesktopIdentity(request)
+}
+
+func (a *App) SyncDetectedIdentity(request IdentityDetectionRequest) (*IdentityDetectionActionResult, error) {
+	return syncDesktopDetectedIdentity(request)
+}
+
 func (a *App) GetDoctorStatus() (*DoctorStatus, error) {
 	return loadDoctorStatus()
 }

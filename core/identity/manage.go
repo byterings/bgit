@@ -83,6 +83,26 @@ func DeleteUser(cfg *config.Config, identifier string) (*DeleteResult, error) {
 	}
 	cfg.Users = newUsers
 
+	newBindings := make([]config.Binding, 0, len(cfg.Bindings))
+	for _, binding := range cfg.Bindings {
+		if binding.User == user.Alias {
+			result.RemovedBindings = append(result.RemovedBindings, binding.Path)
+			continue
+		}
+		newBindings = append(newBindings, binding)
+	}
+	cfg.Bindings = newBindings
+
+	newWorkspaces := make([]config.Workspace, 0, len(cfg.Workspaces))
+	for _, workspace := range cfg.Workspaces {
+		if workspace.User == user.Alias {
+			result.RemovedWorkspaces = append(result.RemovedWorkspaces, workspace.Path)
+			continue
+		}
+		newWorkspaces = append(newWorkspaces, workspace)
+	}
+	cfg.Workspaces = newWorkspaces
+
 	if cfg.ActiveUser == user.Alias {
 		cfg.ActiveUser = ""
 		result.ActiveCleared = true

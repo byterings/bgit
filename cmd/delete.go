@@ -6,6 +6,7 @@ import (
 
 	"github.com/byterings/bgit/core/config"
 	coreidentity "github.com/byterings/bgit/core/identity"
+	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +42,31 @@ func runDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("user '%s' not found", identifier)
 	}
 
-	confirmed, err := ui.PromptConfirmation(fmt.Sprintf("Delete user '%s' (%s)?", user.Alias, user.Email))
+	bindingCount := 0
+	for _, binding := range cfg.GetBindings() {
+		if binding.User == user.Alias {
+			bindingCount++
+		}
+	}
+	workspaceCount := 0
+	for _, workspace := range cfg.GetWorkspaces() {
+		if workspace.User == user.Alias {
+			workspaceCount++
+		}
+	}
+
+	prompt := fmt.Sprintf("Delete user '%s' (%s)?", user.Alias, user.Email)
+	if bindingCount > 0 || workspaceCount > 0 {
+		prompt = fmt.Sprintf(
+			"Delete user '%s' (%s)? This will also remove %d binding(s) and %d workspace binding(s).",
+			user.Alias,
+			user.Email,
+			bindingCount,
+			workspaceCount,
+		)
+	}
+
+	confirmed, err := ui.PromptConfirmation(prompt)
 	if err != nil {
 		return err
 	}
@@ -66,6 +91,17 @@ func runDelete(cmd *cobra.Command, args []string) error {
 
 	if result.ActiveCleared {
 		ui.Info("Active user cleared")
+	}
+	for _, repoPath := range result.RemovedBindings {
+		if err := git.UnsetLocalUser(repoPath); err != nil {
+			ui.Warning(fmt.Sprintf("Could not clear repository Git identity for %s: %v", repoPath, err))
+		}
+	}
+	if len(result.RemovedBindings) > 0 {
+		ui.Warning(fmt.Sprintf("Removed %d binding(s) for '%s'", len(result.RemovedBindings), user.Alias))
+	}
+	if len(result.RemovedWorkspaces) > 0 {
+		ui.Warning(fmt.Sprintf("Removed %d workspace binding(s) for '%s'", len(result.RemovedWorkspaces), user.Alias))
 	}
 
 	if deleteKeys && user.SSHKeyPath != "" {

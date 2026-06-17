@@ -13,6 +13,7 @@ import (
 	"github.com/byterings/bgit/core/config"
 	coreexport "github.com/byterings/bgit/core/export"
 	coreidentity "github.com/byterings/bgit/core/identity"
+	corerepo "github.com/byterings/bgit/core/repo"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/platform"
@@ -50,6 +51,10 @@ func loadDesktopStatus() (*DesktopStatus, error) {
 			active := view
 			status.ActiveIdentity = &active
 		}
+	}
+
+	for _, binding := range cfg.Bindings {
+		status.Bindings = append(status.Bindings, repoBindingViewFromBinding(cfg, binding))
 	}
 
 	resolution, err := coreidentity.GetEffectiveResolution(cfg)
@@ -109,6 +114,22 @@ func githubAvatarURL(username string) string {
 		return ""
 	}
 	return fmt.Sprintf("https://github.com/%s.png?size=96", username)
+}
+
+func repoBindingViewFromBinding(cfg *config.Config, binding config.Binding) RepoBindingView {
+	view := RepoBindingView{
+		Path:  binding.Path,
+		Alias: binding.User,
+	}
+	user := cfg.FindUserByAlias(binding.User)
+	if user == nil {
+		view.MissingIdentity = true
+		return view
+	}
+	view.Name = user.Name
+	view.Email = user.Email
+	view.GitHubUsername = user.GitHubUsername
+	return view
 }
 
 func addDesktopIdentity(request IdentityRequest) (*IdentityActionResult, error) {
@@ -199,6 +220,9 @@ func updateDesktopIdentity(request UpdateIdentityRequest) (*IdentityActionResult
 	if err := coressh.UpdateSSHConfig(cfg.Users); err != nil {
 		return nil, err
 	}
+	if err := syncBoundRepositoriesForAlias(cfg, alias); err != nil {
+		return nil, err
+	}
 
 	return actionResult(fmt.Sprintf("Identity '%s' updated", alias))
 }
@@ -218,7 +242,28 @@ func activateDesktopIdentity(alias string) (*IdentityActionResult, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := syncBoundRepositoriesForAlias(cfg, result.User.Alias); err != nil {
+		return nil, err
+	}
 	return actionResult(fmt.Sprintf("Identity '%s' activated", result.User.Alias))
+}
+
+func syncBoundRepositoriesForAlias(cfg *config.Config, alias string) error {
+	user := cfg.FindUserByAlias(alias)
+	if user == nil {
+		return fmt.Errorf("identity '%s' not found", alias)
+	}
+
+	for _, binding := range cfg.GetBindings() {
+		if binding.User != alias {
+			continue
+		}
+		if err := git.SetLocalUser(binding.Path, user.Name, user.Email); err != nil {
+			return fmt.Errorf("failed to sync repository git identity for '%s': %w", binding.Path, err)
+		}
+	}
+
+	return nil
 }
 
 func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult, error) {
@@ -242,6 +287,11 @@ func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult
 	if err != nil {
 		return nil, err
 	}
+	for _, repoPath := range result.RemovedBindings {
+		if err := git.UnsetLocalUser(repoPath); err != nil {
+			return nil, fmt.Errorf("failed to clear repository Git identity for '%s': %w", repoPath, err)
+		}
+	}
 
 	if request.DeleteKeys && sshKeyPath != "" {
 		if err := removeIdentityKeyFiles(sshKeyPath); err != nil {
@@ -253,7 +303,307 @@ func deleteDesktopIdentity(request DeleteIdentityRequest) (*IdentityActionResult
 	if result.ActiveCleared {
 		message += "; active identity cleared"
 	}
+	if len(result.RemovedBindings) > 0 {
+		message += fmt.Sprintf("; removed %d binding(s)", len(result.RemovedBindings))
+	}
+	if len(result.RemovedWorkspaces) > 0 {
+		message += fmt.Sprintf("; removed %d workspace binding(s)", len(result.RemovedWorkspaces))
+	}
 	return actionResult(message)
+}
+
+func chooseDesktopRepositoryPath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	return wailsruntime.OpenDirectoryDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title: "Choose Git repository",
+	})
+}
+
+func chooseDesktopIdentityPath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	return wailsruntime.OpenDirectoryDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title: "Choose repository or workspace",
+	})
+}
+
+func chooseDesktopSSHPrivateKeyPath(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", fmt.Errorf("desktop runtime is not ready")
+	}
+
+	sshDir, _ := os.UserHomeDir()
+	if sshDir != "" {
+		sshDir = filepath.Join(sshDir, ".ssh")
+		if _, err := os.Stat(sshDir); err != nil {
+			sshDir = ""
+		}
+	}
+
+	return wailsruntime.OpenFileDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title:            "Choose SSH private key",
+		DefaultDirectory: sshDir,
+		Filters: []wailsruntime.FileFilter{
+			{DisplayName: "SSH private key files", Pattern: "*"},
+		},
+	})
+}
+
+func bindDesktopRepository(request RepoBindingRequest) (*RepoBindingActionResult, error) {
+	cfg, err := loadExistingDesktopConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	repoRoot, err := normalizeDesktopRepoPath(request.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	alias := strings.TrimSpace(request.Alias)
+	if alias == "" {
+		return nil, fmt.Errorf("identity is required")
+	}
+
+	result, err := corerepo.BindRepository(cfg, repoRoot, alias, true)
+	if err != nil {
+		return nil, err
+	}
+	if result.User == nil {
+		return nil, fmt.Errorf("identity '%s' not found", alias)
+	}
+	if err := git.SetLocalUser(repoRoot, result.User.Name, result.User.Email); err != nil {
+		return nil, fmt.Errorf("failed to set repository git identity: %w", err)
+	}
+
+	message := fmt.Sprintf("Repository bound to '%s'", alias)
+	if result.NoChange {
+		message = fmt.Sprintf("Repository already bound to '%s'; Git identity refreshed", alias)
+	} else if result.ExistingBinding != nil && result.ExistingBinding.User != alias {
+		message = fmt.Sprintf("Repository binding changed from '%s' to '%s'", result.ExistingBinding.User, alias)
+	}
+
+	return repoBindingActionResult(message, repoRoot)
+}
+
+func removeDesktopRepositoryBinding(path string) (*RepoBindingActionResult, error) {
+	cfg, err := loadExistingDesktopConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	repoRoot, err := normalizeDesktopRepoPath(path)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := corerepo.RemoveBinding(cfg, repoRoot)
+	if err != nil {
+		return nil, err
+	}
+	if result.Binding == nil {
+		return repoBindingActionResult("No binding found for this repository", repoRoot)
+	}
+	if err := restoreDesktopRepoGitIdentity(cfg, repoRoot); err != nil {
+		return nil, err
+	}
+	message := fmt.Sprintf("Removed binding for '%s'; repository local Git identity cleared", result.Binding.User)
+	if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceWorkspace {
+		message += fmt.Sprintf("; bgit still resolves workspace identity '%s' here", resolution.Alias)
+	}
+	return repoBindingActionResult(message, repoRoot)
+}
+
+func restoreDesktopRepoGitIdentity(cfg *config.Config, repoRoot string) error {
+	if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceBinding && resolution.User != nil {
+		if err := git.SetLocalUser(repoRoot, resolution.User.Name, resolution.User.Email); err != nil {
+			return fmt.Errorf("failed to restore repository Git identity: %w", err)
+		}
+		return nil
+	}
+
+	if err := git.UnsetLocalUser(repoRoot); err != nil {
+		return fmt.Errorf("failed to clear repository Git identity: %w", err)
+	}
+	return nil
+}
+
+func normalizeDesktopRepoPath(path string) (string, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "", fmt.Errorf("repository path is required")
+	}
+	expandedPath, err := platform.ExpandTilde(path)
+	if err != nil {
+		return "", err
+	}
+	absPath, err := filepath.Abs(expandedPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve repository path: %w", err)
+	}
+	info, err := os.Stat(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("repository path does not exist: %s", absPath)
+		}
+		return "", fmt.Errorf("cannot inspect repository path: %w", err)
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("repository path must be a directory: %s", absPath)
+	}
+	repoRoot := coreidentity.FindGitRoot(absPath)
+	if repoRoot == "" {
+		return "", fmt.Errorf("not a Git repository: %s", absPath)
+	}
+	return filepath.Abs(repoRoot)
+}
+
+func repoBindingActionResult(message, path string) (*RepoBindingActionResult, error) {
+	status, err := loadDesktopStatus()
+	if err != nil {
+		return nil, err
+	}
+	return &RepoBindingActionResult{
+		Message: message,
+		Path:    path,
+		Status:  status,
+	}, nil
+}
+
+func detectDesktopIdentity(request IdentityDetectionRequest) (*IdentityDetectionResult, error) {
+	cfg, err := loadExistingDesktopConfig()
+	if err != nil {
+		return nil, err
+	}
+	return identityDetectionForPath(cfg, request.Path)
+}
+
+func syncDesktopDetectedIdentity(request IdentityDetectionRequest) (*IdentityDetectionActionResult, error) {
+	cfg, err := loadExistingDesktopConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	detected, err := identityDetectionForPath(cfg, request.Path)
+	if err != nil {
+		return nil, err
+	}
+	if !detected.SyncAvailable || detected.Alias == "" {
+		return nil, fmt.Errorf("no identity detected for this path")
+	}
+
+	user := cfg.FindUserByAlias(detected.Alias)
+	if user == nil {
+		return nil, fmt.Errorf("identity '%s' not found", detected.Alias)
+	}
+
+	message := fmt.Sprintf("Synced global Git identity to '%s'", detected.Alias)
+	if detected.Source == string(coreidentity.SourceBinding) && detected.RepoRoot != "" {
+		if err := git.SetLocalUser(detected.RepoRoot, user.Name, user.Email); err != nil {
+			return nil, fmt.Errorf("failed to sync repository Git identity: %w", err)
+		}
+		message = fmt.Sprintf("Synced repository Git identity to '%s'", detected.Alias)
+	} else {
+		if err := git.SetGlobalUser(user.Name, user.Email); err != nil {
+			return nil, fmt.Errorf("failed to sync global Git identity: %w", err)
+		}
+	}
+
+	detected, err = identityDetectionForPath(cfg, detected.Path)
+	if err != nil {
+		return nil, err
+	}
+	status, err := loadDesktopStatus()
+	if err != nil {
+		return nil, err
+	}
+	return &IdentityDetectionActionResult{
+		Message:  message,
+		Detected: detected,
+		Status:   status,
+	}, nil
+}
+
+func identityDetectionForPath(cfg *config.Config, path string) (*IdentityDetectionResult, error) {
+	absPath, err := normalizeDesktopExistingDirPath(path)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &IdentityDetectionResult{Path: absPath}
+	repoRoot := coreidentity.FindGitRoot(absPath)
+	if repoRoot != "" {
+		result.RepoRoot = repoRoot
+	}
+
+	resolution, err := coreidentity.ResolveIdentity(cfg, absPath)
+	if err != nil {
+		return nil, err
+	}
+	if resolution == nil || resolution.User == nil {
+		result.Message = "No identity detected for this path"
+		return result, nil
+	}
+
+	result.Alias = resolution.Alias
+	result.Source = string(resolution.Source)
+	result.SourcePath = resolution.Path
+	result.Name = resolution.User.Name
+	result.Email = resolution.User.Email
+	result.GitHubUsername = resolution.User.GitHubUsername
+	result.SyncAvailable = true
+
+	if resolution.Source == coreidentity.SourceBinding && repoRoot != "" {
+		result.GitConfigScope = "repository"
+		result.GitName, result.GitEmail, err = git.GetUserForRepo(repoRoot)
+	} else {
+		result.GitConfigScope = "global"
+		result.GitName, result.GitEmail, err = git.GetGlobalUser()
+	}
+	if err != nil {
+		result.Message = fmt.Sprintf("Failed to read %s Git identity: %v", result.GitConfigScope, err)
+		return result, nil
+	}
+
+	result.GitConfigChecked = true
+	result.GitMatches = result.GitName == resolution.User.Name && result.GitEmail == resolution.User.Email
+	if result.GitMatches {
+		result.Message = "Git identity already matches detected bgit identity"
+	} else {
+		result.Message = "Git identity does not match detected bgit identity"
+	}
+	return result, nil
+}
+
+func normalizeDesktopExistingDirPath(path string) (string, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "", fmt.Errorf("path is required")
+	}
+	expandedPath, err := platform.ExpandTilde(path)
+	if err != nil {
+		return "", err
+	}
+	absPath, err := filepath.Abs(expandedPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve path: %w", err)
+	}
+	info, err := os.Stat(absPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("path does not exist: %s", absPath)
+		}
+		return "", fmt.Errorf("cannot inspect path: %w", err)
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("path must be a directory: %s", absPath)
+	}
+	return absPath, nil
 }
 
 func loadOrCreateDesktopConfig() (*config.Config, error) {

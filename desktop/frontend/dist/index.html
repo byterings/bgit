@@ -8,6 +8,14 @@
       :root {
         color: #172033;
         background: #f8fafc;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --border: #d8dee8;
+        --border-soft: #e2e8f0;
+        --text: #172033;
+        --muted: #64748b;
+        --control-height: 36px;
+        --radius: 8px;
         font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
           "Segoe UI", sans-serif;
@@ -15,13 +23,176 @@
       * {
         box-sizing: border-box;
       }
+      html {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        scrollbar-gutter: stable;
+        scroll-behavior: smooth;
+      }
       body {
+        width: 100%;
+        height: 100%;
         margin: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+        background: var(--bg);
+      }
+      .app-shell {
+        display: grid;
+        grid-template-columns: 248px minmax(0, 1fr);
+        width: 100%;
+        height: 100vh;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-right: 1px solid var(--border);
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 24px 16px;
+      }
+      .brand {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 24px;
+        padding: 0 8px;
+      }
+      .brand strong {
+        color: #ffffff;
+        font-size: 22px;
+      }
+      .brand span {
+        color: #94a3b8;
+        font-size: 13px;
+      }
+      .nav {
+        display: grid;
+        gap: 6px;
+      }
+      .nav button {
+        justify-content: flex-start;
+        width: 100%;
+        border-color: transparent;
+        background: transparent;
+        color: #cbd5e1;
+        transition:
+          background-color 180ms ease,
+          color 180ms ease,
+          border-color 180ms ease,
+          transform 180ms ease;
+      }
+      .nav button:hover,
+      .nav button.active {
+        border-color: rgb(148 163 184 / 0.24);
+        background: rgb(255 255 255 / 0.08);
+        color: #ffffff;
+      }
+      .nav button:hover {
+        transform: translateX(2px);
+      }
+      .content-shell {
+        height: 100vh;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: none;
+        scroll-behavior: smooth;
       }
       main {
-        max-width: 1120px;
+        max-width: 1180px;
         margin: 0 auto;
-        padding: 32px;
+        padding: 28px 32px 40px;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 1px solid var(--border);
+        background: rgb(248 250 252 / 0.94);
+        backdrop-filter: blur(10px);
+      }
+      .topbar-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 16px 32px;
+      }
+      .top-active {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-left: auto;
+        min-width: 0;
+      }
+      .top-back {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        padding: 0;
+      }
+      .top-active .avatar {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+      }
+      .top-active-details {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+        text-align: left;
+      }
+      .top-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .page-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+      .page-heading h1 {
+        margin-bottom: 6px;
+      }
+      .page-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .page-view {
+        animation: page-in 220ms ease-out;
+        min-height: 320px;
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease;
+      }
+      .page-view.page-exit {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      @keyframes page-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       header,
       .section-heading,
@@ -39,31 +210,52 @@
       h2 {
         margin: 0 0 16px;
         font-size: 16px;
+        line-height: 1.3;
       }
       h3 {
         margin: 0 0 12px;
         font-size: 14px;
+        line-height: 1.3;
       }
       p {
         margin: 0;
         color: #526071;
+        line-height: 1.45;
       }
       button,
-      input {
+      input,
+      select {
         border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        background: #ffffff;
-        color: #172033;
-        min-height: 36px;
+        border-radius: var(--radius);
+        background: var(--surface);
+        color: var(--text);
+        min-height: var(--control-height);
         font: inherit;
+        transition:
+          border-color 140ms ease,
+          background-color 140ms ease,
+          box-shadow 140ms ease,
+          opacity 140ms ease;
       }
       button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
         padding: 0 14px;
         cursor: pointer;
+        white-space: nowrap;
       }
       button:hover {
         border-color: #94a3b8;
         background: #f8fafc;
+        box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid #93c5fd;
+        outline-offset: 2px;
       }
       button:disabled {
         cursor: not-allowed;
@@ -79,6 +271,10 @@
         background: #334155;
       }
       input {
+        width: 100%;
+        padding: 0 10px;
+      }
+      select {
         width: 100%;
         padding: 0 10px;
       }
@@ -101,10 +297,18 @@
       }
       .panel {
         margin-top: 24px;
-        border: 1px solid #d8dee8;
-        border-radius: 8px;
-        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
         padding: 20px;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
+      }
+      .panel.active-card.active {
+        border-color: #86efac;
+        box-shadow: 0 0 0 3px rgb(134 239 172 / 0.22);
       }
       .summary {
         display: grid;
@@ -119,8 +323,9 @@
       }
       .metric {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         padding: 12px;
+        min-height: 76px;
       }
       .metric strong {
         display: block;
@@ -131,6 +336,143 @@
         grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
         gap: 20px;
       }
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+      .identity-card {
+        display: grid;
+        gap: 10px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius);
+        padding: 16px;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          background-color 160ms ease,
+          transform 160ms ease;
+      }
+      .identity-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+      }
+      .identity-card.active {
+        border-color: #86efac;
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
+      .card-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+      }
+      .identity-meta {
+        display: grid;
+        gap: 6px;
+      }
+      .quick-launchpad {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .quick-launchpad button {
+        justify-content: flex-start;
+        min-height: 64px;
+        padding: 0 18px;
+        font-weight: 700;
+      }
+      .identity-records {
+        display: grid;
+        gap: 10px;
+      }
+      .identity-record {
+        display: grid;
+        grid-template-columns:
+          minmax(240px, 1.3fr)
+          minmax(140px, 0.7fr)
+          minmax(260px, 1.3fr)
+          minmax(100px, 0.45fr)
+          170px;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 14px;
+        transition:
+          background-color 160ms ease,
+          border-color 160ms ease,
+          box-shadow 160ms ease,
+          transform 160ms ease;
+      }
+      .identity-record:hover {
+        border-color: #cbd5e1;
+        background: #fbfdff;
+        box-shadow: 0 8px 20px rgb(15 23 42 / 0.06);
+        transform: translateY(-1px);
+      }
+      .identity-record.active {
+        border-color: #86efac;
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
+      .record-field {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+      .record-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+      .record-value {
+        min-width: 0;
+        color: #334155;
+      }
+      .identity-record-actions {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+      }
+      .detail-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .detail-row {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        border-top: 1px solid #eef2f7;
+        padding-top: 12px;
+      }
+      .detail-row:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .detail-row span:first-child {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      details.compact-details {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 8px;
+      }
+      details.compact-details summary {
+        cursor: pointer;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      details.compact-details summary:hover {
+        color: #172033;
+      }
       .form-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -138,6 +480,52 @@
       }
       .form-grid .wide {
         grid-column: 1 / -1;
+      }
+      .field-group {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+      .field-group > span:first-child {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .field-control {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px;
+        gap: 8px;
+        align-items: center;
+        min-width: 0;
+      }
+      .field-control button {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+      }
+      .field-hint {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.35;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        align-items: center;
+      }
+      .editing-banner {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid #bfdbfe;
+        border-radius: var(--radius);
+        background: #eff6ff;
+        color: #1e3a8a;
+        padding: 10px 12px;
       }
       .backup-grid {
         display: grid;
@@ -148,7 +536,7 @@
         display: grid;
         gap: 12px;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         padding: 14px;
       }
       .backup-actions {
@@ -158,17 +546,20 @@
         align-items: center;
       }
       .backup-path,
-      .backup-summary {
+      .backup-summary,
+      .repo-path {
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: #f8fafc;
         padding: 10px;
         color: #475569;
-        overflow-wrap: anywhere;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .warning-note {
         border: 1px solid #fde68a;
-        border-radius: 8px;
+        border-radius: var(--radius);
         background: #fffbeb;
         color: #92400e;
         padding: 10px;
@@ -179,20 +570,112 @@
         display: grid;
         gap: 10px;
       }
+      .active-heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
       .active-name {
+        display: flex;
+        gap: 10px;
+        align-items: center;
         font-size: 22px;
         font-weight: 700;
+      }
+      .active-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #16a34a;
+        box-shadow: 0 0 0 4px rgb(22 163 74 / 0.14);
       }
       .muted {
         color: #64748b;
       }
+      .truncate {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+        white-space: nowrap;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
       .message {
-        margin-top: 16px;
-        min-height: 20px;
-        color: #166534;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
       }
       .message.error {
         color: #b91c1c;
+      }
+      .hero-active {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        border: 1px solid #86efac;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 72%);
+        padding: 20px;
+        box-shadow: 0 14px 34px rgb(22 163 74 / 0.12);
+      }
+      .hero-active-title {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+      }
+      .hero-active-title strong {
+        font-size: 30px;
+        line-height: 1.1;
+      }
+      .hero-active-meta {
+        display: grid;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .activity-list {
+        display: grid;
+        gap: 10px;
+      }
+      .activity-item {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        border: 1px solid #eef2f7;
+        border-radius: var(--radius);
+        padding: 10px;
+        background: #ffffff;
+      }
+      .activity-dot {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 999px;
+        background: #f0fdf4;
+        color: #166534;
+      }
+      .activity-item.warn .activity-dot {
+        background: #fffbeb;
+        color: #92400e;
+      }
+      .activity-item.error .activity-dot {
+        background: #fef2f2;
+        color: #991b1b;
       }
       .toast-region {
         position: fixed;
@@ -213,6 +696,17 @@
         background: #ffffff;
         box-shadow: 0 18px 40px rgb(15 23 42 / 0.12);
         padding: 12px;
+        animation: toast-in 160ms ease-out;
+      }
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .toast::before {
         content: "";
@@ -266,13 +760,25 @@
         display: inline-flex;
         width: fit-content;
         align-items: center;
+        justify-content: center;
         min-height: 24px;
+        min-width: 72px;
         border-radius: 999px;
         border: 1px solid #cbd5e1;
         padding: 0 10px;
         font-size: 12px;
         color: #334155;
         background: #f8fafc;
+      }
+      .badge.active {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .badge.error {
+        border-color: #fecaca;
+        color: #991b1b;
+        background: #fef2f2;
       }
       .badge.good {
         border-color: #86efac;
@@ -287,13 +793,14 @@
       .table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
       .table th,
       .table td {
         border-top: 1px solid #eef2f7;
-        padding: 12px 10px;
+        padding: 14px 10px;
         text-align: left;
-        vertical-align: top;
+        vertical-align: middle;
       }
       .table th {
         color: #64748b;
@@ -303,14 +810,31 @@
       .table tr:first-child th {
         border-top: 0;
       }
+      .table tbody tr {
+        transition: background-color 140ms ease;
+      }
+      .table tbody tr:hover {
+        background: #f8fafc;
+      }
+      .table tbody tr.active-row {
+        background: #f0fdf4;
+        box-shadow: inset 3px 0 0 #16a34a;
+      }
       .identity-cell {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
+        min-width: 0;
       }
       .identity-details {
         display: grid;
         gap: 4px;
+        min-width: 0;
+      }
+      .identity-details strong {
+        display: flex;
+        gap: 8px;
+        align-items: center;
         min-width: 0;
       }
       .avatar {
@@ -343,7 +867,7 @@
       .public-key-card {
         display: grid;
         gap: 8px;
-        max-width: 420px;
+        max-width: 100%;
       }
       .public-key-preview {
         display: block;
@@ -366,15 +890,97 @@
       .actions {
         display: flex;
         flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .icon-btn {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+      }
+      .icon {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        color: currentColor;
+        flex: 0 0 16px;
+      }
+      .icon svg {
+        display: block;
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+      }
+      .copyable {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 36px;
         gap: 8px;
+        align-items: center;
+        max-width: 100%;
+      }
+      .copyable .backup-path,
+      .copyable .repo-path,
+      .copyable code,
+      .copyable span {
+        min-width: 0;
+      }
+      .copy-btn.copied {
+        border-color: #86efac;
+        color: #166534;
+        background: #f0fdf4;
+      }
+      .binding-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+      .detection-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 16px;
+      }
+      .detection-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .detection-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .detection-item span {
+        display: block;
+        margin-bottom: 4px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
       }
       .check-list {
         display: grid;
-        gap: 14px;
+        gap: 18px;
       }
       .check-section {
         display: grid;
-        gap: 8px;
+        gap: 10px;
+        border: 1px solid #eef2f7;
+        border-radius: var(--radius);
+        padding: 12px;
+      }
+      details.check-section summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        cursor: pointer;
+        list-style: none;
+      }
+      details.check-section summary::-webkit-details-marker {
+        display: none;
       }
       .check-section h3 {
         margin: 0;
@@ -383,9 +989,9 @@
         display: grid;
         grid-template-columns: 76px minmax(0, 1fr);
         gap: 12px;
-        align-items: start;
+        align-items: center;
         border-top: 1px solid #eef2f7;
-        padding-top: 8px;
+        padding-top: 10px;
       }
       .check-level {
         display: inline-flex;
@@ -429,6 +1035,10 @@
         display: grid;
         place-items: center;
         text-align: center;
+        border: 1px dashed #cbd5e1;
+        border-radius: var(--radius);
+        background: #f8fafc;
+        padding: 24px;
       }
       dialog {
         width: min(640px, calc(100vw - 32px));
@@ -460,9 +1070,91 @@
         gap: 10px;
         margin-top: 18px;
       }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      @media (max-width: 1100px) {
+        .identity-record {
+          grid-template-columns: minmax(220px, 1.2fr) minmax(140px, 0.8fr);
+        }
+        .identity-record .record-field,
+        .identity-record-actions {
+          min-width: 0;
+        }
+        .identity-record-actions {
+          justify-content: flex-start;
+        }
+        .binding-form {
+          grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+        }
+      }
       @media (max-width: 820px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+        .sidebar {
+          position: sticky;
+          top: 0;
+          z-index: 30;
+          height: auto;
+          overflow: hidden;
+          border-right: 0;
+          border-bottom: 1px solid rgb(148 163 184 / 0.24);
+          padding: 12px 16px;
+        }
+        .brand {
+          display: flex;
+          gap: 8px;
+          align-items: baseline;
+          margin-bottom: 10px;
+          padding: 0 4px;
+        }
+        .brand strong {
+          font-size: 18px;
+        }
+        .nav {
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          scrollbar-width: thin;
+        }
+        .nav button {
+          width: auto;
+          flex: 0 0 auto;
+          padding-inline: 12px;
+        }
+        .content-shell {
+          height: 100%;
+          min-height: 0;
+          overflow-y: auto;
+        }
+        .topbar {
+          top: 0;
+        }
+        .topbar-inner,
+        main {
+          padding-inline: 20px;
+        }
+        .topbar-inner {
+          min-height: 64px;
+          padding-block: 12px;
+        }
         main {
           padding: 20px;
+        }
+        .page-heading {
+          align-items: center;
         }
         header,
         .section-heading,
@@ -470,34 +1162,214 @@
           display: grid;
         }
         .grid,
+        .quick-launchpad,
+        .identity-record,
+        .detail-row,
         .form-grid,
-        .backup-grid {
+        .backup-grid,
+        .binding-form,
+        .detection-form {
           grid-template-columns: 1fr;
+        }
+        .identity-record {
+          gap: 12px;
+        }
+        .identity-record-actions {
+          justify-content: flex-start;
+        }
+        .copyable {
+          width: 100%;
+        }
+        .form-actions {
+          justify-content: stretch;
+        }
+        .form-actions button {
+          flex: 1 1 auto;
+        }
+        .backup-actions,
+        .page-actions {
+          align-items: stretch;
+        }
+        .backup-actions > button,
+        .page-actions > button {
+          flex: 1 1 auto;
+        }
+        details.check-section summary {
+          align-items: flex-start;
+        }
+        details.check-section summary .actions {
+          justify-content: flex-end;
         }
         .table {
           display: block;
+          max-width: 100%;
           overflow-x: auto;
+        }
+        dialog {
+          max-height: calc(100vh - 24px);
+          overflow-y: auto;
         }
         .toast-region {
           right: 16px;
           bottom: 16px;
         }
       }
+      @media (max-width: 560px) {
+        .sidebar {
+          padding-inline: 10px;
+        }
+        .brand span {
+          display: none;
+        }
+        .nav button {
+          min-height: 34px;
+          padding-inline: 10px;
+          font-size: 13px;
+        }
+        .topbar {
+          top: 0;
+        }
+        .topbar-inner,
+        main {
+          padding-inline: 14px;
+        }
+        main {
+          padding-block: 16px 28px;
+        }
+        .top-active {
+          max-width: calc(100% - 52px);
+        }
+        .top-active-details {
+          max-width: min(230px, 58vw);
+        }
+        .page-heading {
+          display: grid;
+          gap: 12px;
+        }
+        .page-actions,
+        .page-actions button {
+          width: 100%;
+        }
+        h1 {
+          font-size: 24px;
+        }
+        .summary,
+        .quick-launchpad {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .metric {
+          min-width: 0;
+        }
+        .metric strong {
+          overflow-wrap: anywhere;
+          font-size: 18px;
+        }
+        .quick-launchpad button {
+          min-height: 56px;
+          padding-inline: 12px;
+        }
+        .panel,
+        .identity-record {
+          padding: 14px;
+        }
+        .identity-cell {
+          align-items: flex-start;
+        }
+        .identity-record-actions {
+          display: grid;
+          grid-template-columns: repeat(4, 36px);
+        }
+        .detail-row {
+          gap: 6px;
+        }
+        .dialog-body {
+          padding: 16px;
+        }
+        .dialog-actions {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .dialog-actions button {
+          width: 100%;
+        }
+        details.check-section summary {
+          display: grid;
+        }
+        details.check-section summary .actions {
+          justify-content: flex-start;
+        }
+        .check-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        .toast-region {
+          right: 10px;
+          bottom: 10px;
+          width: calc(100vw - 20px);
+        }
+      }
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <div>
-          <h1>bgit</h1>
-          <p>Identity dashboard for this machine.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>bgit</strong>
+          <span>Identity manager</span>
         </div>
-        <button id="refresh" type="button">Refresh</button>
-      </header>
-      <section id="app" class="panel">Loading...</section>
-      <p id="message" class="message" aria-live="polite"></p>
-    </main>
+        <nav id="sidebarNav" class="nav" aria-label="Desktop navigation"></nav>
+      </aside>
+      <div id="contentShell" class="content-shell">
+        <div id="topbar" class="topbar"></div>
+        <main>
+          <section id="app" class="panel">Loading...</section>
+          <p id="message" class="message" aria-live="polite"></p>
+        </main>
+      </div>
+    </div>
     <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+
+    <dialog id="addDialog">
+      <form id="addForm" class="dialog-body" method="dialog">
+        <h2>Add Identity</h2>
+        <div class="form-grid">
+          <label>
+            Alias
+            <input name="alias" autocomplete="off" required />
+          </label>
+          <label>
+            GitHub username
+            <input name="githubUsername" autocomplete="username" required />
+          </label>
+          <label>
+            Name
+            <input name="name" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input name="email" autocomplete="email" required />
+          </label>
+          <div class="field-group wide">
+            <span>Existing SSH private key</span>
+            <div class="field-control">
+              <input name="sshKeyPath" placeholder="Select a private key file (optional)" />
+              <button type="button" data-action="choose-add-ssh-key" title="Choose SSH private key" aria-label="Choose SSH private key">
+                <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span>
+              </button>
+            </div>
+            <span class="field-hint">Choose an existing private key file, or generate a new key below.</span>
+          </div>
+          <label class="check wide">
+            <input name="generateSSHKey" type="checkbox" />
+            Generate new SSH key
+          </label>
+        </div>
+        <div class="dialog-actions">
+          <button id="cancelAdd" type="button">Cancel</button>
+          <button class="primary" type="submit">Add Identity</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="editDialog">
       <form id="editForm" class="dialog-body" method="dialog">
@@ -516,16 +1388,31 @@
             GitHub username
             <input id="editGitHub" name="githubUsername" required />
           </label>
-          <label>
-            SSH private key path
-            <input id="editSSHKey" name="sshKeyPath" />
-          </label>
+          <div class="field-group">
+            <span>SSH private key</span>
+            <div class="field-control">
+              <input id="editSSHKey" name="sshKeyPath" placeholder="Select a private key file" />
+              <button type="button" data-action="choose-edit-ssh-key" title="Choose SSH private key" aria-label="Choose SSH private key">
+                <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></span>
+              </button>
+            </div>
+            <span class="field-hint">Select the private key file used by this identity.</span>
+          </div>
         </div>
         <div class="row-actions" style="margin-top: 18px">
           <button id="cancelEdit" type="button">Cancel</button>
-          <button type="submit">Save</button>
+          <button class="primary" type="submit">Save</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="viewDialog">
+      <div class="dialog-body">
+        <div id="viewIdentityContent"></div>
+        <div class="dialog-actions">
+          <button id="closeView" type="button">Close</button>
+        </div>
+      </div>
     </dialog>
 
     <dialog id="confirmDialog">
@@ -558,6 +1445,25 @@
       let toastCounter = 0;
       let lastExportPath = "";
       let lastImportPath = "";
+      let selectedRepoPath = "";
+      let selectedDetectPath = "";
+      let currentDetection = null;
+      let editingBindingPath = "";
+      let currentPage = "dashboard";
+      let pageHistory = [];
+      let lastRenderedPage = "";
+      let navInitialized = false;
+      let topbarKey = "";
+      let pageScrollPositions = {};
+      let activityLog = [];
+      let lastDoctorRunAt = "";
+      const pages = [
+        { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+        { id: "identities", label: "Identities", icon: "users" },
+        { id: "bindings", label: "Repository Bindings", icon: "link" },
+        { id: "backup", label: "Backup & Restore", icon: "archive" },
+        { id: "doctor", label: "Doctor", icon: "shield" },
+      ];
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -591,9 +1497,10 @@
         const toast = document.createElement("div");
         toast.id = id;
         toast.className = `toast ${tone}`;
+        const marker = tone === "error" ? "!" : tone === "warn" ? "!" : "✓";
         toast.innerHTML = `
           <div>
-            <div class="toast-title">${escapeHtml(title)}</div>
+            <div class="toast-title">${marker} ${escapeHtml(title)}</div>
             <div class="toast-message">${escapeHtml(message)}</div>
           </div>
           <button class="toast-close" type="button" aria-label="Dismiss notification">×</button>
@@ -604,6 +1511,15 @@
         if (timeout > 0) {
           window.setTimeout(remove, timeout);
         }
+      }
+
+      function addActivity(title, message = "", tone = "success") {
+        activityLog.unshift({
+          title,
+          message,
+          tone,
+        });
+        activityLog = activityLog.slice(0, 5);
       }
 
       function setActionText(text) {
@@ -622,74 +1538,238 @@
         return `<span class="badge ${tone}">${label}</span>`;
       }
 
+      function iconSvg(name) {
+        const icons = {
+          edit: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+          trash: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>',
+          copy: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+          check: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+          refresh: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+          back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="m15 18-6-6 6-6"/><path d="M9 12h10"/></svg>',
+          eye: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
+          search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+          sync: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 3v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 21v-5h5"/></svg>',
+          folder: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h7l2 2h9v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>',
+          use: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+          dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+          users: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+          link: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>',
+          archive: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>',
+          shield: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>',
+        };
+        return icons[name] || icons.check;
+      }
+
+      function iconButton({ action, icon, label, alias = "", path = "", disabled = false, danger = false }) {
+        const attrs = [
+          `type="button"`,
+          `class="icon-btn ${danger ? "danger" : ""}"`,
+          `data-action="${escapeHtml(action)}"`,
+          `title="${escapeHtml(label)}"`,
+          `aria-label="${escapeHtml(label)}"`,
+          alias ? `data-alias="${escapeHtml(alias)}"` : "",
+          path ? `data-path="${escapeHtml(path)}"` : "",
+          disabled ? "disabled" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return `<button ${attrs}><span class="icon" aria-hidden="true">${iconSvg(icon)}</span><span class="sr-only">${escapeHtml(label)}</span></button>`;
+      }
+
+      function copyButton(value, label = "Copy") {
+        return iconButton({
+          action: "copy-value",
+          icon: "copy",
+          label,
+          path: value,
+        }).replace("icon-btn", "icon-btn copy-btn");
+      }
+
+      function copyableValue(value, className = "", label = "Copy") {
+        const safe = escapeHtml(value || "");
+        const copyDisabled = !value || value === "Default backup location" || value === "No archive selected";
+        return `
+          <div class="copyable">
+            <span class="${escapeHtml(className)} truncate" title="${safe}">${safe}</span>
+            ${
+              copyDisabled
+                ? `<button type="button" class="icon-btn copy-btn" title="Nothing to copy" aria-label="Nothing to copy" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                : copyButton(value || "", label)
+            }
+          </div>
+        `;
+      }
+
+      function fieldWithChooser({ label, name, value = "", placeholder = "", action, title, hint = "", required = false, className = "" }) {
+        return `
+          <div class="field-group ${escapeHtml(className)}">
+            <span>${escapeHtml(label)}</span>
+            <div class="field-control">
+              <input name="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" ${required ? "required" : ""} />
+              <button type="button" data-action="${escapeHtml(action)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+                <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+              </button>
+            </div>
+            ${hint ? `<span class="field-hint">${escapeHtml(hint)}</span>` : ""}
+          </div>
+        `;
+      }
+
+      function renderNavigation() {
+        const nav = document.getElementById("sidebarNav");
+        if (!navInitialized) {
+          nav.innerHTML = pages
+            .map(
+              (page) => `
+                <button type="button" data-page="${escapeHtml(page.id)}">
+                  <span class="icon" aria-hidden="true">${iconSvg(page.icon)}</span>
+                  ${escapeHtml(page.label)}
+                </button>
+              `,
+            )
+            .join("");
+          nav.querySelectorAll("[data-page]").forEach((button) => {
+            button.addEventListener("click", () => {
+              transitionToPage(button.dataset.page || "dashboard");
+            });
+          });
+          navInitialized = true;
+        }
+        nav.querySelectorAll("[data-page]").forEach((button) => {
+          button.classList.toggle("active", button.dataset.page === currentPage);
+        });
+      }
+
+      function setCurrentPage(page) {
+        if (currentPage === page) {
+          return false;
+        }
+        currentPage = page;
+        return true;
+      }
+
+      function transitionToPage(page, rememberCurrent = true) {
+        const previousPage = currentPage;
+        if (!setCurrentPage(page)) {
+          return;
+        }
+        if (rememberCurrent) {
+          pageHistory.push(previousPage);
+        }
+        const shell = document.getElementById("contentShell");
+        if (shell && lastRenderedPage) {
+          pageScrollPositions[lastRenderedPage] = shell.scrollTop;
+        }
+        const view = document.querySelector(".page-view");
+        if (!view) {
+          render(currentStatus, currentDoctor);
+          return;
+        }
+        view.classList.add("page-exit");
+        window.setTimeout(() => render(currentStatus, currentDoctor), 120);
+      }
+
+      function renderTopbar(status, doctor) {
+        const topbar = document.getElementById("topbar");
+        const active = status?.activeIdentity;
+        const nextKey = [
+          currentPage,
+          pageHistory.length,
+          active?.alias || "",
+          active?.email || "",
+          active?.githubAvatarUrl || "",
+        ].join("|");
+        if (topbarKey === nextKey) {
+          return;
+        }
+        topbarKey = nextKey;
+        topbar.innerHTML = `
+          <div class="topbar-inner">
+            ${
+              currentPage === "dashboard"
+                ? `<span aria-hidden="true"></span>`
+                : `<button
+                    id="headerBack"
+                    type="button"
+                    class="top-back"
+                    title="Go back"
+                    aria-label="Go back"
+                  >
+                    <span class="icon" aria-hidden="true">${iconSvg("back")}</span>
+                  </button>`
+            }
+            <div class="top-active">
+              ${active ? avatarBlock(active) : `<span class="avatar" aria-hidden="true">?</span>`}
+              <div class="top-active-details">
+                <strong class="truncate" title="${escapeHtml(active?.alias || "No active identity")}">${escapeHtml(active?.alias || "No active identity")}</strong>
+                <span class="muted truncate" title="${escapeHtml(active?.email || "Set an active identity")}">${escapeHtml(active?.email || "Set an active identity")}</span>
+              </div>
+            </div>
+          </div>
+        `;
+        const backButton = document.getElementById("headerBack");
+        if (backButton) {
+          backButton.addEventListener("click", () => {
+            const previousPage = pageHistory.pop() || "dashboard";
+            transitionToPage(previousPage, false);
+          });
+        }
+      }
+
+      function pageHeading(title, copy = "", actions = "") {
+        return `
+          <div class="page-heading">
+            <div>
+              <h1>${escapeHtml(title)}</h1>
+              ${copy ? `<p>${escapeHtml(copy)}</p>` : ""}
+            </div>
+            ${actions ? `<div class="page-actions">${actions}</div>` : ""}
+          </div>
+        `;
+      }
+
       function activePanel(status) {
         const active = status.activeIdentity;
         if (!active) {
           return `
-            <section class="panel active-card">
-              <h2>Active Profile</h2>
-              <p class="muted">No active identity set.</p>
+            <section class="hero-active">
+              <div>
+                <div class="hero-active-title">
+                  <span class="active-dot" aria-hidden="true"></span>
+                  <strong>No active identity</strong>
+                </div>
+                <div class="hero-active-meta">
+                  <span class="muted">Set an identity before working with repositories.</span>
+                </div>
+              </div>
+              ${addIdentityButton()}
             </section>
           `;
         }
         const effective = status.effectiveIdentity;
         return `
-          <section class="panel active-card">
-            <h2>Active Profile</h2>
-            <div class="active-name">${escapeHtml(active.alias)}</div>
-            <div>${escapeHtml(active.name)}</div>
-            <div class="muted">${escapeHtml(active.email)}</div>
-            <div class="muted">GitHub: ${escapeHtml(active.githubUsername)}</div>
-            ${statusBadge(active.sshKeyStatus)}
-            ${
-              effective
-                ? `<div class="muted">Effective source: ${escapeHtml(effective.source)}</div>`
-                : ""
-            }
+          <section class="hero-active">
+            <div>
+              <div class="hero-active-title">
+                <span class="active-dot" aria-hidden="true"></span>
+                <strong class="truncate" title="${escapeHtml(active.alias)}">${escapeHtml(active.alias)}</strong>
+              </div>
+              <div class="hero-active-meta">
+                <span class="truncate" title="${escapeHtml(active.name)}">${escapeHtml(active.name)}</span>
+                <span class="muted truncate" title="${escapeHtml(active.email)}">${escapeHtml(active.email)}</span>
+                <span class="muted truncate" title="${escapeHtml(active.githubUsername)}">GitHub: ${escapeHtml(active.githubUsername)}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <span class="badge active">Active</span>
+              ${effective ? `<span class="badge">${escapeHtml(effective.source)}</span>` : ""}
+            </div>
           </section>
         `;
       }
 
-      function addIdentityForm() {
-        return `
-          <section class="panel">
-            <div class="section-heading">
-              <div>
-                <h2>Add Identity</h2>
-              </div>
-            </div>
-            <form id="addForm" class="form-grid">
-              <label>
-                Alias
-                <input name="alias" autocomplete="off" required />
-              </label>
-              <label>
-                GitHub username
-                <input name="githubUsername" autocomplete="username" required />
-              </label>
-              <label>
-                Name
-                <input name="name" autocomplete="name" required />
-              </label>
-              <label>
-                Email
-                <input name="email" autocomplete="email" required />
-              </label>
-              <label class="wide">
-                Existing SSH private key path
-                <input name="sshKeyPath" placeholder="Optional" />
-              </label>
-              <label class="check wide">
-                <input name="generateSSHKey" type="checkbox" />
-                Generate new SSH key
-              </label>
-              <div class="wide">
-                <button type="submit">Add Identity</button>
-                <span id="actionNote" class="action-note">${activeActionText ? `<span class="spinner" aria-hidden="true"></span>${escapeHtml(activeActionText)}` : ""}</span>
-              </div>
-            </form>
-          </section>
-        `;
+      function addIdentityButton() {
+        return `<button type="button" class="primary" data-action="open-add-identity"><span class="icon" aria-hidden="true">${iconSvg("users")}</span>Add Identity</button>`;
       }
 
       function backupPanel() {
@@ -704,6 +1784,17 @@
               <form id="exportForm" class="backup-box">
                 <h3>Export Backup</h3>
                 <div class="warning-note">Keep this password safe. It is required for import and cannot be recovered.</div>
+                <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
+                <div class="field-group">
+                  <span>Backup location</span>
+                  <div class="field-control">
+                    <span class="backup-path truncate" title="${escapeHtml(lastExportPath || "Default backup location")}">${escapeHtml(lastExportPath || "Default backup location")}</span>
+                    <button type="button" data-action="choose-export" title="Choose backup location" aria-label="Choose backup location">
+                      <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+                    </button>
+                  </div>
+                  <span class="field-hint">Choose where the encrypted .bgit archive will be saved.</span>
+                </div>
                 <label>
                   Export password
                   <input name="password" type="password" autocomplete="new-password" required />
@@ -712,11 +1803,8 @@
                   Confirm password
                   <input name="confirmPassword" type="password" autocomplete="new-password" required />
                 </label>
-                <input name="outputPath" type="hidden" value="${escapeHtml(lastExportPath)}" />
-                <div class="backup-path">${escapeHtml(lastExportPath || "Default backup location")}</div>
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-export">Choose Location</button>
-                  <button type="submit">Export</button>
+                  <button type="submit" class="primary">Export</button>
                 </div>
               </form>
 
@@ -724,14 +1812,22 @@
                 <h3>Import Backup</h3>
                 <div class="warning-note">Import replaces the current bgit configuration with the selected archive contents.</div>
                 <input name="archivePath" type="hidden" value="${escapeHtml(lastImportPath)}" required />
-                <div class="backup-path">${escapeHtml(lastImportPath || "No archive selected")}</div>
+                <div class="field-group">
+                  <span>Backup archive</span>
+                  <div class="field-control">
+                    <span class="backup-path truncate" title="${escapeHtml(lastImportPath || "No archive selected")}">${escapeHtml(lastImportPath || "No archive selected")}</span>
+                    <button type="button" data-action="choose-import" title="Choose .bgit archive" aria-label="Choose .bgit archive">
+                      <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
+                    </button>
+                  </div>
+                  <span class="field-hint">Select an encrypted .bgit archive to restore.</span>
+                </div>
                 <label>
                   Import password
                   <input name="password" type="password" autocomplete="current-password" required />
                 </label>
                 <div class="backup-actions">
-                  <button type="button" data-action="choose-import">Choose Archive</button>
-                  <button type="submit">Import</button>
+                  <button type="submit" class="primary">Import</button>
                 </div>
                 <div id="importSummary" class="backup-summary" hidden></div>
               </form>
@@ -740,14 +1836,190 @@
         `;
       }
 
+      function repoBindingPanel(status) {
+        const identities = status.identities || [];
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Repository Bindings</h2>
+                <p>Pin local Git repositories to the identity they must use.</p>
+              </div>
+            </div>
+            <form id="repoBindingForm" class="binding-form">
+              ${
+                editingBindingPath
+                  ? `<div class="editing-banner">
+                      <strong>Editing binding</strong>
+                      <button type="button" data-action="cancel-binding-edit">Cancel</button>
+                    </div>`
+                  : ""
+              }
+              ${fieldWithChooser({
+                label: "Repository path",
+                name: "path",
+                value: selectedRepoPath,
+                placeholder: "/path/to/git/repo",
+                action: "choose-repo",
+                title: "Choose Git repository",
+                hint: "Select a local Git repository directory.",
+                required: true,
+              })}
+              <label>
+                Identity
+                <select name="alias" required ${identities.length === 0 ? "disabled" : ""}>
+                  <option value="">Select identity</option>
+                  ${identities
+                    .map(
+                      (identity) =>
+                        `<option value="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>${editingBindingPath ? "Update Binding" : "Bind"}</button>
+              </div>
+            </form>
+            ${repoBindingRows(status.bindings || [])}
+          </section>
+        `;
+      }
+
+      function repoBindingRows(bindings) {
+        if (bindings.length === 0) {
+          return `<div class="empty"><p>No repository bindings configured. Bind a repository to keep its Git identity aligned automatically.</p></div>`;
+        }
+        return `
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Identity</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${bindings
+                .map(
+                  (binding) => `
+                    <tr>
+                      <td>${copyableValue(binding.path, "repo-path", "Copy repository path")}</td>
+                      <td>
+                        <strong>${escapeHtml(binding.alias)}</strong>
+                        ${
+                          binding.missingIdentity
+                            ? ""
+                            : `<div class="muted truncate" title="${escapeHtml(`${binding.name} · ${binding.email}`)}">${escapeHtml(binding.name)} · ${escapeHtml(binding.email)}</div>`
+                        }
+                      </td>
+                      <td>${binding.missingIdentity ? `<span class="badge warn">Identity missing</span>` : `<span class="badge good">Ready</span>`}</td>
+                      <td>
+                        <div class="actions">
+                          ${iconButton({ action: "edit-binding", icon: "edit", label: `Change ${binding.alias} binding`, alias: binding.alias, path: binding.path })}
+                          ${iconButton({ action: "remove-binding", icon: "trash", label: `Remove ${binding.alias} binding`, alias: binding.alias, path: binding.path, danger: true })}
+                        </div>
+                      </td>
+                    </tr>
+                  `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function identityDetectionPanel(detection = currentDetection) {
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Identity Detection</h2>
+                <p>Check which bgit identity applies to a repository or workspace path.</p>
+              </div>
+            </div>
+            <form id="identityDetectionForm" class="detection-form">
+              ${fieldWithChooser({
+                label: "Repository or workspace path",
+                name: "path",
+                value: selectedDetectPath,
+                placeholder: "/path/to/repo-or-workspace",
+                action: "choose-detect-path",
+                title: "Choose repository or workspace",
+                hint: "Select a path, then run detection.",
+                required: true,
+              })}
+              <div class="form-actions">
+                <button type="submit" class="primary"><span class="icon" aria-hidden="true">${iconSvg("search")}</span>Detect</button>
+              </div>
+            </form>
+            ${identityDetectionDetails(detection)}
+          </section>
+        `;
+      }
+
+      function identityDetectionDetails(detection) {
+        if (!detection) {
+          return `<p class="muted">Choose a path to see the effective identity and Git config state.</p>`;
+        }
+        if (!detection.alias) {
+          return `
+            <div class="warning-note">${escapeHtml(detection.message || "No identity detected for this path.")}</div>
+          `;
+        }
+        const sourceLabel = detection.source === "binding"
+          ? "Bound repository"
+          : detection.source === "workspace"
+            ? "Workspace"
+            : "Global active identity";
+        const matchBadge = detection.gitConfigChecked
+          ? detection.gitMatches
+            ? `<span class="badge good">Git config matches</span>`
+            : `<span class="badge warn">Git config needs sync</span>`
+          : `<span class="badge warn">Git config not checked</span>`;
+        return `
+          <div class="detection-grid">
+            <div class="detection-item">
+              <span>Detected Source</span>
+              <strong>${escapeHtml(sourceLabel)}</strong>
+              ${detection.sourcePath ? `<div class="muted">${escapeHtml(detection.sourcePath)}</div>` : ""}
+            </div>
+            <div class="detection-item">
+              <span>Identity</span>
+              <strong>${escapeHtml(detection.alias)}</strong>
+              <div class="muted">${escapeHtml(detection.email)}</div>
+            </div>
+            <div class="detection-item">
+              <span>Git Config</span>
+              ${matchBadge}
+              <div class="muted">${escapeHtml(detection.gitConfigScope || "unknown")}</div>
+              ${
+                detection.gitConfigChecked
+                  ? `<div class="muted">${escapeHtml(detection.gitName)} &lt;${escapeHtml(detection.gitEmail)}&gt;</div>`
+                  : ""
+              }
+            </div>
+            <div class="detection-item">
+              <span>Repository</span>
+              ${copyableValue(detection.repoRoot || detection.path, "", "Copy detected path")}
+            </div>
+          </div>
+          <div class="backup-actions" style="margin-top: 12px">
+            <button
+              type="button"
+              data-action="sync-detected-identity"
+              ${!detection.syncAvailable || detection.gitMatches ? "disabled" : ""}
+            ><span class="icon" aria-hidden="true">${iconSvg("sync")}</span>Sync Identity</button>
+            <span class="muted">${escapeHtml(detection.message || "")}</span>
+          </div>
+        `;
+      }
+
       function doctorPanel(doctor) {
         if (!doctor) {
           return `
             <section class="panel">
-              <div class="section-heading">
-                <h2>Doctor</h2>
-                <button type="button" data-action="doctor-refresh">Run Checks</button>
-              </div>
               <p class="muted">Diagnostics not loaded.</p>
             </section>
           `;
@@ -764,15 +2036,9 @@
           <section class="panel">
             <div class="section-heading">
               <div>
-                <h2>Doctor</h2>
+                <h2>Overall Health</h2>
                 <p>${escapeHtml(state)}</p>
               </div>
-              <button type="button" data-action="doctor-refresh">Run Checks</button>
-            </div>
-            <div class="doctor-summary">
-              <span class="badge good">${doctorSuccessCount(doctor)} passing</span>
-              <span class="badge warn">${doctor.warnings || 0} warning(s)</span>
-              <span class="badge ${doctor.errors > 0 ? "warn" : ""}">${doctor.errors || 0} error(s)</span>
             </div>
             ${doctorSections(doctor.sections || [])}
           </section>
@@ -795,12 +2061,26 @@
           <div class="check-list">
             ${sections
               .map(
-                (section) => `
-                  <div class="check-section">
-                    <h3>${escapeHtml(section.title)}</h3>
-                    ${(section.checks || []).map(doctorCheckRow).join("")}
-                  </div>
-                `,
+                (section) => {
+                  const checks = section.checks || [];
+                  const errors = checks.filter((check) => check.level === "fail").length;
+                  const warnings = checks.filter((check) => check.level === "warn").length;
+                  const passes = checks.filter((check) => check.level === "pass").length;
+                  const open = errors > 0 || warnings > 0 ? "open" : "";
+                  return `
+                    <details class="check-section" ${open}>
+                      <summary>
+                        <h3>${escapeHtml(section.title)}</h3>
+                        <span class="actions">
+                          <span class="badge good">${passes} pass</span>
+                          <span class="badge warn">${warnings} warn</span>
+                          <span class="badge ${errors > 0 ? "error" : ""}">${errors} error</span>
+                        </span>
+                      </summary>
+                      ${checks.map(doctorCheckRow).join("")}
+                    </details>
+                  `;
+                },
               )
               .join("")}
           </div>
@@ -824,9 +2104,8 @@
         if (identity.sshPublicKeyStatus === "available" && identity.sshPublicKey) {
           return `
             <div class="public-key-card">
-              <code class="public-key-preview" title="${escapeHtml(identity.sshPublicKey)}">${escapeHtml(identity.sshPublicKey)}</code>
+              ${copyableValue(identity.sshPublicKey, "public-key-preview", `Copy public key for ${identity.alias}`)}
               <div class="key-actions">
-                <button type="button" data-action="copy-public-key" data-alias="${escapeHtml(identity.alias)}">Copy Public Key</button>
                 <span class="muted">Add this to GitHub SSH keys.</span>
               </div>
             </div>
@@ -844,6 +2123,28 @@
           <div class="public-key-card">
             <span class="badge warn">Not configured</span>
             <span class="muted">Generate or set an SSH key to copy the GitHub public key.</span>
+          </div>
+        `;
+      }
+
+      function sshKeySummary(identity) {
+        const canCopy = identity.sshPublicKeyStatus === "available" && identity.sshPublicKey;
+        const keyValue = canCopy
+          ? identity.sshPublicKey
+          : identity.sshKeyStatus === "available"
+            ? "Public key unavailable"
+            : "No SSH key configured";
+        return `
+          <div class="record-field">
+            <span class="record-label">SSH Key</span>
+            <div class="copyable">
+              <span class="record-value truncate" title="${escapeHtml(keyValue)}">${escapeHtml(keyValue)}</span>
+              ${
+                canCopy
+                  ? copyButton(identity.sshPublicKey, `Copy SSH key for ${identity.alias}`)
+                  : `<button type="button" class="icon-btn" title="SSH public key unavailable" aria-label="SSH public key unavailable" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+              }
+            </div>
           </div>
         `;
       }
@@ -878,95 +2179,240 @@
 
       function identityRows(identities) {
         if (identities.length === 0) {
-          return `<div class="empty"><p>No identities configured.</p></div>`;
+          return `<section class="panel empty"><p>No identities configured. Add your first profile to start managing Git identities.</p></section>`;
         }
         return `
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Identity</th>
-                <th>GitHub</th>
-                <th>Public Key</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${identities
-                .map(
-                  (identity) => `
-                    <tr>
-                      <td>
-                        <div class="identity-cell">
-                          ${avatarBlock(identity)}
-                          <div class="identity-details">
-                            <strong>${escapeHtml(identity.alias)}${identity.active ? " (active)" : ""}</strong>
-                            <span>${escapeHtml(identity.name)}</span>
-                            <span class="muted">${escapeHtml(identity.email)}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td>${escapeHtml(identity.githubUsername)}</td>
-                      <td>${publicKeyBlock(identity)}</td>
-                      <td>${statusBadge(identity.sshKeyStatus)}</td>
-                      <td>
-                        <div class="actions">
-                          <button type="button" data-action="activate" data-alias="${escapeHtml(identity.alias)}" ${identity.active ? "disabled" : ""}>Use</button>
-                          <button type="button" data-action="edit" data-alias="${escapeHtml(identity.alias)}">Edit</button>
-                          <button class="danger" type="button" data-action="delete" data-alias="${escapeHtml(identity.alias)}">Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  `,
-                )
-                .join("")}
-            </tbody>
-          </table>
+          <section class="identity-records">
+            ${identities
+              .map(
+                (identity) => `
+                  <article class="identity-record ${identity.active ? "active" : ""}">
+                    <div class="identity-cell">
+                      ${avatarBlock(identity)}
+                      <div class="identity-details">
+                        <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
+                        <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+                        <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+                      </div>
+                    </div>
+                    <div class="record-field">
+                      <span class="record-label">GitHub</span>
+                      <span class="record-value truncate" title="${escapeHtml(identity.githubUsername || "Not set")}">${escapeHtml(identity.githubUsername || "Not set")}</span>
+                    </div>
+                    ${sshKeySummary(identity)}
+                    <div class="record-field">
+                      <span class="record-label">Status</span>
+                      <div class="actions">
+                        ${statusBadge(identity.sshKeyStatus)}
+                      </div>
+                    </div>
+                    <div class="actions identity-record-actions">
+                      ${iconButton({ action: "view", icon: "eye", label: `View ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
+                      ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
+                    </div>
+                  </article>
+                `,
+              )
+              .join("")}
+          </section>
         `;
       }
 
+      function identityCards(identities) {
+        if (identities.length === 0) {
+          return `<section class="panel empty"><p>No identities configured. Add your first profile to start managing Git identities.</p></section>`;
+        }
+        return `
+          <div class="card-grid">
+            ${identities
+              .map(
+                (identity) => `
+                  <article class="identity-card ${identity.active ? "active" : ""}">
+                    <div class="card-actions">
+                      <div class="identity-cell">
+                        ${avatarBlock(identity)}
+                        <div class="identity-details">
+                          <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
+                          <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+                          <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+                        </div>
+                      </div>
+                      ${identity.active ? `<span class="badge active">Active</span>` : statusBadge(identity.sshKeyStatus)}
+                    </div>
+                    <div class="identity-meta">
+                      <div class="muted truncate" title="${escapeHtml(identity.githubUsername)}">GitHub: ${escapeHtml(identity.githubUsername)}</div>
+                      <div>${statusBadge(identity.sshKeyStatus)}</div>
+                    </div>
+                    <details class="compact-details">
+                      <summary>SSH public key</summary>
+                      <div style="margin-top: 10px">${publicKeyBlock(identity)}</div>
+                    </details>
+                    <div class="actions">
+                      ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
+                      ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
+                      ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
+                    </div>
+                  </article>
+                `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      function dashboardPage(status, doctor) {
+        const health = doctor
+          ? doctor.errors > 0
+            ? "Needs attention"
+            : doctor.warnings > 0
+              ? "Warnings"
+              : "Healthy"
+          : "Not checked";
+        return `
+          ${pageHeading("Dashboard", "A quick view of identity, repository, backup, and health status.")}
+          <section class="summary">
+            <div class="metric"><span>Identities</span><strong>${status.identityCount || 0}</strong></div>
+            <div class="metric"><span>Repository Bindings</span><strong>${status.bindingCount || 0}</strong></div>
+            <div class="metric"><span>Backup Status</span><strong>${lastExportPath || lastImportPath ? "Recent" : "Ready"}</strong></div>
+            <div class="metric"><span>Doctor</span><strong>${escapeHtml(health)}</strong></div>
+          </section>
+          <section class="panel">
+            <h2>Quick Actions</h2>
+            <div class="quick-launchpad">
+              <button type="button" data-page-jump="identities"><span class="icon" aria-hidden="true">${iconSvg("users")}</span>Identities</button>
+              <button type="button" data-page-jump="backup"><span class="icon" aria-hidden="true">${iconSvg("archive")}</span>Backup</button>
+              <button type="button" data-page-jump="doctor"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Doctor</button>
+              <button type="button" data-page-jump="bindings"><span class="icon" aria-hidden="true">${iconSvg("link")}</span>Bindings</button>
+            </div>
+          </section>
+          ${activityPanel()}
+        `;
+      }
+
+      function activityPanel() {
+        const items = activityLog.slice(0, 5);
+        return `
+          <section class="panel">
+            <div class="section-heading">
+              <div>
+                <h2>Recent Activity</h2>
+                <p>Latest desktop actions on this machine.</p>
+              </div>
+            </div>
+            ${
+              items.length === 0
+                ? `<div class="empty"><p>No recent activity yet. Actions you perform in this desktop app will appear here.</p></div>`
+                : `<div class="activity-list">
+                    ${items
+                      .map(
+                        (item) => `
+                          <div class="activity-item ${escapeHtml(item.tone || "")}">
+                            <span class="activity-dot" aria-hidden="true">${item.tone === "error" ? "!" : item.tone === "warn" ? "!" : "✓"}</span>
+                            <div>
+                              <strong>${escapeHtml(item.title)}</strong>
+                              ${item.message ? `<div class="muted">${escapeHtml(item.message)}</div>` : ""}
+                              ${item.time ? `<div class="muted">${escapeHtml(item.time)}</div>` : ""}
+                            </div>
+                          </div>
+                        `,
+                      )
+                      .join("")}
+                  </div>`
+            }
+          </section>
+        `;
+      }
+
+      function identitiesPage(status) {
+        return `
+          ${pageHeading("Identities", "Manage Git profiles and copy SSH public keys.", addIdentityButton())}
+          ${identityRows(status.identities || [])}
+        `;
+      }
+
+      function bindingsPage(status) {
+        return `
+          ${pageHeading("Repository Bindings", "Map local repositories to the identity they must use.")}
+          ${repoBindingPanel(status)}
+        `;
+      }
+
+      function backupPage() {
+        return `
+          ${pageHeading("Backup & Restore", "Export encrypted backups or import an existing .bgit archive.")}
+          ${backupPanel()}
+        `;
+      }
+
+      function doctorPage(doctor) {
+        return `
+          ${pageHeading("Doctor", "Review configuration, SSH, and Git identity health.", `<button type="button" data-action="doctor-refresh"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Run Checks</button>`)}
+          ${doctorPanel(doctor)}
+        `;
+      }
+
+      function currentPageContent(status, doctor) {
+        if (!status.configured) {
+          return `
+            ${pageHeading("Setup", "bgit is not configured on this machine.", addIdentityButton())}
+            ${backupPage()}
+            ${doctorPage(doctor)}
+          `;
+        }
+        switch (currentPage) {
+          case "identities":
+            return identitiesPage(status);
+          case "bindings":
+            return bindingsPage(status);
+          case "backup":
+            return backupPage(status);
+          case "doctor":
+            return doctorPage(doctor);
+          default:
+            return dashboardPage(status, doctor);
+        }
+      }
+
       function render(status, doctor = currentDoctor) {
+        const shell = document.getElementById("contentShell");
+        const pageChanged = lastRenderedPage !== "" && lastRenderedPage !== currentPage;
+        const previousScrollY = pageChanged ? pageScrollPositions[currentPage] || 0 : shell ? shell.scrollTop : window.scrollY;
         currentStatus = status;
         currentDoctor = doctor;
         const target = document.getElementById("app");
+        const hadRendered = target.dataset.rendered === "true";
         target.className = "";
-
-        if (!status.configured) {
-          target.innerHTML = `
-            <section class="panel empty"><p>bgit is not configured on this machine.</p></section>
-            ${addIdentityForm()}
-            ${backupPanel()}
-            ${doctorPanel(doctor)}
-          `;
-          bindForms();
-          bindBackupActions();
-          bindDoctorActions();
-          return;
-        }
-
-        const identities = status.identities || [];
-        target.innerHTML = `
-          <section class="panel summary">
-            <div class="metric"><span>Identities</span><strong>${status.identityCount}</strong></div>
-            <div class="metric"><span>Workspaces</span><strong>${status.workspaceCount}</strong></div>
-            <div class="metric"><span>Bindings</span><strong>${status.bindingCount}</strong></div>
-            <div class="metric"><span>Setup</span><strong>${status.setupCompleted ? "Ready" : "Pending"}</strong></div>
-          </section>
-          <div class="grid">
-            ${activePanel(status)}
-            ${addIdentityForm()}
-          </div>
-          <section class="panel">
-            <h2>Identities</h2>
-            ${identityRows(identities)}
-          </section>
-          ${backupPanel()}
-          ${doctorPanel(doctor)}
-        `;
+        renderNavigation();
+        renderTopbar(status, doctor);
+        target.innerHTML = `<div class="page-view">${currentPageContent(status, doctor)}</div>`;
+        lastRenderedPage = currentPage;
         bindForms();
         bindIdentityActions();
+        bindIdentityDetectionActions();
+        bindRepoBindingActions();
         bindBackupActions();
+        bindCopyActions();
         bindDoctorActions();
+        bindPageActions();
+        finishRender(target, hadRendered, previousScrollY);
+      }
+
+      function finishRender(target, preserveScroll, previousScrollY) {
+        target.dataset.rendered = "true";
+        if (!preserveScroll) {
+          return;
+        }
+        requestAnimationFrame(() => {
+          const shell = document.getElementById("contentShell");
+          if (shell) {
+            shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
+            return;
+          }
+          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          window.scrollTo({ top: Math.min(previousScrollY, maxScroll), left: 0, behavior: "auto" });
+        });
       }
 
       function formPayload(form) {
@@ -986,16 +2432,92 @@
         if (!addForm) {
           return;
         }
-        addForm.addEventListener("submit", async (event) => {
+        bindSSHKeyChoice(addForm);
+        addForm.onsubmit = async (event) => {
           event.preventDefault();
-          await runAction(() => api().AddIdentity(formPayload(addForm)), addForm, "Adding identity");
+          const payload = formPayload(addForm);
+          const added = await runAction(() => api().AddIdentity(payload), addForm, "Adding identity");
+          if (added) {
+            addForm.reset();
+            document.getElementById("addDialog").close();
+            notify({
+              title: "Add SSH key to GitHub",
+              message: `Open '${payload.alias}' in Identities, copy its SSH public key, and add it to your GitHub SSH keys.`,
+              tone: "success",
+              timeout: 0,
+            });
+          }
+        };
+        document.querySelectorAll("[data-action='choose-add-ssh-key']").forEach((button) => {
+          button.onclick = async () => {
+            await chooseSSHPrivateKey(button, addForm.elements.sshKeyPath);
+            syncSSHKeyChoice(addForm);
+          };
+        });
+        document.querySelectorAll("[data-action='choose-edit-ssh-key']").forEach((button) => {
+          button.onclick = async () => {
+            await chooseSSHPrivateKey(button, document.getElementById("editSSHKey"));
+          };
+        });
+      }
+
+      function bindSSHKeyChoice(form) {
+        const pathInput = form.elements.sshKeyPath;
+        const generate = form.elements.generateSSHKey;
+        if (!pathInput || !generate) {
+          return;
+        }
+        const sync = () => syncSSHKeyChoice(form);
+        pathInput.oninput = sync;
+        generate.onchange = sync;
+        sync();
+      }
+
+      function syncSSHKeyChoice(form) {
+        const pathInput = form.elements.sshKeyPath;
+        const generate = form.elements.generateSSHKey;
+        if (!pathInput || !generate) {
+          return;
+        }
+        const chooseButton = form.querySelector("[data-action='choose-add-ssh-key']");
+        const hasPath = String(pathInput.value || "").trim() !== "";
+        if (hasPath) {
+          generate.checked = false;
+        }
+        if (generate.checked) {
+          pathInput.value = "";
+          pathInput.disabled = true;
+          if (chooseButton) {
+            chooseButton.disabled = true;
+          }
+          return;
+        }
+        pathInput.disabled = false;
+        if (chooseButton) {
+          chooseButton.disabled = false;
+        }
+      }
+
+      function bindPageActions() {
+        document.querySelectorAll("[data-action='open-add-identity']").forEach((button) => {
+          button.addEventListener("click", () => {
+            document.getElementById("addDialog").showModal();
+          });
+        });
+        document.querySelectorAll("[data-page-jump]").forEach((button) => {
+          button.addEventListener("click", () => {
+            transitionToPage(button.dataset.pageJump || "dashboard");
+          });
         });
       }
 
       function bindIdentityActions() {
-        document.querySelectorAll("[data-action]").forEach((button) => {
+        document.querySelectorAll("[data-action='view'], [data-action='activate'], [data-action='edit'], [data-action='delete']").forEach((button) => {
           button.addEventListener("click", async () => {
             const alias = button.dataset.alias;
+            if (button.dataset.action === "view") {
+              openViewDialog(alias);
+            }
             if (button.dataset.action === "activate") {
               await runAction(() => api().ActivateIdentity(alias), button, `Activating ${alias}`);
             }
@@ -1004,12 +2526,18 @@
             }
             if (button.dataset.action === "delete") {
               const identity = findIdentity(alias);
+              const bindingCount = (currentStatus?.bindings || []).filter((binding) => binding.alias === alias).length;
+              const cleanupWarning = [
+                bindingCount > 0 ? `${bindingCount} repository binding(s) for this identity will be removed.` : "",
+                "Any workspace bindings for this identity will also be removed.",
+                identity?.sshKeyPath ? "SSH key files will be kept unless you choose to delete them in the next step." : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
               const confirmed = await confirmAction({
                 title: "Delete Identity",
                 message: `Delete identity '${alias}' from bgit? This removes the profile from bgit configuration.`,
-                warning: identity?.sshKeyPath
-                  ? "SSH key files will be kept unless you choose to delete them in the next step."
-                  : "",
+                warning: cleanupWarning,
                 acceptLabel: "Delete",
                 danger: true,
               });
@@ -1028,9 +2556,14 @@
                 : false;
               await runAction(() => api().DeleteIdentity({ alias, deleteKeys }), button, `Deleting ${alias}`);
             }
-            if (button.dataset.action === "copy-public-key") {
-              await copyPublicKey(alias, button);
-            }
+          });
+        });
+      }
+
+      function bindCopyActions() {
+        document.querySelectorAll("[data-action='copy-value']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await copyTextValue(button.dataset.path || "", button);
           });
         });
       }
@@ -1122,6 +2655,228 @@
         });
       }
 
+      function bindIdentityDetectionActions() {
+        const form = document.getElementById("identityDetectionForm");
+        if (form) {
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const path = String(new FormData(form).get("path") || "").trim();
+            selectedDetectPath = path;
+            await detectIdentityPath(path, form);
+          });
+        }
+
+        document.querySelectorAll("[data-action='choose-detect-path']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseIdentityPath(button);
+          });
+        });
+
+        document.querySelectorAll("[data-action='sync-detected-identity']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await syncDetectedIdentity(button);
+          });
+        });
+      }
+
+      async function chooseIdentityPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseIdentityPath();
+          if (path) {
+            selectedDetectPath = path;
+            render(currentStatus, currentDoctor);
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose path failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function detectIdentityPath(path, disabledTarget) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return false;
+        }
+        setMessage("");
+        setActionText("Detecting identity");
+        const elements = disabledTarget
+          ? Array.from(disabledTarget.querySelectorAll("button, input, select"))
+          : [];
+        const previousStates = elements.map((element) => ({ element, disabled: element.disabled }));
+        elements.forEach((element) => {
+          element.disabled = true;
+        });
+        try {
+          currentDetection = await api().DetectIdentity({ path });
+          render(currentStatus, currentDoctor);
+          const tone = currentDetection.alias
+            ? currentDetection.gitMatches
+              ? "success"
+              : "warn"
+            : "warn";
+          notify({
+            title: "Identity detected",
+            message: currentDetection.message || "Detection complete.",
+            tone,
+          });
+          return true;
+        } catch (error) {
+          setMessage(actionableError(error), true, "Detection failed");
+          return false;
+        } finally {
+          previousStates.forEach(({ element, disabled }) => {
+            element.disabled = disabled;
+          });
+          setActionText("");
+        }
+      }
+
+      async function syncDetectedIdentity(button) {
+        if (!currentDetection?.path) {
+          setMessage("Detect an identity before syncing.", true, "Detection required");
+          return;
+        }
+        const result = await runAction(
+          () => api().SyncDetectedIdentity({ path: currentDetection.path }),
+          button,
+          "Syncing detected identity",
+        );
+        if (result?.detected) {
+          currentDetection = result.detected;
+          if (result.status) {
+            render(result.status, currentDoctor);
+          } else {
+            render(currentStatus, currentDoctor);
+          }
+        }
+      }
+
+      function bindRepoBindingActions() {
+        const form = document.getElementById("repoBindingForm");
+        if (form) {
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const payload = repoBindingPayload(form);
+            selectedRepoPath = payload.path;
+            const actionText = editingBindingPath ? "Updating binding" : "Binding repository";
+            const previousEditPath = editingBindingPath;
+            if (previousEditPath) {
+              editingBindingPath = "";
+            }
+            const result = await runAction(() => api().BindRepository(payload), form, actionText);
+            if (!result && previousEditPath) {
+              editingBindingPath = previousEditPath;
+              render(currentStatus, currentDoctor);
+            }
+          });
+        }
+
+        document.querySelectorAll("[data-action='choose-repo']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            await chooseRepositoryPath(button);
+          });
+        });
+
+        document.querySelectorAll("[data-action='edit-binding']").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedRepoPath = button.dataset.path || "";
+            editingBindingPath = selectedRepoPath;
+            render(currentStatus, currentDoctor);
+            const form = document.getElementById("repoBindingForm");
+            if (form) {
+              form.elements.path.value = selectedRepoPath;
+              form.elements.alias.value = button.dataset.alias || "";
+              form.elements.path.focus();
+            }
+          });
+        });
+
+        document.querySelectorAll("[data-action='cancel-binding-edit']").forEach((button) => {
+          button.addEventListener("click", () => {
+            editingBindingPath = "";
+            selectedRepoPath = "";
+            render(currentStatus, currentDoctor);
+          });
+        });
+
+        document.querySelectorAll("[data-action='remove-binding']").forEach((button) => {
+          button.addEventListener("click", async () => {
+            const path = button.dataset.path || "";
+            const alias = button.dataset.alias || "";
+            const confirmed = await confirmAction({
+              title: "Remove Repository Binding",
+              message: `Remove the binding between this repository and '${alias}'?`,
+              warning: "The repository will fall back to workspace identity or the global active identity.",
+              acceptLabel: "Remove",
+              danger: true,
+            });
+            if (!confirmed) {
+              return;
+            }
+            if (editingBindingPath === path) {
+              editingBindingPath = "";
+              selectedRepoPath = "";
+            }
+            await runAction(() => api().RemoveRepositoryBinding(path), button, "Removing repository binding");
+          });
+        });
+      }
+
+      function repoBindingPayload(form) {
+        const data = new FormData(form);
+        return {
+          path: String(data.get("path") || "").trim(),
+          alias: String(data.get("alias") || "").trim(),
+        };
+      }
+
+      async function chooseRepositoryPath(button) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseRepositoryPath();
+          if (path) {
+            selectedRepoPath = path;
+            render(currentStatus, currentDoctor);
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose repository failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
+      async function chooseSSHPrivateKey(button, input) {
+        if (!api()) {
+          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
+          return;
+        }
+        const previousDisabled = button.disabled;
+        button.disabled = true;
+        try {
+          const path = await api().ChooseSSHPrivateKeyPath();
+          if (path && input) {
+            input.value = path;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        } catch (error) {
+          setMessage(actionableError(error), true, "Choose SSH key failed");
+        } finally {
+          button.disabled = previousDisabled;
+        }
+      }
+
       async function chooseExportPath(button) {
         if (!api()) {
           setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
@@ -1197,34 +2952,37 @@
         return (currentStatus?.identities || []).find((identity) => identity.alias === alias);
       }
 
-      async function copyPublicKey(alias, button) {
-        const identity = findIdentity(alias);
-        if (!identity?.sshPublicKey) {
-          setMessage(`Public key for '${alias}' is not available.`, true, "Public key missing");
+      async function copyTextValue(value, button, message = "Copied to clipboard") {
+        if (!value || value === "Default backup location" || value === "No archive selected") {
+          setMessage("No value available to copy.", true, "Copy unavailable");
           return;
         }
         const previousDisabled = button.disabled;
-        const previousLabel = button.textContent;
+        const previousTitle = button.title;
         button.disabled = true;
-        button.textContent = "Copying...";
+        button.title = "Copied";
+        button.classList.add("copied");
         try {
           if (window.runtime?.ClipboardSetText) {
-            await window.runtime.ClipboardSetText(identity.sshPublicKey);
+            await window.runtime.ClipboardSetText(value);
           } else if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(identity.sshPublicKey);
+            await navigator.clipboard.writeText(value);
           } else {
             throw new Error("clipboard is not available");
           }
           notify({
-            title: "Public key copied",
-            message: `Add '${alias}' to GitHub at github.com/settings/keys.`,
+            title: "Copied",
+            message,
             tone: "success",
           });
         } catch (error) {
-          setMessage(`Could not copy public key: ${String(error)}`, true, "Copy failed");
+          setMessage(`Could not copy value: ${String(error)}`, true, "Copy failed");
         } finally {
-          button.disabled = previousDisabled;
-          button.textContent = previousLabel;
+          window.setTimeout(() => {
+            button.disabled = previousDisabled;
+            button.title = previousTitle || "Copy";
+            button.classList.remove("copied");
+          }, 900);
         }
       }
 
@@ -1241,6 +2999,74 @@
         document.getElementById("editGitHub").value = identity.githubUsername;
         document.getElementById("editSSHKey").value = identity.sshKeyPath || "";
         document.getElementById("editDialog").showModal();
+      }
+
+      function openViewDialog(alias) {
+        const identity = findIdentity(alias);
+        if (!identity) {
+          setMessage(`Identity '${alias}' not found`, true, "Identity not found");
+          return;
+        }
+        const copyAvailable = identity.sshPublicKeyStatus === "available" && identity.sshPublicKey;
+        const publicKey = copyAvailable
+          ? identity.sshPublicKey
+          : identity.sshKeyStatus === "available"
+            ? "Public key unavailable"
+            : "No SSH key configured";
+        const content = document.getElementById("viewIdentityContent");
+        content.innerHTML = `
+          <h2>Identity Details</h2>
+          <div class="identity-cell" style="margin-top: 12px">
+            ${avatarBlock(identity)}
+            <div class="identity-details">
+              <strong class="truncate" title="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</strong>
+              <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+            </div>
+          </div>
+          <div class="detail-list">
+            <div class="detail-row">
+              <span>Alias</span>
+              <strong class="truncate" title="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</strong>
+            </div>
+            <div class="detail-row">
+              <span>Name</span>
+              <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
+            </div>
+            <div class="detail-row">
+              <span>Email</span>
+              <span class="truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
+            </div>
+            <div class="detail-row">
+              <span>GitHub Username</span>
+              <span class="truncate" title="${escapeHtml(identity.githubUsername || "Not set")}">${escapeHtml(identity.githubUsername || "Not set")}</span>
+            </div>
+            <div class="detail-row">
+              <span>SSH Public Key</span>
+              <div class="copyable">
+                <span class="truncate" title="${escapeHtml(publicKey)}">${escapeHtml(publicKey)}</span>
+                ${
+                  copyAvailable
+                    ? `<button id="viewCopyKey" type="button" class="icon-btn copy-btn" title="Copy SSH key" aria-label="Copy SSH key"><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                    : `<button type="button" class="icon-btn" title="SSH public key unavailable" aria-label="SSH public key unavailable" disabled><span class="icon" aria-hidden="true">${iconSvg("copy")}</span></button>`
+                }
+              </div>
+            </div>
+            <div class="detail-row">
+              <span>Status</span>
+              <div class="actions">
+                ${identity.active ? `<span class="badge active">Active</span>` : ""}
+                ${statusBadge(identity.sshKeyStatus)}
+              </div>
+            </div>
+          </div>
+        `;
+        const copy = document.getElementById("viewCopyKey");
+        if (copy) {
+          copy.addEventListener("click", async () => {
+            await copyTextValue(identity.sshPublicKey, copy, `Copied SSH key for ${identity.alias}`);
+          });
+        }
+        document.getElementById("viewDialog").showModal();
       }
 
       function confirmAction({ title, message, warning = "", acceptLabel = "Continue", cancelLabel = "Cancel", danger = false }) {
@@ -1301,32 +3127,37 @@
         const previousStates = disabledElements.map((element) => ({
           element,
           disabled: element.disabled,
-          label: element.tagName === "BUTTON" ? element.textContent : "",
+          html: element.tagName === "BUTTON" ? element.innerHTML : "",
         }));
         disabledElements.forEach((element) => {
           element.disabled = true;
         });
-        if (disabledTarget.tagName === "BUTTON") {
-          disabledTarget.textContent = "Working...";
+        if (disabledTarget.tagName === "BUTTON" && !disabledTarget.classList.contains("icon-btn")) {
+          disabledTarget.innerHTML = `<span class="spinner" aria-hidden="true"></span>${escapeHtml(actionText)}`;
         }
         try {
           const result = await action();
-          const doctor = await api().GetDoctorStatus();
+          const shouldRefreshDoctor = currentPage === "doctor";
+          const doctor = shouldRefreshDoctor ? await api().GetDoctorStatus() : currentDoctor;
           if (result?.status) {
             render(result.status, doctor);
           } else {
             await load();
           }
-          setMessage(result?.message || "Done", false, "Action complete");
+          const message = result?.message || "Done";
+          addActivity(message, actionText, "success");
+          setMessage(message, false, "Action complete");
           return result || true;
         } catch (error) {
-          setMessage(actionableError(error), true, "Action failed");
+          const message = actionableError(error);
+          addActivity("Action failed", message, "error");
+          setMessage(message, true, "Action failed");
           return false;
         } finally {
-          previousStates.forEach(({ element, disabled, label }) => {
+          previousStates.forEach(({ element, disabled, html }) => {
             element.disabled = disabled;
             if (element.tagName === "BUTTON") {
-              element.textContent = label;
+              element.innerHTML = html;
             }
           });
           setActionText("");
@@ -1339,16 +3170,18 @@
           return;
         }
         const previousDisabled = button.disabled;
-        const previousLabel = button.textContent;
+        const previousHTML = button.innerHTML;
         button.disabled = true;
-        button.textContent = "Checking...";
+        button.innerHTML = `<span class="spinner" aria-hidden="true"></span>Running checks`;
         setActionText("Running diagnostics");
         try {
           const doctor = await api().GetDoctorStatus();
+          lastDoctorRunAt = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           render(currentStatus, doctor);
           const tone = doctor.errors > 0 ? "error" : doctor.warnings > 0 ? "warn" : "success";
+          addActivity("Doctor completed", `${doctor.errors || 0} error(s), ${doctor.warnings || 0} warning(s)`, tone);
           notify({
-            title: "Doctor checks refreshed",
+            title: "Doctor completed",
             message:
               doctor.errors > 0
                 ? `${doctor.errors} issue(s) need attention. Review the fix hints below.`
@@ -1361,7 +3194,7 @@
           setMessage(actionableError(error), true, "Doctor failed");
         } finally {
           button.disabled = previousDisabled;
-          button.textContent = previousLabel;
+          button.innerHTML = previousHTML;
           setActionText("");
         }
       }
@@ -1383,8 +3216,10 @@
       async function load() {
         const target = document.getElementById("app");
         try {
-          target.className = "panel";
-          target.textContent = "Loading...";
+          if (!currentStatus) {
+            target.className = "panel";
+            target.textContent = "Loading...";
+          }
           if (!api()) {
             throw new Error("Desktop backend is not available. Open this screen in the Wails app window.");
           }
@@ -1401,9 +3236,14 @@
         }
       }
 
-      document.getElementById("refresh").addEventListener("click", load);
       document.getElementById("cancelEdit").addEventListener("click", () => {
         document.getElementById("editDialog").close();
+      });
+      document.getElementById("cancelAdd").addEventListener("click", () => {
+        document.getElementById("addDialog").close();
+      });
+      document.getElementById("closeView").addEventListener("click", () => {
+        document.getElementById("viewDialog").close();
       });
       document.getElementById("editForm").addEventListener("submit", async (event) => {
         event.preventDefault();

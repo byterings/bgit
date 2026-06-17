@@ -10,16 +10,36 @@ export function AddIdentity(arg1) {
   return window['go']['main']['App']['AddIdentity'](arg1);
 }
 
+export function BindRepository(arg1) {
+  return window['go']['main']['App']['BindRepository'](arg1);
+}
+
 export function ChooseExportArchivePath() {
   return window['go']['main']['App']['ChooseExportArchivePath']();
+}
+
+export function ChooseIdentityPath() {
+  return window['go']['main']['App']['ChooseIdentityPath']();
 }
 
 export function ChooseImportArchivePath() {
   return window['go']['main']['App']['ChooseImportArchivePath']();
 }
 
+export function ChooseRepositoryPath() {
+  return window['go']['main']['App']['ChooseRepositoryPath']();
+}
+
+export function ChooseSSHPrivateKeyPath() {
+  return window['go']['main']['App']['ChooseSSHPrivateKeyPath']();
+}
+
 export function DeleteIdentity(arg1) {
   return window['go']['main']['App']['DeleteIdentity'](arg1);
+}
+
+export function DetectIdentity(arg1) {
+  return window['go']['main']['App']['DetectIdentity'](arg1);
 }
 
 export function ExportBackup(arg1) {
@@ -44,6 +64,14 @@ export function ImportBackup(arg1) {
 
 export function ListIdentities() {
   return window['go']['main']['App']['ListIdentities']();
+}
+
+export function RemoveRepositoryBinding(arg1) {
+  return window['go']['main']['App']['RemoveRepositoryBinding'](arg1);
+}
+
+export function SyncDetectedIdentity(arg1) {
+  return window['go']['main']['App']['SyncDetectedIdentity'](arg1);
 }
 
 export function UpdateIdentity(arg1) {

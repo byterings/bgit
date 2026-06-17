@@ -100,6 +100,28 @@ export namespace main {
 	        this.path = source["path"];
 	    }
 	}
+	export class RepoBindingView {
+	    path: string;
+	    alias: string;
+	    name?: string;
+	    email?: string;
+	    githubUsername?: string;
+	    missingIdentity: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoBindingView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.alias = source["alias"];
+	        this.name = source["name"];
+	        this.email = source["email"];
+	        this.githubUsername = source["githubUsername"];
+	        this.missingIdentity = source["missingIdentity"];
+	    }
+	}
 	export class IdentityView {
 	    alias: string;
 	    name: string;
@@ -138,6 +160,7 @@ export namespace main {
 	    workspaceCount: number;
 	    bindingCount: number;
 	    identities: IdentityView[];
+	    bindings: RepoBindingView[];
 	    activeIdentity?: IdentityView;
 	    effectiveIdentity?: EffectiveIdentityView;
 	
@@ -154,6 +177,7 @@ export namespace main {
 	        this.workspaceCount = source["workspaceCount"];
 	        this.bindingCount = source["bindingCount"];
 	        this.identities = this.convertValues(source["identities"], IdentityView);
+	        this.bindings = this.convertValues(source["bindings"], RepoBindingView);
 	        this.activeIdentity = this.convertValues(source["activeIdentity"], IdentityView);
 	        this.effectiveIdentity = this.convertValues(source["effectiveIdentity"], EffectiveIdentityView);
 	    }
@@ -301,6 +325,93 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class IdentityDetectionResult {
+	    path: string;
+	    repoRoot?: string;
+	    alias?: string;
+	    source?: string;
+	    sourcePath?: string;
+	    name?: string;
+	    email?: string;
+	    githubUsername?: string;
+	    gitConfigScope?: string;
+	    gitName?: string;
+	    gitEmail?: string;
+	    gitMatches: boolean;
+	    gitConfigChecked: boolean;
+	    syncAvailable: boolean;
+	    message?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.repoRoot = source["repoRoot"];
+	        this.alias = source["alias"];
+	        this.source = source["source"];
+	        this.sourcePath = source["sourcePath"];
+	        this.name = source["name"];
+	        this.email = source["email"];
+	        this.githubUsername = source["githubUsername"];
+	        this.gitConfigScope = source["gitConfigScope"];
+	        this.gitName = source["gitName"];
+	        this.gitEmail = source["gitEmail"];
+	        this.gitMatches = source["gitMatches"];
+	        this.gitConfigChecked = source["gitConfigChecked"];
+	        this.syncAvailable = source["syncAvailable"];
+	        this.message = source["message"];
+	    }
+	}
+	export class IdentityDetectionActionResult {
+	    message: string;
+	    detected?: IdentityDetectionResult;
+	    status?: DesktopStatus;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionActionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.message = source["message"];
+	        this.detected = this.convertValues(source["detected"], IdentityDetectionResult);
+	        this.status = this.convertValues(source["status"], DesktopStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class IdentityDetectionRequest {
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IdentityDetectionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	
 	export class IdentityRequest {
 	    alias: string;
 	    name: string;
@@ -321,6 +432,55 @@ export namespace main {
 	        this.githubUsername = source["githubUsername"];
 	        this.sshKeyPath = source["sshKeyPath"];
 	        this.generateSSHKey = source["generateSSHKey"];
+	    }
+	}
+	
+	export class RepoBindingActionResult {
+	    message: string;
+	    path?: string;
+	    status?: DesktopStatus;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoBindingActionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.message = source["message"];
+	        this.path = source["path"];
+	        this.status = this.convertValues(source["status"], DesktopStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RepoBindingRequest {
+	    path: string;
+	    alias: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoBindingRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.alias = source["alias"];
 	    }
 	}
 	

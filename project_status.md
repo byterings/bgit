@@ -24,6 +24,10 @@ Recent fix:
 - Bound repositories now write and validate repo-local Git `user.name` and `user.email` for the bound identity.
 - `bgit check` validates the effective Git identity for the repository, so a bound repo can pass even when the global active user differs, provided the repo-local Git identity matches the binding.
 - `bgit sync --fix` repairs repo-local Git identity for bound repositories.
+- `bgit use` now re-syncs repo-local Git identity for repositories already bound to the activated alias, so stale bound repos are repaired during normal CLI identity switches.
+- Removing a binding now clears stale repo-local Git identity so the repository no longer keeps committing as the old bound user.
+- Deleting an identity now automatically removes its dependent repo bindings and workspace bindings, and clears repo-local Git identity from the affected repositories.
+- CLI confirmation prompts now accept non-TTY yes/no input, so scripted validation can cover delete, remote, check, and sync confirmation flows reliably.
 
 Recent desktop update:
 
@@ -47,6 +51,66 @@ Recent desktop avatar update:
 
 - Desktop identity rows now show GitHub avatars derived from each configured GitHub username.
 - Avatar rendering uses direct GitHub avatar URLs and initials fallback, without adding GitHub API calls or tokens.
+
+Recent desktop repo binding update:
+
+- Desktop users can view configured repository bindings.
+- Desktop users can choose or enter a local Git repository path and bind it to an identity.
+- Desktop repository binding uses the existing core repo binding flow and writes repo-local Git identity settings for the selected identity.
+- Desktop users can change or remove existing repository bindings with in-app confirmation.
+- Desktop activation and identity update flows now resync repo-local Git identity for repositories bound to the affected alias, so bound repositories keep using their bound commit identity even when the global active user differs.
+
+Recent desktop activation fix:
+
+- Global Git config commands now run from a stable existing directory so desktop identity activation does not fail when the app process current working directory is unavailable.
+
+Recent desktop identity detection update:
+
+- Desktop users can choose a repository or workspace path and see the effective bgit identity resolved from existing workspace, binding, and global identity rules.
+- Desktop shows whether the relevant Git config currently matches the detected identity.
+- Desktop users can sync the detected identity, using repo-local Git config for bound repositories and global Git config for workspace/global identities.
+
+Recent desktop UI polish update:
+
+- Desktop spacing, control sizing, table row alignment, and long-value truncation were tightened without changing navigation or business logic.
+- Row actions now use compact icon buttons with accessible labels and tooltips for identity and repository binding actions.
+- Panels, rows, controls, and toasts now use subtle transitions to reduce abrupt visual updates.
+- Review fixes added one consistent inline SVG icon set, copy buttons for long values, stronger active identity highlighting, generic copied feedback, and scroll-position preservation during dashboard updates.
+
+Recent desktop navigation update:
+
+- Desktop UI is organized into a sticky sidebar shell with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages.
+- Active identity and quick health indicators are shown in a persistent top area while module content scrolls independently.
+- Add Identity now opens in a modal instead of being permanently displayed on the page.
+- Navigation refinements added page transition animation, cleaner page scroll behavior, and simplified identity cards with secondary SSH key details behind a compact disclosure.
+
+Recent desktop UX polish update:
+
+- Sidebar navigation now updates active state without rebuilding the full sidebar on every render.
+- Page scroll position is preserved per section, while page switches restore the target section's prior scroll position.
+- Topbar rendering is cached to avoid unnecessary DOM replacement during routine data refreshes.
+- Dashboard now emphasizes the active identity and includes recent activity for identity, backup, repository, and doctor actions.
+- Doctor results default to summary-first collapsible sections so long pass lists do not dominate the page.
+- Button loading states preserve icon markup and stable button sizing to reduce layout jumps.
+
+Recent desktop UI refinement update:
+
+- Dashboard header was simplified to show only the active identity avatar, alias, and email as the persistent header item.
+- The header now includes a circular back action using desktop page navigation history, with active identity alias and email aligned from the same left edge.
+- The back action is positioned at the far left of the header while active identity information remains aligned at the far right.
+- The Dashboard hides the back action because it is the root desktop page.
+- Dashboard duplicate Active Profile card was removed and Quick Actions now use an equal 2x2 launchpad layout.
+- Recent Activity now shows only recorded desktop actions, limited to the latest five entries, without generated placeholder timestamps.
+- Identities now render as full-width horizontal records with avatar, alias, name, email, GitHub username, SSH key copy action, status, and icon-only actions.
+- Identity records now display the SSH public key directly instead of its filesystem path, use stable aligned columns, and avoid duplicating the active badge in the status column.
+- A read-only identity details modal displays and copies the SSH public key instead of exposing its filesystem path.
+- Successful identity creation now prompts the user to copy the generated public key and add it to GitHub SSH keys.
+- Doctor now exposes a single page-level Run Checks action and no longer duplicates aggregate pass, warning, and error badges inside the results panel.
+- Desktop responsiveness now includes tablet and mobile layouts for horizontal navigation, identity records, forms, dialogs, diagnostics, long values, action controls, and notifications.
+- Desktop chooser controls are now attached to their related fields for repository binding, identity detection, backup export/import, and SSH private-key selection.
+- Add Identity now prevents conflicting SSH key choices by making generated keys and existing private-key paths mutually exclusive.
+- Repository binding edit mode now shows an explicit editing state with Update Binding and Cancel actions.
+- Backup, binding, detection, and edit/save actions now use consistent primary action styling and explicit submit flows.
 
 ---
 
@@ -655,6 +719,132 @@ Why:
 
 ---
 
+### R-018
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added desktop repository binding models, status rows, and action results.
+- Added Wails backend methods to choose a repository directory, bind a repository to an identity, and remove a repository binding.
+- Reused the existing core repo binding implementation and refreshed repo-local Git `user.name` and `user.email` when binding through the desktop app.
+- Added a Repository Bindings desktop panel with path entry, directory picker, identity selector, binding list, change action, and remove confirmation.
+
+Why:
+
+- Completes desktop repository-to-identity mapping while preserving existing CLI behavior and core repo ownership.
+
+---
+
+### R-019
+
+- Status: done
+
+Files Changed:
+
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added desktop identity detection models and Wails backend methods for choosing a repository/workspace path, detecting the effective identity, and syncing the detected identity.
+- Reused existing core identity resolution rules instead of changing CLI/core resolution behavior.
+- Added an Identity Detection desktop panel that shows detected source, resolved identity, repository path, Git config scope, Git config values, and match status.
+- Added a desktop Sync Identity action that fixes repo-local Git identity for bound repositories and global Git identity for workspace/global resolution.
+
+Why:
+
+- Completes automatic identity switching visibility and correction in the desktop app while preserving existing CLI behavior.
+
+Milestone:
+
+- R-018 and R-019 are complete. R-019-A was added as a final UI polish task before the v0.9.0 release.
+
+---
+
+### R-019-A
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Standardized desktop control sizing, spacing, panel radius usage, table alignment, and status badge sizing.
+- Added subtle transitions for controls, panels, table rows, and toast entry to make refreshes and state changes feel less abrupt.
+- Replaced identity and repository binding row text actions with a single inline SVG icon set using consistent sizing, tooltips, hover states, and accessible labels.
+- Added copy buttons, copied tooltip state, and toast feedback for copyable long values including public keys, repository paths, backup paths, and detection paths.
+- Added stronger active identity highlighting in the dashboard and identity list with a green indicator, active badge, and highlighted row.
+- Added truncation and title tooltips for long identity values, repository paths, backup paths, detection paths, and public key values.
+- Preserved scroll position across dashboard re-renders to reduce abrupt update jumps.
+- Improved table row spacing and hover states while preserving existing section order and page structure.
+- Improved Doctor section spacing and visual grouping without changing diagnostics behavior.
+
+Why:
+
+- Improves desktop readability and interaction quality without changing business logic, navigation, or backend behavior.
+
+Milestone:
+
+- R-018, R-019, and R-019-A are complete. R-019-B was added as a desktop navigation redesign task before the v0.9.0 release.
+
+---
+
+### R-019-B
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Reorganized the desktop app from one long management page into a structured shell with sticky sidebar navigation and independently scrolling content.
+- Added dedicated pages for Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor while reusing existing frontend actions and backend calls.
+- Added a persistent top area that shows active identity details, identity/binding counts, doctor health status, and refresh action.
+- Moved Add Identity into a modal/popup form instead of showing it permanently.
+- Added dashboard quick actions and kept existing identity detection, repository binding, backup/import, and doctor functionality available through dedicated pages.
+- Refined page switching with smooth content transitions, cleaner scroll reset on navigation, and preserved scroll behavior for data refreshes.
+- Reduced identity card density by showing core identity details first and moving SSH public key details into a compact expandable section.
+
+Why:
+
+- Improves desktop application structure and navigation while preserving existing functionality, import/export behavior, identity handling, and core logic.
+
+Milestone:
+
+- R-018, R-019, R-019-A, and R-019-B are now complete, so the v0.9.0 milestone has been reached. Update roadmap/release notes/changelog/version and release a new version before moving to the next milestone.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -665,6 +855,7 @@ Why:
 - removal of unused manual Windows installer packaging
 - comprehensive BGIT import/export automated coverage for encrypted export, import restore, wrong-password failure, corrupted/empty archive rejection, isolated temporary environment use, SSH config regeneration, and config round-trip validation
   tested on local machine A and remote machine B
+- R-019-C desktop UX polish for smoother navigation, per-page scroll preservation, recent activity, summary-first Doctor details, cached topbar/sidebar updates, and stable action loading states
 
 ---
 
@@ -676,7 +867,7 @@ None
 
 ## Pending
 
-- R-016 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-020 through R-021 remain pending until implemented and recorded here with matching IDs.
 
 ---
 

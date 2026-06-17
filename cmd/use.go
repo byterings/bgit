@@ -64,8 +64,15 @@ func runUse(cmd *cobra.Command, args []string) error {
 	if result.KeyLoaded {
 		ui.Info("SSH key loaded into agent")
 	}
+	resynced, syncFailures := syncBoundReposForAlias(cfg, user.Alias, user.Name, user.Email)
 
 	ui.Success(fmt.Sprintf("Switched to identity: %s (%s)", user.Alias, user.Email))
+	if resynced > 0 {
+		ui.Success(fmt.Sprintf("Re-synced %d bound repos for '%s'", resynced, user.Alias))
+	}
+	for _, syncFailure := range syncFailures {
+		ui.Warning(syncFailure)
+	}
 
 	cwd, err := os.Getwd()
 	if err == nil {
@@ -89,4 +96,22 @@ func runUse(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func syncBoundReposForAlias(cfg *config.Config, alias, name, email string) (int, []string) {
+	resynced := 0
+	failures := []string{}
+
+	for _, binding := range cfg.GetBindings() {
+		if binding.User != alias {
+			continue
+		}
+		if err := git.SetLocalUser(binding.Path, name, email); err != nil {
+			failures = append(failures, fmt.Sprintf("Could not sync bound repo '%s': %v", binding.Path, err))
+			continue
+		}
+		resynced++
+	}
+
+	return resynced, failures
 }

@@ -130,9 +130,29 @@ func removeBind(cfg *config.Config, repoRoot string) error {
 	previousUser := result.Binding.User
 
 	if result.Changed {
+		if err := restoreRepoGitIdentity(cfg, repoRoot); err != nil {
+			return err
+		}
 		ui.Success(fmt.Sprintf("Removed binding for '%s'", previousUser))
-		ui.Info("Repository will now use workspace identity (if inside one) or global active user.")
+		ui.Info("Repository local Git identity cleaned. Global Git identity now applies.")
+		if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceWorkspace {
+			ui.Info(fmt.Sprintf("bgit commands here still resolve to workspace identity '%s'", resolution.Alias))
+		}
 	}
 
+	return nil
+}
+
+func restoreRepoGitIdentity(cfg *config.Config, repoRoot string) error {
+	if resolution, err := coreidentity.ResolveIdentity(cfg, repoRoot); err == nil && resolution != nil && resolution.Source == coreidentity.SourceBinding && resolution.User != nil {
+		if err := git.SetLocalUser(repoRoot, resolution.User.Name, resolution.User.Email); err != nil {
+			return fmt.Errorf("failed to restore repository git identity: %w", err)
+		}
+		return nil
+	}
+
+	if err := git.UnsetLocalUser(repoRoot); err != nil {
+		return fmt.Errorf("failed to clear repository git identity: %w", err)
+	}
 	return nil
 }

@@ -217,9 +217,13 @@ assert_contains "$output" "User 'company' added successfully"
 output="$(run_bgit_ok add --alias personal --name "Personal User" --email "personal@example.com" --github "personal-user" --ssh-key skip)"
 assert_contains "$output" "User 'personal' added successfully"
 
+output="$(run_bgit_ok add --alias cleanup --name "Cleanup User" --email "cleanup@example.com" --github "cleanup-user" --ssh-key skip)"
+assert_contains "$output" "User 'cleanup' added successfully"
+
 output="$(run_bgit_ok list)"
 assert_contains "$output" "company"
 assert_contains "$output" "personal"
+assert_contains "$output" "cleanup"
 
 output="$(run_bgit_ok use company)"
 assert_contains "$output" "Switched to identity: company"
@@ -273,13 +277,29 @@ assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email
 
 output="$(run_bgit_ok bind --remove)"
 assert_contains "$output" "Removed binding for 'company'"
+assert_equals "" "$(git_repo "$REPO" --local --get user.name 2>/dev/null || true)"
+assert_equals "" "$(git_repo "$REPO" --local --get user.email 2>/dev/null || true)"
 
 output="$(run_bgit_ok bind --user company)"
 assert_contains "$output" "Bound repository to 'company'"
 assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
 assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
 
+CLEANUP_REPO="$TMPROOT/cleanup-repo"
+mkdir -p "$CLEANUP_REPO"
+run_env git -C "$CLEANUP_REPO" init
+cd "$CLEANUP_REPO"
+output="$(run_bgit_ok bind --user cleanup)"
+assert_contains "$output" "Bound repository to 'cleanup'"
+assert_equals "Cleanup User" "$(git_repo "$CLEANUP_REPO" --local --get user.name)"
+assert_equals "cleanup@example.com" "$(git_repo "$CLEANUP_REPO" --local --get user.email)"
+cd "$ROOT_DIR"
+
+output="$(run_bgit_ok workspace --path "$WORKSPACES" --users cleanup)"
+assert_contains "$output" "Workspace ready"
+
 log "Remote fix and safety check"
+cd "$REPO"
 output="$(run_bgit_ok remote fix)"
 assert_contains "$output" "Remote fixed for user 'company'"
 assert_equals "git@github.com-byterings:byterings/bgit.git" "$(run_env git -C "$REPO" remote get-url origin)"
@@ -317,6 +337,30 @@ assert_contains "$output" "Safety checks passed"
 
 output="$(run_bgit_ok use company)"
 assert_contains "$output" "Switched to identity: company"
+assert_contains "$output" "Re-synced 1 bound repos for 'company'"
+
+git_repo "$REPO" --local user.name "Wrong User"
+git_repo "$REPO" --local user.email "wrong@example.com"
+assert_equals "Wrong User" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "wrong@example.com" "$(git_repo "$REPO" --local --get user.email)"
+
+output="$(run_bgit_ok use company)"
+assert_contains "$output" "Switched to identity: company"
+assert_contains "$output" "Re-synced 1 bound repos for 'company'"
+assert_equals "Byterings Admin" "$(git_repo "$REPO" --local --get user.name)"
+assert_equals "byterings@gmail.com" "$(git_repo "$REPO" --local --get user.email)"
+
+cd "$ROOT_DIR"
+output="$(printf 'y\nn\n' | run_bgit delete cleanup 2>&1)"
+assert_contains "$output" "This will also remove 1 binding(s) and 1 workspace binding(s)."
+assert_contains "$output" "Removed 1 binding(s) for 'cleanup'"
+assert_contains "$output" "Removed 1 workspace binding(s) for 'cleanup'"
+assert_contains "$output" "User 'cleanup' deleted"
+
+output="$(run_bgit_ok list)"
+assert_not_contains "$output" "cleanup"
+assert_equals "" "$(git_repo "$CLEANUP_REPO" --local --get user.name 2>/dev/null || true)"
+assert_equals "" "$(git_repo "$CLEANUP_REPO" --local --get user.email 2>/dev/null || true)"
 
 log "Export archive success and encryption"
 cd "$ROOT_DIR"

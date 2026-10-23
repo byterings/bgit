@@ -9,7 +9,78 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      exists: ${{ steps.check_release.outputs.exists }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(tr -d '\n' < version.txt)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Version: $VERSION"
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-cli:
+    needs: metadata
+    if: needs.metadata.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.11'
+
+      - name: Build CLI binaries
+        run: |
+          VERSION=${{ needs.metadata.outputs.version }}
+
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-arm64.exe .
+
+      - name: Upload CLI release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-release-assets
+          path: |
+            bgit-linux-amd64
+            bgit-linux-arm64
+            bgit-darwin-amd64
+            bgit-darwin-arm64
+            bgit-windows-amd64.exe
+            bgit-windows-arm64.exe
+
+  build-desktop-linux:
+    needs: metadata
+    if: needs.metadata.outputs.exists == 'false'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,58 +96,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Read version
-        id: version
-        run: |
-          VERSION=$(cat version.txt | tr -d '\n')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          if [[ "$VERSION" == *"-"* ]]; then
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
-          echo "Version: $VERSION"
-
-      - name: Check if release exists
-        id: check_release
-        run: |
-          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate changelog
-        if: steps.check_release.outputs.exists == 'false'
-        run: go run scripts/generate-changelog.go
-
-      - name: Build CLI binaries
-        if: steps.check_release.outputs.exists == 'false'
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-
-          # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-amd64 .
-
-          # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
-
-          # macOS AMD64 (Intel)
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
-
-          # macOS ARM64 (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .
-
-          # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-amd64.exe .
-
-          # Windows ARM64
-          GOOS=windows GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-arm64.exe .
-
       - name: Install Linux desktop dependencies
-        if: steps.check_release.outputs.exists == 'false'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -87,23 +107,137 @@ jobs:
             libsoup-3.0-dev
 
       - name: Install Wails CLI
-        if: steps.check_release.outputs.exists == 'false'
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
-      - name: Build Linux desktop beta
-        if: steps.check_release.outputs.exists == 'false'
+      - name: Add Wails CLI to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build Linux desktop app
         run: |
           cd desktop
-          wails build -tags webkit2_41 -clean
-          cd ..
-          cp desktop/build/bin/bgit-desktop bgit-desktop-linux-amd64
-          chmod +x bgit-desktop-linux-amd64
+          wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage -o bgit-desktop-linux-amd64
+
+      - name: Upload Linux desktop artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-linux-release-assets
+          path: desktop/build/bin/bgit-desktop-linux-amd64
+
+  build-desktop-windows:
+    needs: metadata
+    if: needs.metadata.outputs.exists == 'false'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.11'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        shell: bash
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Add Wails CLI to PATH
+        shell: bash
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build Windows desktop app
+        shell: bash
+        run: |
+          cd desktop
+          wails build -platform windows/amd64 -clean -nopackage -webview2 download -o bgit-desktop-windows-amd64
+
+      - name: Upload Windows desktop artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-release-assets
+          path: desktop/build/bin/bgit-desktop-windows-amd64.exe
+
+  build-desktop-macos:
+    needs: metadata
+    if: needs.metadata.outputs.exists == 'false'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.11'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Add Wails CLI to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build macOS desktop app
+        run: |
+          cd desktop
+          wails build -platform darwin/universal -clean -nopackage -o bgit-desktop-darwin-universal
+
+      - name: Archive macOS desktop app
+        run: |
+          cd desktop/build/bin
+          APP_PATH="$(find . -maxdepth 1 -type d -name 'bgit-desktop-darwin-universal*.app' | head -n 1)"
+          if [[ -z "$APP_PATH" ]]; then
+            echo "macOS app bundle not found"
+            ls -la
+            exit 1
+          fi
+          ditto -c -k --keepParent "$APP_PATH" bgit-desktop-darwin-universal.zip
+
+      - name: Upload macOS desktop artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-release-assets
+          path: desktop/build/bin/bgit-desktop-darwin-universal.zip
+
+  release:
+    needs:
+      - metadata
+      - build-cli
+      - build-desktop-linux
+      - build-desktop-windows
+      - build-desktop-macos
+    if: needs.metadata.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.11'
+
+      - name: Generate changelog
+        run: go run scripts/generate-changelog.go
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-release-assets'
+          merge-multiple: true
+          path: dist
 
       - name: Extract release notes
-        if: steps.check_release.outputs.exists == 'false'
-        id: release_notes
         run: |
-          VERSION=${{ steps.version.outputs.version }}
+          VERSION=${{ needs.metadata.outputs.version }}
           SUMMARY=$(jq -r --arg v "$VERSION" '.releases[] | select(.version == $v) | .summary' changelog.json)
           if [ -z "$SUMMARY" ] || [ "$SUMMARY" = "null" ]; then
             SUMMARY="Release $VERSION"
@@ -114,48 +248,68 @@ jobs:
 
           $SUMMARY
 
-          ### Installation
+          ### CLI Installation
 
-          **Linux / macOS:**
-          ```bash
-          curl -fsSL https://bgitcli.com/install.sh | bash
-          ```
+          **Linux**
+          \`\`\`bash
+          curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-linux-amd64 -o bgit
+          chmod +x bgit
+          sudo mv bgit /usr/local/bin/
+          \`\`\`
 
-          **Windows:**
-          ```powershell
+          For ARM devices, use \`bgit-linux-arm64\`.
+
+          **macOS**
+          Intel Macs:
+          \`\`\`bash
+          curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-amd64 -o bgit
+          chmod +x bgit
+          sudo mv bgit /usr/local/bin/
+          \`\`\`
+
+          Apple Silicon:
+          \`\`\`bash
+          curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-arm64 -o bgit
+          chmod +x bgit
+          sudo mv bgit /usr/local/bin/
+          \`\`\`
+
+          **Windows**
+          \`\`\`powershell
           irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
-          ```
+          \`\`\`
 
-          ### Desktop Beta
+          ### Desktop Artifacts
 
-          Linux desktop beta artifact:
-          - bgit-desktop-linux-amd64
+          - Linux: \`bgit-desktop-linux-amd64\`
+          - Windows: \`bgit-desktop-windows-amd64.exe\`
+          - macOS: \`bgit-desktop-darwin-universal.zip\`
 
-          See [changelog.json](changelog.json) for full details.
+          See \`changelog.json\` for full details.
           EOF
 
       - name: Create GitHub Release
-        if: steps.check_release.outputs.exists == 'false'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: bgit v${{ steps.version.outputs.version }}
+          tag_name: v${{ needs.metadata.outputs.version }}
+          name: bgit v${{ needs.metadata.outputs.version }}
           body_path: release_notes.md
           draft: false
-          prerelease: ${{ steps.version.outputs.prerelease }}
+          prerelease: ${{ needs.metadata.outputs.prerelease }}
           files: |
-            bgit-linux-amd64
-            bgit-linux-arm64
-            bgit-darwin-amd64
-            bgit-darwin-arm64
-            bgit-windows-amd64.exe
-            bgit-windows-arm64.exe
-            bgit-desktop-linux-amd64
+            dist/bgit-linux-amd64
+            dist/bgit-linux-arm64
+            dist/bgit-darwin-amd64
+            dist/bgit-darwin-arm64
+            dist/bgit-windows-amd64.exe
+            dist/bgit-windows-arm64.exe
+            dist/bgit-desktop-linux-amd64
+            dist/bgit-desktop-windows-amd64.exe
+            dist/bgit-desktop-darwin-universal.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger website rebuild (Cloudflare Pages)
-        if: steps.check_release.outputs.exists == 'false'
         run: |
           echo "Waiting 5 minutes for GitHub CDN cache to update..."
           sleep 300

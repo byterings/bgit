@@ -15,6 +15,7 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - desktop encrypted backup export/import with file selection, password prompts, and restore summaries
 - desktop SSH public key display and copy action for GitHub setup
 - desktop GitHub avatar display with initials fallback
+- desktop release workflow artifacts for Linux, Windows, and macOS
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
@@ -111,6 +112,12 @@ Recent desktop UI refinement update:
 - Add Identity now prevents conflicting SSH key choices by making generated keys and existing private-key paths mutually exclusive.
 - Repository binding edit mode now shows an explicit editing state with Update Binding and Cancel actions.
 - Backup, binding, detection, and edit/save actions now use consistent primary action styling and explicit submit flows.
+
+Recent desktop packaging update:
+
+- GitHub release workflow now builds and uploads desktop artifacts for Linux, Windows, and macOS alongside the existing CLI binaries.
+- Release notes now use the same CLI installation commands as the site documentation and list the released desktop artifacts explicitly.
+- README installation instructions now match the site installation steps for Linux, macOS, and Windows.
 
 ---
 
@@ -845,6 +852,31 @@ Milestone:
 
 ---
 
+### R-020
+
+- Status: done
+
+Files Changed:
+
+- .github/workflows/release.yml
+- README.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Split the release workflow into metadata, CLI build, Linux desktop build, Windows desktop build, macOS desktop build, and final release jobs.
+- Added native desktop release artifact generation for Linux, Windows, and macOS using Wails on their corresponding GitHub Actions runners.
+- Aggregated CLI and desktop artifacts into the final GitHub release so all desktop platforms are published from the same workflow.
+- Updated generated release notes to use the same CLI installation steps as the site documentation and to list all desktop artifacts explicitly.
+- Updated README installation instructions to match the documented Linux, macOS, and Windows install flow.
+
+Why:
+
+- Completes cross-platform desktop release packaging while keeping the CLI release behavior intact and aligning repo documentation with the published installation steps.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -867,7 +899,7 @@ None
 
 ## Pending
 
-- R-020 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-021 remains pending until implemented and recorded here with matching IDs.
 
 ---
 

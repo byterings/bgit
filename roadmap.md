@@ -233,7 +233,7 @@
 - Title: Cross Platform Packaging
 - Description: Add Linux, Windows, and macOS packaging support for desktop application
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

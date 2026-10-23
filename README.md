@@ -8,10 +8,32 @@ bgit is a CLI tool that helps developers manage multiple Git identities (work, p
 
 ## Install
 
-### Linux / macOS
+### Linux
 
 ```bash
-curl -fsSL https://bgitcli.com/install.sh | bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-linux-amd64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
+```
+
+For Linux ARM devices, use `bgit-linux-arm64`.
+
+### macOS
+
+Intel Macs:
+
+```bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-amd64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
+```
+
+Apple Silicon Macs:
+
+```bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-arm64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
 ```
 
 ### Windows
@@ -19,6 +41,14 @@ curl -fsSL https://bgitcli.com/install.sh | bash
 ```powershell
 irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
 ```
+
+## Desktop Beta
+
+Desktop release assets are attached to GitHub Releases:
+
+- Linux: `bgit-desktop-linux-amd64`
+- Windows: `bgit-desktop-windows-amd64.exe`
+- macOS: `bgit-desktop-darwin-universal.zip`
 
 ## Quick Start
 

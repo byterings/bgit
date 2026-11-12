@@ -324,7 +324,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Installers and Signing
 - Description: Produce real installers for Linux, Windows, and macOS instead of raw binaries, and add code signing where available
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

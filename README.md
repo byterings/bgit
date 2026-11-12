@@ -42,13 +42,21 @@ sudo mv bgit /usr/local/bin/
 irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
 ```
 
-## Desktop Beta
+## Desktop App
 
-Desktop release assets are attached to GitHub Releases:
+The desktop app does everything without a terminal: first-run setup, identities and SSH keys, cloning, repository health, and everyday Git work (changes, commit, pull, push, branches, history). It does not need the CLI.
 
-- Linux: `bgit-desktop-linux-amd64`
-- Windows: `bgit-desktop-windows-amd64.exe`
-- macOS: `bgit-desktop-darwin-universal.zip`
+Download it from [GitHub Releases](https://github.com/byterings/bgit/releases/latest):
+
+- **Windows:** run `bgit-desktop-windows-amd64-installer.exe`
+- **macOS:** open `bgit-desktop-darwin-universal.dmg` and drag bgit to Applications
+- **Linux (Debian, Ubuntu):** `sudo apt install ./bgit-desktop-linux-amd64.deb`
+
+The first launch walks you through setup. Git must be installed.
+
+Until releases are code signed, Windows SmartScreen and macOS Gatekeeper warn before the first launch. On Windows choose "More info", then "Run anyway". On macOS open System Settings, Privacy & Security, and choose "Open Anyway".
+
+Before uninstalling the app, open Settings and choose "Remove bgit from this computer" so your repositories and Git configuration are restored.
 
 ## Quick Start
 

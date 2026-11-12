@@ -115,18 +115,34 @@ jobs:
       - name: Build Linux desktop app
         run: |
           cd desktop
-          wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage -o bgit-desktop-linux-amd64
+          wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
+            -o bgit-desktop-linux-amd64
 
-      - name: Upload Linux desktop artifact
+      - name: Build Debian package
+        run: |
+          desktop/build/linux/package-deb.sh \
+            "${{ needs.metadata.outputs.version }}" \
+            desktop/build/bin/bgit-desktop-linux-amd64 \
+            desktop/build/bin
+
+      - name: Upload Linux desktop artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-linux-release-assets
-          path: desktop/build/bin/bgit-desktop-linux-amd64
+          path: |
+            desktop/build/bin/bgit-desktop-linux-amd64
+            desktop/build/bin/bgit-desktop-linux-amd64.deb
 
   build-desktop-windows:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'
     runs-on: windows-latest
+    env:
+      # Optional code signing. Without these secrets the app and installer
+      # are published unsigned.
+      WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -149,22 +165,75 @@ jobs:
         shell: bash
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Build Windows desktop app
+      - name: Install NSIS
+        shell: bash
+        run: |
+          if ! command -v makensis >/dev/null 2>&1; then
+            choco install nsis -y --no-progress
+            echo "C:\\Program Files (x86)\\NSIS" >> "$GITHUB_PATH"
+          fi
+
+      - name: Set product version
+        shell: bash
+        run: node desktop/build/set-product-version.mjs "${{ needs.metadata.outputs.version }}"
+
+      - name: Build Windows desktop app and installer
         shell: bash
         run: |
           cd desktop
-          wails build -platform windows/amd64 -clean -nopackage -webview2 download -o bgit-desktop-windows-amd64
+          wails build -platform windows/amd64 -clean -nsis -webview2 download \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
+            -o bgit-desktop-windows-amd64.exe
+          ls -la build/bin
 
-      - name: Upload Windows desktop artifact
+      # Signing has to happen in two passes: the app first, then the installer
+      # is rebuilt around the signed app and signed itself.
+      - name: Sign Windows app and installer
+        if: env.WINDOWS_CERTIFICATE != ''
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -match "x64" } | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found" }
+          $sign = { param($file) & $signtool.FullName sign /f $pfx /p $env:WINDOWS_CERTIFICATE_PASSWORD /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $file; if ($LASTEXITCODE -ne 0) { throw "signing $file failed" } }
+
+          & $sign "desktop\build\bin\bgit-desktop-windows-amd64.exe"
+
+          Push-Location desktop\build\windows\installer
+          makensis "-DARG_WAILS_AMD64_BINARY=..\..\bin\bgit-desktop-windows-amd64.exe" project.nsi
+          if ($LASTEXITCODE -ne 0) { throw "rebuilding the installer failed" }
+          Pop-Location
+
+          & $sign "desktop\build\bin\bgit-amd64-installer.exe"
+          Remove-Item $pfx
+
+      - name: Name Windows installer
+        shell: bash
+        run: mv desktop/build/bin/bgit-amd64-installer.exe desktop/build/bin/bgit-desktop-windows-amd64-installer.exe
+
+      - name: Upload Windows desktop artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows-release-assets
-          path: desktop/build/bin/bgit-desktop-windows-amd64.exe
+          path: |
+            desktop/build/bin/bgit-desktop-windows-amd64.exe
+            desktop/build/bin/bgit-desktop-windows-amd64-installer.exe
 
   build-desktop-macos:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'
     runs-on: macos-latest
+    env:
+      # Optional signing and notarization. Without these secrets the app is
+      # published unsigned and macOS asks the user to confirm opening it.
+      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -185,27 +254,59 @@ jobs:
       - name: Add Wails CLI to PATH
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      - name: Set product version
+        run: node desktop/build/set-product-version.mjs "${{ needs.metadata.outputs.version }}"
+
+      # Packaging is left on so Wails produces build/bin/bgit.app.
       - name: Build macOS desktop app
         run: |
           cd desktop
-          wails build -platform darwin/universal -clean -nopackage -o bgit-desktop-darwin-universal
+          wails build -platform darwin/universal -clean \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}"
+          ls -la build/bin
+          test -d build/bin/bgit.app
 
-      - name: Archive macOS desktop app
+      - name: Sign macOS app
+        if: env.MACOS_CERTIFICATE != ''
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -P "$MACOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN"
+          codesign --force --deep --options runtime --timestamp \
+            --sign "$MACOS_SIGN_IDENTITY" desktop/build/bin/bgit.app
+          codesign --verify --deep --strict desktop/build/bin/bgit.app
+          rm "$RUNNER_TEMP/certificate.p12"
+
+      - name: Create macOS disk image and archive
         run: |
           cd desktop/build/bin
-          APP_PATH="$(find . -maxdepth 1 -type d -name 'bgit-desktop-darwin-universal*.app' | head -n 1)"
-          if [[ -z "$APP_PATH" ]]; then
-            echo "macOS app bundle not found"
-            ls -la
-            exit 1
-          fi
-          ditto -c -k --keepParent "$APP_PATH" bgit-desktop-darwin-universal.zip
+          mkdir dmg
+          cp -R bgit.app dmg/
+          ln -s /Applications dmg/Applications
+          hdiutil create -volname "bgit" -srcfolder dmg -ov -format UDZO bgit-desktop-darwin-universal.dmg
+          ditto -c -k --keepParent bgit.app bgit-desktop-darwin-universal.zip
 
-      - name: Upload macOS desktop artifact
+      - name: Notarize macOS disk image
+        if: env.MACOS_CERTIFICATE != '' && env.APPLE_ID != ''
+        run: |
+          cd desktop/build/bin
+          xcrun notarytool submit bgit-desktop-darwin-universal.dmg \
+            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+          xcrun stapler staple bgit-desktop-darwin-universal.dmg
+
+      - name: Upload macOS desktop artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-macos-release-assets
-          path: desktop/build/bin/bgit-desktop-darwin-universal.zip
+          path: |
+            desktop/build/bin/bgit-desktop-darwin-universal.dmg
+            desktop/build/bin/bgit-desktop-darwin-universal.zip
 
   release:
     needs:
@@ -279,17 +380,21 @@ jobs:
           irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
           \`\`\`
 
-          ### Desktop Artifacts
+          ### Desktop App
 
-          - Linux: \`bgit-desktop-linux-amd64\`
-          - Windows: \`bgit-desktop-windows-amd64.exe\`
-          - macOS: \`bgit-desktop-darwin-universal.zip\`
+          The desktop app works on its own; the CLI is not required.
+
+          - **Windows:** run \`bgit-desktop-windows-amd64-installer.exe\`
+          - **macOS:** open \`bgit-desktop-darwin-universal.dmg\` and drag bgit to Applications
+          - **Linux (Debian, Ubuntu):** \`sudo apt install ./bgit-desktop-linux-amd64.deb\`
+
+          Also attached: \`bgit-desktop-windows-amd64.exe\` (portable), \`bgit-desktop-darwin-universal.zip\`, and \`bgit-desktop-linux-amd64\` (binary only).
 
           See \`changelog.json\` for full details.
           EOF
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.metadata.outputs.version }}
           name: bgit v${{ needs.metadata.outputs.version }}
@@ -304,7 +409,10 @@ jobs:
             dist/bgit-windows-amd64.exe
             dist/bgit-windows-arm64.exe
             dist/bgit-desktop-linux-amd64
+            dist/bgit-desktop-linux-amd64.deb
             dist/bgit-desktop-windows-amd64.exe
+            dist/bgit-desktop-windows-amd64-installer.exe
+            dist/bgit-desktop-darwin-universal.dmg
             dist/bgit-desktop-darwin-universal.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

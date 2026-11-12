@@ -34,6 +34,12 @@ dist/
 !desktop/frontend/dist/
 !desktop/frontend/dist/**
 build/
+# Desktop packaging inputs live in desktop/build; build output there is ignored.
+!desktop/build/
+desktop/build/*
+!desktop/build/appicon.png
+!desktop/build/set-product-version.mjs
+!desktop/build/linux/
 release/
 
 # Package artifacts

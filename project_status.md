@@ -1260,6 +1260,50 @@ Validation:
 
 ---
 
+### R-029
+
+- Status: done (not yet run in CI)
+
+Files Changed:
+
+- .github/workflows/release.yml
+- desktop/build/appicon.png
+- desktop/build/set-product-version.mjs
+- desktop/build/linux/package-deb.sh
+- desktop/build/linux/bgit-desktop.desktop
+- desktop/build/linux/bgit-desktop.png
+- desktop/wails.json
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- .gitignore
+- README.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Windows: the release workflow builds an NSIS installer (`bgit-desktop-windows-amd64-installer.exe`) next to the portable executable.
+- macOS: the workflow builds the `bgit.app` bundle and publishes it as a `.dmg` with an Applications shortcut, plus a `.zip`. The previous macOS step passed `-nopackage` and then looked for an app bundle, which that flag does not produce.
+- Linux: `desktop/build/linux/package-deb.sh` builds a `.deb` that installs the binary, a desktop entry, and an icon, and depends on GTK 3, WebKitGTK 4.1, Git, and the OpenSSH client.
+- Code signing is optional and driven by repository secrets: `WINDOWS_CERTIFICATE` and `WINDOWS_CERTIFICATE_PASSWORD` for Windows; `MACOS_CERTIFICATE`, `MACOS_CERTIFICATE_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD` for macOS signing and notarization. Without them, unsigned artifacts are published.
+- Desktop builds now carry the release version, and the app icon is generated from the existing bgit logo.
+- Updated `softprops/action-gh-release` from v1 to v2 because the workflow linter reports v1 as too old to run.
+- Regenerated the Wails frontend bindings for the new backend methods.
+
+Why:
+
+- Raw binaries are hard to install and launch for users who do not use a terminal.
+
+Validation:
+
+- The `.deb` script was run locally with a stand-in binary and the package metadata and contents were inspected.
+- The workflow passes `actionlint`.
+- Not verified: the workflow has not run on GitHub, so the Windows installer, the macOS disk image, and both signing paths are untested. No `.rpm` or AppImage is produced.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -1282,7 +1326,6 @@ None
 
 ## Pending
 
-- R-029 Desktop Installers and Signing.
 - R-021 Release Stabilization, the final item before v1.0.0.
 
 Known limits of the desktop app (verified in code, 2026-11-12):

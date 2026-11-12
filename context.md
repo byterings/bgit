@@ -38,6 +38,12 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `cmd/uninstall.go`: restores repo remotes, removes managed SSH config, restores hooks/Git identity when possible, and removes bgit config.
 - `internal/git`: global Git config wrappers.
 
+## Packaging
+- `.github/workflows/release.yml` builds the CLI binaries and the desktop app: an NSIS installer on Windows, a `.dmg` on macOS, and a `.deb` on Linux (`desktop/build/linux/package-deb.sh`).
+- `desktop/build/` holds packaging inputs (icon, Linux desktop entry, version script). Wails writes its generated files and build output there too; those are ignored by Git.
+- The Linux desktop entry must not pass arguments to the binary, because arguments switch it to CLI mode.
+- Signing and notarization run only when the signing secrets are configured.
+
 ## Testing
 - `make test`: runs `go test ./...` with an isolated Go build cache under `/tmp`.
 - Go unit tests use `internal/testenv` to isolate HOME and Git global/system config in a temp directory, so they never touch real bgit, Git, or SSH state.

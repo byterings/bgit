@@ -948,7 +948,7 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 		return nil, false, section
 	}
 	if !exists {
-		section.Checks = append(section.Checks, doctorWarn("bgit is not set up on this computer", "Open Settings and choose Run setup again"))
+		section.Checks = append(section.Checks, doctorWarn("bgit is not set up on this computer", "Open Settings and choose Run the setup guide again"))
 		return nil, false, section
 	}
 

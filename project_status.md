@@ -1329,10 +1329,12 @@ Done so far:
 - Review fixes: the desktop binary only enters CLI mode for a leading subcommand, so Wails' own flags and the macOS launch argument open the window; the app prefers its installed location on macOS when launched from a download; background refreshes no longer replace the commit message inputs.
 - Desktop UI tests added under `desktop/uitest` (`make test-ui`): five scenarios, 79 checks, covering the wizard, identities, repositories, the repository view, workspaces, settings, and removal.
 - Unused frontend code from the old Repository Bindings and Identity Detection panels was removed.
+- `make desktop-harness` failed to serve the page because the frontend folder was resolved relative to the wrong directory; the harness now finds it from the repository root or from `desktop/`.
+- `BGIT_DESKTOP_LOG=trace` makes the built app print every call between the window and the backend.
 
 Still to do before v1.0.0:
 
-- Build and run the real Wails app on Linux, Windows, and macOS. So far the app has only run through the dev harness in Chrome.
+- Build and run the real Wails app on Windows and macOS, and click through every screen in the real window on Linux. On Linux (Ubuntu 24.04, WebKitGTK 4.1) the app builds, opens, loads all frontend files, and its first backend calls succeed; CLI mode of the built binary (`status`, `setup`, `check --from-hook`) works. The screens themselves have only been driven in Chrome through the dev harness.
 - Run the release workflow once and install each artifact (Windows installer, macOS disk image, Linux `.deb`).
 - Test against real GitHub accounts: add key, test connection, clone, push, pull.
 - Test Windows-specific code that cannot run here: console attachment in CLI mode, hidden child process windows, and the hook calling the installed `.exe`.

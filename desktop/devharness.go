@@ -69,7 +69,7 @@ const harnessBridge = `(() => {
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:34116", "listen address (localhost only)")
-	dist := flag.String("dist", "frontend/dist", "frontend directory to serve")
+	dist := flag.String("dist", "", "frontend directory to serve (default: found automatically)")
 	home := flag.String("home", "", "isolated home directory (required)")
 	flag.Parse()
 
@@ -77,6 +77,10 @@ func main() {
 		log.Fatal("the dev harness only listens on localhost")
 	}
 	if err := isolateHome(*home); err != nil {
+		log.Fatal(err)
+	}
+	distDir, err := findFrontend(*dist)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -90,11 +94,27 @@ func main() {
 		handleCall(app, w, r)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		serveFrontend(*dist, w, r)
+		serveFrontend(distDir, w, r)
 	})
 
-	log.Printf("bgit dev harness on http://%s (home: %s)", *addr, os.Getenv("HOME"))
+	log.Printf("bgit dev harness on http://%s (home: %s, frontend: %s)", *addr, os.Getenv("HOME"), distDir)
 	log.Fatal(http.ListenAndServe(*addr, mux))
+}
+
+// findFrontend returns the frontend folder. The harness is started both from
+// the repository root (`make desktop-harness`) and from desktop/, so both
+// layouts are tried when no folder is given.
+func findFrontend(dist string) (string, error) {
+	candidates := []string{dist}
+	if strings.TrimSpace(dist) == "" {
+		candidates = []string{filepath.Join("desktop", "frontend", "dist"), filepath.Join("frontend", "dist")}
+	}
+	for _, candidate := range candidates {
+		if _, err := os.Stat(filepath.Join(candidate, "index.html")); err == nil {
+			return filepath.Abs(candidate)
+		}
+	}
+	return "", fmt.Errorf("frontend not found (looked in %s). Run from the repository root or pass -dist", strings.Join(candidates, ", "))
 }
 
 // isolateHome points everything the backend reads at a throwaway directory.

@@ -31,6 +31,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `desktop/repos.go`, `desktop/gitclient.go`, `desktop/workspaces.go`, `desktop/settings.go`, `desktop/onboarding.go`, `desktop/system.go`: desktop backend by feature. Repository actions only accept repositories bgit manages (bound, or inside a workspace). Git failures are returned as results with a category so the UI can offer the next step (fix and push, pull first).
 - `desktop/` entrypoint: started with arguments, the desktop binary runs the bgit CLI (`desktop/main.go`, `desktop/cli.go`). The managed pre-push hook written by the app calls `bgit` when it is on PATH and otherwise this binary, so app-only installs keep push protection.
 - `desktop/frontend/dist/`: plain HTML/CSS/JS with no build step. `index.html` holds the shell and shared helpers; feature screens live in `js/*.js` and register themselves with `registerPage`. `app.css` holds their styles.
+- Diagnostics: start the built app with `BGIT_DESKTOP_LOG=trace` to print every asset request and every call between the window and the backend.
 - `desktop/devharness.go` (build tag `devharness`): serves the frontend to a browser with the real backend on an isolated home directory, for developing and testing screens without WebKit/GTK.
 - `internal/platform` background mode: the desktop app enables it so child processes do not open console windows on Windows.
 - `cmd/setup.go`: initializes config, installs managed pre-push hook, stores previous hook path for later restore.

@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -97,8 +98,14 @@ func main() {
 		serveFrontend(distDir, w, r)
 	})
 
-	log.Printf("bgit dev harness on http://%s (home: %s, frontend: %s)", *addr, os.Getenv("HOME"), distDir)
-	log.Fatal(http.ListenAndServe(*addr, mux))
+	// Listen first, so the "ready" line is only printed once the address is
+	// really ours. A port that is already in use fails here with a clear error.
+	listener, err := net.Listen("tcp", *addr)
+	if err != nil {
+		log.Fatalf("cannot start the dev harness on %s: %v. Stop the other harness or pass -addr with another port", *addr, err)
+	}
+	log.Printf("bgit dev harness on http://%s (home: %s, frontend: %s)", listener.Addr(), os.Getenv("HOME"), distDir)
+	log.Fatal(http.Serve(listener, mux))
 }
 
 // findFrontend returns the frontend folder. The harness is started both from

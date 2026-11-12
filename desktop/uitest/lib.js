@@ -6,6 +6,7 @@
 // SSH command, so clone, pull, and push run offline with the real Git protocol.
 const { spawn, execFileSync } = require("node:child_process");
 const fs = require("node:fs");
+const net = require("node:net");
 const os = require("node:os");
 const path = require("node:path");
 const puppeteer = require("puppeteer-core");
@@ -32,7 +33,21 @@ function findChrome() {
   return found;
 }
 
-async function start({ port = 34116, home, width = 1180, height = 760, build = true } = {}) {
+// Asks the system for a port nobody is using, so tests never collide with a
+// harness that is already running.
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const { port } = probe.address();
+      probe.close(() => resolve(port));
+    });
+  });
+}
+
+async function start({ port, home, width = 1180, height = 760, build = true } = {}) {
+  port = port || (await freePort());
   fs.mkdirSync(SHOTS, { recursive: true });
   home = home || fs.mkdtempSync(path.join(os.tmpdir(), "bgit-ui-home-"));
   const bin = path.join(OUT, process.platform === "win32" ? "harness.exe" : "harness");
@@ -68,10 +83,13 @@ exec sh -c "$*"
   let serverLog = "";
   server.stdout.on("data", (d) => (serverLog += d));
   server.stderr.on("data", (d) => (serverLog += d));
+  // Ready means our own harness process printed its listening line; a
+  // harness that exits early (for example on a port clash) fails the test.
   await new Promise((resolve, reject) => {
     const started = Date.now();
+    server.once("exit", (code) => reject(new Error(`harness exited with code ${code}: ${serverLog}`)));
     const tick = () => {
-      if (serverLog.includes("bgit dev harness on")) return resolve();
+      if (serverLog.includes(`bgit dev harness on http://127.0.0.1:${port}`)) return resolve();
       if (Date.now() - started > 15000) return reject(new Error("harness did not start: " + serverLog));
       setTimeout(tick, 100);
     };

@@ -242,7 +242,7 @@
 - Title: Release Stabilization
 - Description: Final cleanup, testing, bug fixes, documentation updates, and release preparation
 - Priority: High
-- Status: pending
+- Status: in progress
 
 ---
 
@@ -419,6 +419,8 @@ Release after:
 - R-019-B
 
 ---
+
+Note: v0.10.0, v0.11.0, and v0.12.0 were completed together and ship as a single v0.12.0 release.
 
 ### v0.10.0
 

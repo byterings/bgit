@@ -48,6 +48,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `make test`: runs `go test ./...` with an isolated Go build cache under `/tmp`.
 - Go unit tests use `internal/testenv` to isolate HOME and Git global/system config in a temp directory, so they never touch real bgit, Git, or SSH state.
 - `make test-desktop`: runs the desktop backend tests with the `devharness` build tag, which needs no WebKit/GTK. `internal/testenv.FakeGitHub` serves local bare repositories through Git's SSH transport so clone, pull, and push through identity host aliases run offline.
+- `make test-ui`: runs the desktop UI tests in `desktop/uitest`. Headless Chrome drives the frontend against the dev harness on an isolated home, with GitHub replaced by local bare repositories behind a stand-in SSH command.
 - `make test-integration`: runs real CLI integration tests on the host using isolated `HOME`/`XDG_CONFIG_HOME`, `GIT_CONFIG_NOSYSTEM=1`, disposable repositories, config-validation regression cases, and cleanup preservation via `BGIT_TEST_KEEP_TMP=1` when needed.
 - `make test-docker`: builds `Dockerfile.test` and runs the same integration suite inside a disposable Linux container.
 - `make test-backup-portability`: simulates Machine A and Machine B with separate temporary HOME directories, exports encrypted backups with SSH keys on Machine A, imports them on Machine B, and verifies config, key files, SSH config regeneration, and identity functionality.

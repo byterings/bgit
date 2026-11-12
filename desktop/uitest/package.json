@@ -1,0 +1,11 @@
+{
+  "name": "bgit-desktop-uitest",
+  "private": true,
+  "description": "Browser tests for the bgit desktop frontend, run against the dev harness.",
+  "scripts": {
+    "test": "node run-all.js"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

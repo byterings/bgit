@@ -1320,20 +1320,37 @@ Validation:
 
 ## In Progress
 
-None
+### R-021 Release Stabilization
+
+Done so far:
+
+- Changelog entry for 0.12.0 added to `changelog.json` and `CHANGELOG.md` regenerated. `version.txt` is still 0.9.0, so nothing is released until it is changed.
+- README describes the desktop app and how to install it.
+- Review fixes: the desktop binary only enters CLI mode for a leading subcommand, so Wails' own flags and the macOS launch argument open the window; the app prefers its installed location on macOS when launched from a download; background refreshes no longer replace the commit message inputs.
+- Desktop UI tests added under `desktop/uitest` (`make test-ui`): five scenarios, 79 checks, covering the wizard, identities, repositories, the repository view, workspaces, settings, and removal.
+- Unused frontend code from the old Repository Bindings and Identity Detection panels was removed.
+
+Still to do before v1.0.0:
+
+- Build and run the real Wails app on Linux, Windows, and macOS. So far the app has only run through the dev harness in Chrome.
+- Run the release workflow once and install each artifact (Windows installer, macOS disk image, Linux `.deb`).
+- Test against real GitHub accounts: add key, test connection, clone, push, pull.
+- Test Windows-specific code that cannot run here: console attachment in CLI mode, hidden child process windows, and the hook calling the installed `.exe`.
+- Decide on code signing and add the signing secrets if wanted.
+- Update the website docs for the desktop app (separate repository).
 
 ---
 
 ## Pending
 
-- R-021 Release Stabilization, the final item before v1.0.0.
+- R-021 remaining items above.
 
 Known limits of the desktop app (verified in code, 2026-11-12):
 
 - Only GitHub remotes are managed. The shared push safety check rejects other hosts, so those repositories show as Blocked.
 - Git operations never prompt. An SSH key with a passphrase must already be loaded in the SSH agent.
 - Stash, rebase, tags, and resolving conflicts inside the app are not implemented. Conflicts are resolved in the user's editor.
-- The app has only been exercised through the dev harness in a browser, not as a built Wails window.
+- Setting the global `core.hooksPath` to bgit's hooks folder means Git ignores hooks inside individual repositories (for example `.git/hooks/pre-commit`). This is existing CLI behavior.
 
 ---
 

@@ -486,3 +486,24 @@ func TestUninstallFromDesktop(t *testing.T) {
 		t.Fatal("the settings folder must not come back after reading state")
 	}
 }
+
+func TestIsCLIInvocation(t *testing.T) {
+	cases := []struct {
+		args []string
+		want bool
+	}{
+		{nil, false},
+		{[]string{"check", "--from-hook"}, true},
+		{[]string{"status"}, true},
+		// Launched from Finder on macOS.
+		{[]string{"-psn_0_12345"}, false},
+		// Flags passed by Wails in dev mode and during binding generation.
+		{[]string{"-tsprefix", "x"}, false},
+		{[]string{"--help"}, false},
+	}
+	for _, tc := range cases {
+		if got := isCLIInvocation(tc.args); got != tc.want {
+			t.Errorf("isCLIInvocation(%v) = %v, want %v", tc.args, got, tc.want)
+		}
+	}
+}

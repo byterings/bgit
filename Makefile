@@ -1,4 +1,4 @@
-.PHONY: test test-desktop test-integration test-docker test-backup-portability test-real desktop-dev desktop-build desktop-harness
+.PHONY: test test-desktop test-ui test-integration test-docker test-backup-portability test-real desktop-dev desktop-build desktop-harness
 
 test:
 	GOCACHE=/tmp/bgit-gocache go test ./...
@@ -7,6 +7,11 @@ test:
 # the Wails window, so no WebKit/GTK libraries are needed.
 test-desktop:
 	GOCACHE=/tmp/bgit-gocache go test -tags devharness ./desktop/
+
+# Desktop UI tests: headless Chrome drives the frontend against the dev
+# harness. Needs Node, Chrome or Chromium, and `npm install` in desktop/uitest.
+test-ui:
+	cd desktop/uitest && npm install --no-audit --no-fund && npm test
 
 test-integration:
 	bash tests/integration.sh

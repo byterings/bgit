@@ -373,6 +373,16 @@
       drawCommitDetail();
       return;
     }
+    // When the Changes panes already exist only their contents are updated.
+    // Rebuilding them would replace the commit message inputs while the user
+    // is typing in them.
+    if (el("fileList") && el("commitForm")?.elements.summary) {
+      drawFiles();
+      syncCommitInputs();
+      updateCommitControls();
+      drawDiff("diffPane", view.diff, view.diffLoading, view.selectedFile, true);
+      return;
+    }
     body.innerHTML = `
       <div class="repo-split">
         <div class="repo-side">
@@ -489,6 +499,18 @@
       <button type="submit" class="primary" id="commitButton" ${canCommit() ? "" : "disabled"}>${commitButtonLabel()}</button>
       <span class="commit-hint muted" id="commitHint">${escapeHtml(commitProblem() || (repo?.alias ? `Commits as ${repo.identityName} <${repo.identityEmail}>` : ""))}</span>
     `;
+  }
+
+  // Copies message text that the app changed (cleared after a commit, or
+  // suggested for a merge) into the inputs, without disturbing typing.
+  function syncCommitInputs() {
+    const form = el("commitForm");
+    for (const name of ["summary", "description"]) {
+      const input = form.elements[name];
+      if (input && input.value !== view[name] && document.activeElement !== input) {
+        input.value = view[name];
+      }
+    }
   }
 
   // Updates the commit button and hint without touching the inputs.

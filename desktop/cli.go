@@ -8,16 +8,15 @@ import (
 	coresetup "github.com/byterings/bgit/core/setup"
 )
 
-// isCLIInvocation reports whether the process was started with real
-// command-line arguments. macOS passes a "-psn_<id>" argument when an app is
-// launched from Finder; that is not a CLI call.
+// isCLIInvocation reports whether the process was started as the bgit CLI,
+// for example `<app> check --from-hook` from the managed pre-push hook.
+//
+// Only a leading subcommand counts. Arguments that start with "-" are left
+// to the window: macOS passes "-psn_<id>" when an app is launched from
+// Finder, and Wails passes its own flags in dev mode and when it generates
+// frontend bindings.
 func isCLIInvocation(args []string) bool {
-	for _, arg := range args {
-		if !strings.HasPrefix(arg, "-psn_") {
-			return true
-		}
-	}
-	return false
+	return len(args) > 0 && !strings.HasPrefix(args[0], "-")
 }
 
 // hookHelperPath returns the path the managed pre-push hook should call when
@@ -35,6 +34,18 @@ func hookHelperPath() string {
 	}
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
+	}
+
+	// macOS runs an app opened straight from a download out of a random
+	// read-only location. That path stops existing when the app quits, so
+	// the installed copy is used when there is one.
+	if strings.Contains(exe, "/AppTranslocation/") {
+		if _, bundlePath, found := strings.Cut(exe, ".app/"); found {
+			installed := filepath.Join("/Applications", filepath.Base(strings.TrimSuffix(exe, "/"+bundlePath)), bundlePath)
+			if info, err := os.Stat(installed); err == nil && !info.IsDir() {
+				return installed
+			}
+		}
 	}
 	return exe
 }

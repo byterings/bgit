@@ -899,7 +899,26 @@ None
 
 ## Pending
 
-- R-021 remains pending until implemented and recorded here with matching IDs.
+- R-022 to R-032 (desktop-first direction) are planned in `roadmap.md` and pending. None are implemented.
+  - R-022 Core Setup and Check Extraction
+  - R-023 Desktop First-Run Onboarding
+  - R-024 Desktop Clone and Add Existing Repository
+  - R-025 Desktop Workspaces
+  - R-026 Desktop Repository Health
+  - R-027 GitHub Key Helper and Connection Test
+  - R-028 Desktop Uninstall and Cleanup
+  - R-029 Desktop Installers and Signing
+  - R-030 Core Git Operations
+  - R-031 Desktop Changes and Commit
+  - R-032 Desktop Sync, Branches, and History
+- R-021 remains pending until implemented and recorded here with matching IDs. It is now the final item before v1.0.0.
+
+Known gaps behind the desktop-first items (verified in code, 2026-11-12):
+
+- Setup, hook installation, check, clone, and uninstall logic lives in `cmd/` and is not callable from `desktop/`.
+- The managed pre-push hook runs `bgit check --from-hook`, so it needs a `bgit` binary on PATH; desktop-only installs do not have one.
+- The desktop app has no setup, clone, workspace management, remote fix/restore, or uninstall actions.
+- Desktop release artifacts are raw binaries, not installers.
 
 ---
 

@@ -279,7 +279,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Clone and Add Existing Repository
 - Description: Clone a GitHub repository with a chosen identity and destination folder, and add an existing local repository by binding it and fixing its remote in one step
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -288,7 +288,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Workspaces
 - Description: Add a desktop page to view, register, and remove workspace folders and their identities using the existing core repo modules
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -297,7 +297,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Repository Health
 - Description: Show all bound repositories with identity and remote status, and provide a one-click fix backed by the existing check and sync logic
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -315,7 +315,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Uninstall and Cleanup
 - Description: Add a settings page to restore remotes, hooks, SSH config, and Git identity and remove bgit configuration, matching CLI uninstall behavior
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -342,7 +342,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Changes and Commit
 - Description: Add a repository view that lists changed files, shows diffs, stages or discards files, and commits with the repository's bgit identity
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -351,7 +351,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop Sync, Branches, and History
 - Description: Add fetch, pull, and push with ahead/behind status, branch switching and creation, and a commit history view; pushes run the same safety check as the CLI hook
 - Priority: High
-- Status: pending
+- Status: done
 
 ## Release Milestones
 

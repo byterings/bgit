@@ -35,8 +35,8 @@ func Commit(ctx context.Context, repo string, request CommitRequest) (*CommitRes
 	if err != nil {
 		return nil, err
 	}
-	if status.Conflicts > 0 {
-		return nil, &Error{Kind: KindConflict, Message: "Resolve the conflicted files before committing."}
+	if status.UnresolvedConflicts > 0 {
+		return nil, &Error{Kind: KindConflict, Message: "Some files still contain conflict markers. Resolve them in your editor before committing."}
 	}
 	if len(status.Files) == 0 && !status.MergeInProgress {
 		return nil, &Error{Kind: KindUnknown, Message: "There is nothing to commit."}

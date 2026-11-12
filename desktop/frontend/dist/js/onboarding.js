@@ -519,7 +519,7 @@
     await refreshState();
     notify({
       title: "Backup restored",
-      message: `Restored ${result.usersCount || 0} identity(s) and ${result.bindingsCount || 0} repository binding(s).`,
+      message: `Restored ${result.usersCount || 0} ${result.usersCount === 1 ? "identity" : "identities"} and ${result.bindingsCount || 0} bound ${result.bindingsCount === 1 ? "repository" : "repositories"}.`,
       tone: "success",
     });
     wizard.alias = "";

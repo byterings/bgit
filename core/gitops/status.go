@@ -1,8 +1,10 @@
 package gitops
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,6 +29,11 @@ func GetStatus(ctx context.Context, repo string) (*Status, error) {
 	}
 
 	status := parseStatus(output)
+	for _, file := range status.Files {
+		if file.Kind == "conflicted" && hasConflictMarkers(filepath.Join(repo, filepath.FromSlash(file.Path))) {
+			status.UnresolvedConflicts++
+		}
+	}
 
 	gitDir, err := gitDir(ctx, repo)
 	if err == nil {
@@ -148,6 +155,37 @@ func changeFromXY(xy, path, origPath string) FileChange {
 		change.Kind = "modified"
 	}
 	return change
+}
+
+// maxConflictScanBytes limits how much of a conflicted file is read when
+// looking for conflict markers.
+const maxConflictScanBytes = 8 << 20
+
+// hasConflictMarkers reports whether a file still contains the markers Git
+// writes around conflicting sections. A file the user finished editing has
+// none, which is how the app knows a conflict was resolved without asking the
+// user to stage files by hand.
+func hasConflictMarkers(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		// A conflicted file that was deleted is a resolution, not a conflict.
+		return false
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(io.LimitReader(file, maxConflictScanBytes))
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	opened := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		switch {
+		case strings.HasPrefix(line, "<<<<<<< "):
+			opened = true
+		case opened && strings.HasPrefix(line, ">>>>>>> "):
+			return true
+		}
+	}
+	return false
 }
 
 // gitDir returns the absolute path of the repository's .git directory.

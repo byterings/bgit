@@ -35,6 +35,11 @@ type Options struct {
 	// managed hook falls back to when `bgit` is not on PATH. The desktop app
 	// passes its own executable here. Empty writes the classic CLI hook.
 	HookHelperPath string
+	// RememberReplacedHooksPath records a custom hooks path that setup
+	// replaces even when an earlier setup already recorded one, so uninstall
+	// restores the path the user had most recently. The CLI keeps its
+	// record-once behavior and leaves this off.
+	RememberReplacedHooksPath bool
 }
 
 // defaultHookHelper is used when Options.HookHelperPath is empty. The desktop
@@ -114,7 +119,8 @@ func Apply(cfg *config.Config, opts Options) (*Result, error) {
 	}
 
 	// Remember the pre-bgit hooks path once so uninstall can restore it.
-	if !cfg.PreviousHooksPathSet && replacesForeignPath {
+	rememberAgain := opts.RememberReplacedHooksPath && result.ReplacedHooksPath != ""
+	if replacesForeignPath && (!cfg.PreviousHooksPathSet || rememberAgain) {
 		cfg.PreviousHooksPath = existingHooksPath
 		cfg.PreviousHooksPathSet = true
 	}

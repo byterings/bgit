@@ -571,7 +571,7 @@ func TestPullConflictCanBeAborted(t *testing.T) {
 		t.Fatalf("expected a conflict, got kind=%q err=%v", KindOf(err), err)
 	}
 	status := mustStatus(t, cloneA)
-	if !status.MergeInProgress || status.Conflicts != 1 || fileKinds(status)["README.md"] != "conflicted" {
+	if !status.MergeInProgress || status.Conflicts != 1 || status.UnresolvedConflicts != 1 || fileKinds(status)["README.md"] != "conflicted" {
 		t.Fatalf("conflict state not reported: %+v", status)
 	}
 	if _, err := Commit(ctx, cloneA, CommitRequest{Summary: "x", AuthorName: authorName, AuthorEmail: authorEmail}); KindOf(err) != KindConflict {
@@ -636,5 +636,43 @@ func TestClassify(t *testing.T) {
 	}
 	if got := classify("", "fatal: something nobody expected").Message; got != "Something nobody expected" {
 		t.Errorf("fallback message = %q", got)
+	}
+}
+
+func TestResolvedConflictCanBeCommitted(t *testing.T) {
+	home, remote, cloneA := newRemotePair(t)
+	cloneB := filepath.Join(home, "clone-b")
+	if err := Clone(ctx, remote, cloneB); err != nil {
+		t.Fatal(err)
+	}
+	testenv.WriteFile(t, cloneB, "README.md", "line one\nB CHANGE\nline three\n")
+	commitAll(t, cloneB, "b edits line two")
+	if _, err := Push(ctx, cloneB); err != nil {
+		t.Fatal(err)
+	}
+	testenv.WriteFile(t, cloneA, "README.md", "line one\nA CHANGE\nline three\n")
+	commitAll(t, cloneA, "a edits line two")
+	if _, err := Pull(ctx, cloneA, authorName, authorEmail); KindOf(err) != KindConflict {
+		t.Fatalf("expected a conflict, got %v", err)
+	}
+
+	// The user edits the file in their editor and removes the markers. They
+	// never run `git add`; the app must still see the conflict as resolved.
+	testenv.WriteFile(t, cloneA, "README.md", "line one\nA AND B CHANGE\nline three\n")
+	status := mustStatus(t, cloneA)
+	if status.Conflicts != 1 || status.UnresolvedConflicts != 0 || !status.MergeInProgress {
+		t.Fatalf("resolved conflict not detected: %+v", status)
+	}
+
+	commitAll(t, cloneA, "Merge remote changes")
+	status = mustStatus(t, cloneA)
+	if status.MergeInProgress || len(status.Files) != 0 || status.Ahead != 2 {
+		t.Fatalf("after committing the merge: %+v", status)
+	}
+	if parents := testenv.Git(t, cloneA, "log", "-1", "--format=%P"); len(strings.Fields(parents)) != 2 {
+		t.Fatalf("the commit should be a merge with two parents, got %q", parents)
+	}
+	if _, err := Push(ctx, cloneA); err != nil {
+		t.Fatalf("push after merge failed: %v", err)
 	}
 }

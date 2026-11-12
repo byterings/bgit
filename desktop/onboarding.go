@@ -60,7 +60,10 @@ func runDesktopSetup() (*OnboardingState, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := coresetup.Apply(cfg, coresetup.Options{HookHelperPath: hookHelperPath()}); err != nil {
+	// The user chose to replace a custom hooks folder from the app, which
+	// promises to put it back on uninstall, so the replaced path is recorded.
+	options := coresetup.Options{HookHelperPath: hookHelperPath(), RememberReplacedHooksPath: true}
+	if _, err := coresetup.Apply(cfg, options); err != nil {
 		return nil, err
 	}
 	return loadOnboardingState()

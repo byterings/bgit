@@ -315,3 +315,42 @@ func TestEnsureHookRepairsMissingAndStaleHooks(t *testing.T) {
 		t.Fatalf("hook must not be reported active with a custom hooks path: %+v", state)
 	}
 }
+
+func TestApplyCanRememberALaterCustomHooksPath(t *testing.T) {
+	home := testenv.Isolate(t)
+
+	cfg, _, err := EnsureConfigInitialized()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Apply(cfg, Options{}); err != nil {
+		t.Fatal(err)
+	}
+
+	// After setup the user points Git at their own hooks folder.
+	custom := filepath.Join(home, "team-hooks")
+	testenv.Git(t, home, "config", "--global", "core.hooksPath", custom)
+
+	// The CLI default keeps the first record (no hooks path before bgit).
+	if _, err := Apply(cfg, Options{}); err != nil {
+		t.Fatal(err)
+	}
+	if cfg.PreviousHooksPath != "" {
+		t.Fatalf("default setup must keep the first record, got %q", cfg.PreviousHooksPath)
+	}
+
+	testenv.Git(t, home, "config", "--global", "core.hooksPath", custom)
+	result, err := Apply(cfg, Options{RememberReplacedHooksPath: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.ReplacedHooksPath != custom || cfg.PreviousHooksPath != custom {
+		t.Fatalf("replaced=%q remembered=%q, want %q", result.ReplacedHooksPath, cfg.PreviousHooksPath, custom)
+	}
+	if err := RestoreGlobalHooksPath(cfg); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := GlobalHooksPath(); got != custom {
+		t.Fatalf("restored hooks path = %q, want %q", got, custom)
+	}
+}

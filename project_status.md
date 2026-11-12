@@ -11,6 +11,8 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
 - uninstall recovery for hooks, remotes, and Git identity
+- desktop first-run setup wizard, repositories (clone, add existing, health, fix), workspaces, settings, and removal
+- desktop everyday Git work: changes, diff, commit, discard, branches, history, fetch, pull, push
 - desktop notifications, confirmation dialogs, and action status indicators
 - desktop encrypted backup export/import with file selection, password prompts, and restore summaries
 - desktop SSH public key display and copy action for GitHub setup
@@ -1046,6 +1048,218 @@ Validation:
 
 ---
 
+### R-024
+
+- Status: done
+
+Files Changed:
+
+- desktop/repos.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/app.css
+- desktop/frontend/dist/js/repositories.js
+- internal/testenv/testenv.go
+- Makefile
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Repositories page that replaces the Repository Bindings page.
+- Clone: takes a GitHub link (HTTPS, SSH, `github.com/owner/repo`, or `owner/repo`), an identity, and a folder; clones through the identity's SSH host alias, binds the clone, and sets its commit identity.
+- Add existing: binds a local repository and, in the same step, sets its commit identity and rewrites its GitHub remote to the identity's SSH host alias. Changing a repository's identity uses the same flow.
+- Removing a repository from bgit works even when its folder no longer exists.
+- Added `make test-desktop` and an offline fake GitHub for tests (`internal/testenv`) that serves local bare repositories through Git's SSH transport.
+
+Why:
+
+- A repository cloned over HTTPS and only bound had its pushes blocked by the safety check until the remote was fixed by hand.
+
+Validation:
+
+- Desktop backend tests cover clone (including an identity without access and invalid input), add existing, and identity change.
+- The page was driven end to end in headless Chrome against the dev harness.
+- Not verified against real GitHub.
+
+---
+
+### R-025
+
+- Status: done
+
+Files Changed:
+
+- desktop/workspaces.go
+- desktop/backend.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/js/workspaces.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Workspaces page to list, add, and remove workspace folders, using the existing core workspace registration.
+- Nested or duplicate workspaces are rejected with a reason. Removing a workspace never deletes the folder.
+- Repositories found inside workspaces (up to three folder levels, skipping hidden and dependency folders) appear on the Repositories page.
+
+Why:
+
+- Workspaces were only manageable from the CLI.
+
+Validation:
+
+- Desktop backend tests and a headless Chrome run cover add, reject, list, and remove.
+
+---
+
+### R-026
+
+- Status: done
+
+Files Changed:
+
+- desktop/repos.go
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/backend_test.go
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Each repository shows a health state from the shared push safety check: Ready, Needs fix, Blocked, or Missing, with the reasons in plain language.
+- Fix aligns one repository; Fix all aligns every fixable one.
+- Repositories with a remote that is not on GitHub are shown as Blocked, because the existing push safety check rejects them.
+
+Why:
+
+- Gives the desktop app the equivalent of `bgit check` and `bgit sync --fix` across all repositories.
+
+Validation:
+
+- Desktop backend tests cover bound, workspace, non-GitHub, and missing repositories, and Fix all.
+
+---
+
+### R-028
+
+- Status: done
+
+Files Changed:
+
+- core/uninstall/uninstall.go
+- core/uninstall/exit.go
+- core/uninstall/uninstall_test.go
+- core/setup/setup.go
+- core/setup/setup_test.go
+- cmd/uninstall.go
+- desktop/settings.go
+- desktop/onboarding.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/app.css
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Moved the uninstall steps (restore remotes, remove managed SSH config, restore hooks path and Git identity, remove generated keys) from `cmd/uninstall.go` into `core/uninstall`. The CLI keeps its prompts and messages.
+- Added a Settings page with push protection status and repair, the setup guide, app information, and "Remove bgit from this computer" with an optional key deletion and a summary of what was restored.
+- Turning push protection on from the app records a custom hooks folder it replaces, so removal restores it. The CLI keeps its record-once behavior.
+
+Why:
+
+- App-only users had no way to undo bgit's changes before uninstalling the app.
+
+Validation:
+
+- `core/uninstall` unit tests and desktop backend tests cover full removal, key handling, and legacy configs.
+- CLI uninstall output was compared before and after across full and legacy scenarios and is identical.
+
+---
+
+### R-031
+
+- Status: done
+
+Files Changed:
+
+- desktop/gitclient.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- core/gitops/status.go
+- core/gitops/commit.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a repository view with a Changes tab: changed files with checkboxes, a line-numbered diff, a commit box, and discard for one file or all.
+- Commits use the repository's bgit identity explicitly, even if the repository's Git config drifted.
+- Selecting a subset of files commits only those; everything else is left as it was.
+- A conflicted file counts as resolved once its conflict markers are gone, so a merge can be finished from the app without staging by hand.
+
+Why:
+
+- Lets users commit with the right identity without a terminal or a second Git client.
+
+Validation:
+
+- Go tests cover full and partial commits, discard of every change kind, and committing a resolved merge.
+- The view was driven end to end in headless Chrome.
+
+---
+
+### R-032
+
+- Status: done
+
+Files Changed:
+
+- desktop/gitclient.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added Fetch, Pull, and Push with incoming and outgoing commit counts. A branch that is not on the remote is published on first push.
+- Push checks the repository against its identity first and offers "Fix and push". A rejected push offers "Pull now".
+- A pull that stops on conflicts shows a merge banner with "Cancel merge".
+- Added a branch picker (local and remote branches), new branch creation, and a History tab with commit details and per-file diffs.
+
+Why:
+
+- Completes everyday Git work in the app.
+
+Validation:
+
+- Desktop backend tests push through the managed pre-push hook and confirm a failing check is reported as a safety block.
+- Headless Chrome runs cover push, publish, fetch, pull, rejected push, conflict, cancel merge, and fix and push, against a local stand-in for GitHub.
+- Not verified against real GitHub or with passphrase-protected SSH keys.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -1068,21 +1282,15 @@ None
 
 ## Pending
 
-- The remaining desktop-first items are planned in `roadmap.md` and pending:
-  - R-024 Desktop Clone and Add Existing Repository
-  - R-025 Desktop Workspaces
-  - R-026 Desktop Repository Health
-  - R-028 Desktop Uninstall and Cleanup
-  - R-029 Desktop Installers and Signing
-  - R-031 Desktop Changes and Commit
-  - R-032 Desktop Sync, Branches, and History
-- R-021 remains pending until implemented and recorded here with matching IDs. It is now the final item before v1.0.0.
+- R-029 Desktop Installers and Signing.
+- R-021 Release Stabilization, the final item before v1.0.0.
 
-Known gaps behind the desktop-first items (verified in code, 2026-11-12):
+Known limits of the desktop app (verified in code, 2026-11-12):
 
-- Clone and uninstall logic lives in `cmd/` and is not callable from `desktop/`. Setup, hook installation, and check were extracted in R-022.
-- The desktop app has no clone, workspace management, remote fix/restore, or uninstall actions.
-- Desktop release artifacts are raw binaries, not installers.
+- Only GitHub remotes are managed. The shared push safety check rejects other hosts, so those repositories show as Blocked.
+- Git operations never prompt. An SSH key with a passphrase must already be loaded in the SSH agent.
+- Stash, rebase, tags, and resolving conflicts inside the app are not implemented. Conflicts are resolved in the user's editor.
+- The app has only been exercised through the dev harness in a browser, not as a built Wails window.
 
 ---
 

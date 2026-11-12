@@ -56,6 +56,7 @@ func loadDesktopStatus() (*DesktopStatus, error) {
 	for _, binding := range cfg.Bindings {
 		status.Bindings = append(status.Bindings, repoBindingViewFromBinding(cfg, binding))
 	}
+	status.Workspaces = workspaceViews(cfg)
 
 	resolution, err := coreidentity.GetEffectiveResolution(cfg)
 	if err != nil {

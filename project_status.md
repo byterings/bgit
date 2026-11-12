@@ -917,6 +917,98 @@ Validation:
 
 ---
 
+### R-023
+
+- Status: done
+
+Files Changed:
+
+- desktop/main.go
+- desktop/cli.go
+- desktop/console_windows.go
+- desktop/console_other.go
+- desktop/onboarding.go
+- desktop/system.go
+- desktop/devharness.go
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/app.css
+- desktop/frontend/dist/js/onboarding.js
+- desktop/frontend/dev.mjs
+- core/setup/setup.go
+- core/setup/setup_test.go
+- core/ssh/agent.go
+- core/ssh/keys.go
+- internal/git/gitconfig.go
+- internal/platform/proc.go
+- internal/platform/proc_windows.go
+- internal/platform/proc_other.go
+- cmd/root.go
+- .gitignore
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a first-run wizard that checks for Git, runs setup, adds the first identity with a generated or existing SSH key, helps add the key to GitHub, and offers restore from a `.bgit` backup instead.
+- The desktop binary now acts as the bgit CLI when started with arguments, and desktop setup writes a pre-push hook that falls back to the desktop binary when `bgit` is not on PATH. If neither exists the hook lets the push through with a notice instead of blocking every push.
+- The app repairs the hook on startup and after a backup import (app moved or updated, or backup restored on a new machine). A hooks path the user set on purpose is left alone.
+- The first identity added in the app becomes the active identity, and an existing bgit key for the same GitHub username is reused instead of failing.
+- Desktop child processes no longer open console windows on Windows. The CLI is unaffected.
+- Frontend feature code now lives in separate files under `desktop/frontend/dist/` and registers pages through a small registry in `index.html`.
+- Added a dev harness (`go run -tags devharness ./desktop -home <dir>`) that serves the frontend to a browser with the real Go backend on an isolated home directory.
+- Desktop Doctor hints now describe what to do in the app instead of CLI commands.
+
+Why:
+
+- Lets a user go from install to a working identity without the CLI, and keeps push protection working for app-only installs.
+
+Validation:
+
+- Go unit tests cover hook generation, fallback behavior, and hook repair.
+- The wizard was run end to end in headless Chrome against the dev harness: setup, hook install, validation errors, key generation, GitHub step, and finish.
+- CLI integration tests pass and CLI output is unchanged.
+- Not yet verified: the built Wails app on Linux, Windows, or macOS. Windows console attachment for CLI mode is untested.
+
+---
+
+### R-027
+
+- Status: done
+
+Files Changed:
+
+- core/ssh/connectivity.go
+- core/ssh/connectivity_test.go
+- core/models/results.go
+- desktop/system.go
+- desktop/app.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/js/onboarding.js
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a per-identity connection test that never prompts, reports wrong-account keys, and explains common failures in plain language.
+- Added "Copy key and open GitHub" and "Test connection" to the identity details dialog and the wizard. Adding an identity now opens its details so the key can be added to GitHub straight away.
+- External links are limited to a fixed list of HTTPS sites.
+
+Why:
+
+- Adding the key to GitHub was the one manual step with no guidance or confirmation.
+
+Validation:
+
+- Unit tests cover response classification. Both actions were exercised in the dev harness.
+- Not verified against a real GitHub account: the test environment has no registered key, so only failure paths ran.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -939,12 +1031,10 @@ None
 
 ## Pending
 
-- R-023 to R-032 (desktop-first direction) are planned in `roadmap.md` and pending.
-  - R-023 Desktop First-Run Onboarding
+- The remaining desktop-first items are planned in `roadmap.md` and pending:
   - R-024 Desktop Clone and Add Existing Repository
   - R-025 Desktop Workspaces
   - R-026 Desktop Repository Health
-  - R-027 GitHub Key Helper and Connection Test
   - R-028 Desktop Uninstall and Cleanup
   - R-029 Desktop Installers and Signing
   - R-030 Core Git Operations
@@ -955,8 +1045,7 @@ None
 Known gaps behind the desktop-first items (verified in code, 2026-11-12):
 
 - Clone and uninstall logic lives in `cmd/` and is not callable from `desktop/`. Setup, hook installation, and check were extracted in R-022.
-- The managed pre-push hook runs `bgit check --from-hook`, so it needs a `bgit` binary on PATH; desktop-only installs do not have one.
-- The desktop app has no setup, clone, workspace management, remote fix/restore, or uninstall actions.
+- The desktop app has no clone, workspace management, remote fix/restore, or uninstall actions.
 - Desktop release artifacts are raw binaries, not installers.
 
 ---

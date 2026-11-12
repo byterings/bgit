@@ -121,7 +121,7 @@ func GenerateSSHKeySystem(username string) (privateKeyPath, publicKeyPath string
 		return "", "", fmt.Errorf("key already exists at %s", privateKeyPath)
 	}
 
-	cmd := exec.Command("ssh-keygen", "-t", "ed25519", "-f", privateKeyPath, "-N", "", "-C", username+"@bgit")
+	cmd := platform.PrepareCommand(exec.Command("ssh-keygen", "-t", "ed25519", "-f", privateKeyPath, "-N", "", "-C", username+"@bgit"))
 	if err := cmd.Run(); err != nil {
 		return "", "", fmt.Errorf("failed to generate SSH key: %w", err)
 	}

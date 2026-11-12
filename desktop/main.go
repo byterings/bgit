@@ -1,8 +1,13 @@
+//go:build !devharness
+
 package main
 
 import (
 	"embed"
+	"os"
 
+	"github.com/byterings/bgit/cmd"
+	"github.com/byterings/bgit/internal/platform"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -12,12 +17,26 @@ import (
 var assets embed.FS
 
 func main() {
+	configureHookHelper()
+
+	// With arguments the desktop binary behaves as the bgit CLI. The managed
+	// pre-push hook relies on this (`<app> check --from-hook`) so push safety
+	// works for users who never installed the CLI.
+	if isCLIInvocation(os.Args[1:]) {
+		attachParentConsole()
+		cmd.Execute()
+		return
+	}
+
+	platform.SetBackgroundMode(true)
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "bgit",
-		Width:  1000,
-		Height: 700,
+		Title:     "bgit",
+		Width:     1180,
+		Height:    760,
+		MinWidth:  860,
+		MinHeight: 560,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

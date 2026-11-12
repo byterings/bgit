@@ -1309,6 +1309,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="app.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -1327,6 +1328,7 @@
         </main>
       </div>
     </div>
+    <div id="onboarding" class="onboarding" hidden></div>
     <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
     <dialog id="addDialog">
@@ -1457,6 +1459,17 @@
       let pageScrollPositions = {};
       let activityLog = [];
       let lastDoctorRunAt = "";
+      let currentOnboarding = null;
+      // Feature modules (js/*.js) add pages and icons here instead of growing
+      // this file. A page is { id, render(status, doctor), bind(root), navParent }.
+      const featurePages = {};
+      const featureIcons = {};
+      function registerPage(page) {
+        featurePages[page.id] = page;
+      }
+      function registerIcons(icons) {
+        Object.assign(featureIcons, icons);
+      }
       const pages = [
         { id: "dashboard", label: "Dashboard", icon: "dashboard" },
         { id: "identities", label: "Identities", icon: "users" },
@@ -1557,7 +1570,7 @@
           archive: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>',
           shield: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>',
         };
-        return icons[name] || icons.check;
+        return icons[name] || featureIcons[name] || icons.check;
       }
 
       function iconButton({ action, icon, label, alias = "", path = "", disabled = false, danger = false }) {
@@ -1635,8 +1648,10 @@
           });
           navInitialized = true;
         }
+        // Sub-pages (for example an open repository) highlight their parent entry.
+        const activeNav = featurePages[currentPage]?.navParent || currentPage;
         nav.querySelectorAll("[data-page]").forEach((button) => {
-          button.classList.toggle("active", button.dataset.page === currentPage);
+          button.classList.toggle("active", button.dataset.page === activeNav);
         });
       }
 
@@ -2361,6 +2376,9 @@
             ${doctorPage(doctor)}
           `;
         }
+        if (featurePages[currentPage]) {
+          return featurePages[currentPage].render(status, doctor);
+        }
         switch (currentPage) {
           case "identities":
             return identitiesPage(status);
@@ -2396,6 +2414,9 @@
         bindCopyActions();
         bindDoctorActions();
         bindPageActions();
+        if (featurePages[currentPage]?.bind) {
+          featurePages[currentPage].bind(target);
+        }
         finishRender(target, hadRendered, previousScrollY);
       }
 
@@ -2440,12 +2461,9 @@
           if (added) {
             addForm.reset();
             document.getElementById("addDialog").close();
-            notify({
-              title: "Add SSH key to GitHub",
-              message: `Open '${payload.alias}' in Identities, copy its SSH public key, and add it to your GitHub SSH keys.`,
-              tone: "success",
-              timeout: 0,
-            });
+            // Go straight to the key details so the next step, adding the key
+            // to GitHub, is one click away.
+            openViewDialog(payload.alias);
           }
         };
         document.querySelectorAll("[data-action='choose-add-ssh-key']").forEach((button) => {
@@ -3059,6 +3077,11 @@
               </div>
             </div>
           </div>
+          <div class="dialog-tools">
+            <button id="viewOpenGitHub" type="button" ${copyAvailable ? "" : "disabled"}><span class="icon" aria-hidden="true">${iconSvg("github")}</span>Copy key and open GitHub</button>
+            <button id="viewTestConnection" type="button" ${identity.sshKeyStatus === "available" ? "" : "disabled"}><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Test connection</button>
+          </div>
+          <div id="viewConnectionResult" class="note" role="status" hidden></div>
         `;
         const copy = document.getElementById("viewCopyKey");
         if (copy) {
@@ -3066,7 +3089,42 @@
             await copyTextValue(identity.sshPublicKey, copy, `Copied SSH key for ${identity.alias}`);
           });
         }
+        document.getElementById("viewOpenGitHub").addEventListener("click", async (event) => {
+          await copyTextValue(identity.sshPublicKey, event.currentTarget, `Copied SSH key for ${identity.alias}. Paste it into GitHub.`);
+          try {
+            await api().OpenGitHubKeySettings();
+          } catch (error) {
+            setMessage(String(error), true, "Could not open GitHub");
+          }
+        });
+        document.getElementById("viewTestConnection").addEventListener("click", async (event) => {
+          await testIdentityConnection(identity.alias, event.currentTarget, document.getElementById("viewConnectionResult"));
+        });
         document.getElementById("viewDialog").showModal();
+      }
+
+      // Checks that GitHub accepts the identity's SSH key and shows the outcome
+      // in the given result box.
+      async function testIdentityConnection(alias, button, resultBox) {
+        const previousHTML = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner" aria-hidden="true"></span>Testing connection`;
+        try {
+          const result = await api().TestIdentityConnection(alias);
+          resultBox.hidden = false;
+          resultBox.className = `note ${result.passed ? "good" : "warn"}`;
+          resultBox.innerHTML = `<strong>${result.passed ? "Connected" : "Not connected"}</strong>${escapeHtml(result.message)}${result.fix && !result.passed ? ` ${escapeHtml(result.fix)}.` : ""}`;
+          addActivity(result.passed ? "GitHub connection works" : "GitHub connection failed", alias, result.passed ? "success" : "warn");
+          return result;
+        } catch (error) {
+          resultBox.hidden = false;
+          resultBox.className = "note error";
+          resultBox.textContent = String(error);
+          return null;
+        } finally {
+          button.disabled = false;
+          button.innerHTML = previousHTML;
+        }
       }
 
       function confirmAction({ title, message, warning = "", acceptLabel = "Continue", cancelLabel = "Cancel", danger = false }) {
@@ -3202,13 +3260,7 @@
       function actionableError(error) {
         const message = String(error);
         if (message.includes("not configured")) {
-          return `${message} Add your first identity or run bgit setup from the CLI.`;
-        }
-        if (message.includes("SSH")) {
-          return `${message} Check the SSH key path or run Doctor for details.`;
-        }
-        if (message.includes("git config") || message.includes("identity")) {
-          return `${message} Use bgit sync --fix or activate the expected identity.`;
+          return `${message}. Finish setup and add your first identity to continue.`;
         }
         return message;
       }
@@ -3223,8 +3275,17 @@
           if (!api()) {
             throw new Error("Desktop backend is not available. Open this screen in the Wails app window.");
           }
-          const [status, doctor] = await Promise.all([api().GetStatus(), api().GetDoctorStatus()]);
+          const [status, doctor, onboarding] = await Promise.all([
+            api().GetStatus(),
+            api().GetDoctorStatus(),
+            api().GetOnboardingState(),
+          ]);
+          currentOnboarding = onboarding;
           render(status, doctor);
+          // First run: the wizard covers the app until setup is finished.
+          if (typeof syncOnboarding === "function") {
+            syncOnboarding(onboarding, status);
+          }
         } catch (error) {
           target.textContent = String(error);
           notify({
@@ -3255,7 +3316,10 @@
           document.getElementById("editDialog").close();
         }
       });
-
+    </script>
+    <script src="js/onboarding.js"></script>
+    <script>
+      // Started last so every feature module is registered before first render.
       load();
     </script>
   </body>

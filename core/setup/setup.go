@@ -337,3 +337,105 @@ func shellUnquote(value string) string {
 	}
 	return strings.ReplaceAll(value, `'\''`, "'")
 }
+
+// HookState describes the managed pre-push hook as currently installed.
+type HookState struct {
+	// HooksPath is the global core.hooksPath ("" when unset).
+	HooksPath string
+	// HooksPathManaged is true when HooksPath is the bgit-managed directory.
+	HooksPathManaged bool
+	// HookExists is true when the managed hook file is present.
+	HookExists bool
+	// HelperPath is the fallback binary written into the hook, if any.
+	HelperPath string
+	// BgitOnPath is true when a `bgit` binary is reachable on PATH.
+	BgitOnPath bool
+}
+
+// Active reports whether pushes are currently protected by the managed hook.
+func (s *HookState) Active() bool {
+	if s == nil || !s.HooksPathManaged || !s.HookExists {
+		return false
+	}
+	if s.BgitOnPath {
+		return true
+	}
+	if s.HelperPath == "" {
+		return false
+	}
+	info, err := os.Stat(s.HelperPath)
+	return err == nil && !info.IsDir()
+}
+
+// InspectHook reports the state of the managed pre-push hook.
+func InspectHook() (*HookState, error) {
+	hooksDir, err := ManagedHooksDir()
+	if err != nil {
+		return nil, err
+	}
+	hooksPath, err := GlobalHooksPath()
+	if err != nil {
+		return nil, err
+	}
+
+	state := &HookState{
+		HooksPath:        hooksPath,
+		HooksPathManaged: hooksPath != "" && filepath.Clean(hooksPath) == filepath.Clean(hooksDir),
+		BgitOnPath:       platform.HasCommand("bgit"),
+	}
+	if info, err := os.Stat(filepath.Join(hooksDir, PrePushHookName)); err == nil && !info.IsDir() {
+		state.HookExists = true
+	}
+	state.HelperPath, err = InstalledHookHelperPath()
+	if err != nil {
+		return nil, err
+	}
+	return state, nil
+}
+
+// EnsureHook repairs the managed hook for a config that already completed
+// setup. It returns true when it changed something.
+//
+// It re-applies setup when no global hooks path is configured (for example
+// after importing a backup on a new machine) and rewrites the hook when the
+// helper it points at is missing or outdated. A hooks path that the user
+// pointed somewhere else on purpose is left alone.
+func EnsureHook(cfg *config.Config, helperPath string) (bool, error) {
+	if cfg == nil || !cfg.SetupCompleted {
+		return false, nil
+	}
+
+	state, err := InspectHook()
+	if err != nil {
+		return false, err
+	}
+
+	if state.HooksPath == "" || (state.HooksPathManaged && !state.HookExists) {
+		if _, err := Apply(cfg, Options{HookHelperPath: helperPath}); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	if !state.HooksPathManaged {
+		return false, nil
+	}
+
+	helperPath = strings.TrimSpace(helperPath)
+	if helperPath == "" {
+		return false, nil
+	}
+	wanted := filepath.ToSlash(helperPath)
+	classicHookWorks := state.HelperPath == "" && state.BgitOnPath
+	if classicHookWorks || state.HelperPath == wanted {
+		return false, nil
+	}
+
+	hooksDir, err := ManagedHooksDir()
+	if err != nil {
+		return false, err
+	}
+	if err := InstallManagedPrePushHook(hooksDir, helperPath); err != nil {
+		return false, err
+	}
+	return true, nil
+}

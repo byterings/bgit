@@ -270,7 +270,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Desktop First-Run Onboarding
 - Description: Add a first-run wizard that checks Git, runs setup, adds the first identity, and generates its SSH key; let the desktop binary answer `check --from-hook` so the pre-push hook works without a separate CLI install
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 
@@ -306,7 +306,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: GitHub Key Helper and Connection Test
 - Description: Add an action to open GitHub SSH key settings with the public key copied, and a per-identity SSH connection test
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 

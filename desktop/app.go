@@ -13,6 +13,7 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	repairDesktopHook()
 }
 
 func (a *App) GetStatus() (*DesktopStatus, error) {
@@ -97,4 +98,28 @@ func (a *App) ExportBackup(request BackupExportRequest) (*BackupActionResult, er
 
 func (a *App) ImportBackup(request BackupImportRequest) (*BackupActionResult, error) {
 	return importDesktopBackup(request)
+}
+
+func (a *App) GetOnboardingState() (*OnboardingState, error) {
+	return loadOnboardingState()
+}
+
+func (a *App) RunSetup() (*OnboardingState, error) {
+	return runDesktopSetup()
+}
+
+func (a *App) GetAppInfo() *AppInfo {
+	return loadAppInfo()
+}
+
+func (a *App) OpenGitHubKeySettings() error {
+	return openDesktopExternalURL(a.ctx, githubNewSSHKeyURL)
+}
+
+func (a *App) OpenExternalURL(url string) error {
+	return openDesktopExternalURL(a.ctx, url)
+}
+
+func (a *App) TestIdentityConnection(alias string) (*ConnectionTestResult, error) {
+	return testDesktopIdentityConnection(alias)
 }

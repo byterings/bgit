@@ -143,12 +143,14 @@ func addDesktopIdentity(request IdentityRequest) (*IdentityActionResult, error) 
 		return nil, err
 	}
 
+	reusedKey := false
 	if request.GenerateSSHKey {
-		privateKey, _, err := coressh.GenerateSSHKeySystem(user.GitHubUsername)
+		privateKey, reused, err := generateOrReuseSSHKey(user.GitHubUsername)
 		if err != nil {
 			return nil, err
 		}
 		user.SSHKeyPath = privateKey
+		reusedKey = reused
 	} else if user.SSHKeyPath != "" {
 		sshKeyPath, err := validateAndNormalizeSSHKeyPath(user.SSHKeyPath)
 		if err != nil {
@@ -164,7 +166,38 @@ func addDesktopIdentity(request IdentityRequest) (*IdentityActionResult, error) 
 		return nil, err
 	}
 
-	return actionResult(fmt.Sprintf("Identity '%s' added", user.Alias))
+	// The first identity becomes the active one, so a new user is ready to
+	// work without a separate "use" step.
+	if cfg.ActiveUser == "" {
+		if _, err := coreidentity.ActivateUser(cfg, user.Alias, coreidentity.LookupByAlias); err != nil {
+			return nil, err
+		}
+	}
+
+	message := fmt.Sprintf("Identity '%s' added", user.Alias)
+	if reusedKey {
+		message += "; reused the existing SSH key for this GitHub username"
+	}
+	return actionResult(message)
+}
+
+// generateOrReuseSSHKey creates the bgit key for a GitHub username, or reuses
+// the key bgit generated earlier for the same username (for example when an
+// identity was deleted but its keys were kept).
+func generateOrReuseSSHKey(githubUsername string) (string, bool, error) {
+	existing := platform.GetExampleSSHKeyPath(githubUsername)
+	if _, err := os.Stat(existing); err == nil {
+		if err := coressh.ValidateSSHKeyPath(existing); err != nil {
+			return "", false, fmt.Errorf("an SSH key already exists at %s but cannot be used: %w", existing, err)
+		}
+		return existing, true, nil
+	}
+
+	privateKey, _, err := coressh.GenerateSSHKeySystem(githubUsername)
+	if err != nil {
+		return "", false, err
+	}
+	return privateKey, false, nil
 }
 
 func updateDesktopIdentity(request UpdateIdentityRequest) (*IdentityActionResult, error) {
@@ -622,7 +655,16 @@ func loadOrCreateDesktopConfig() (*config.Config, error) {
 			return nil, err
 		}
 	}
-	return config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	// Adding the first identity without the wizard must still install the
+	// push safety hook, like the CLI does on first use.
+	if err := ensureDesktopSetup(cfg); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func loadExistingDesktopConfig() (*config.Config, error) {
@@ -809,6 +851,10 @@ func importDesktopBackup(request BackupImportRequest) (*BackupActionResult, erro
 		return nil, err
 	}
 
+	// A backup restored on a new machine says setup is complete, but this
+	// machine has no push safety hook yet.
+	repairDesktopHook()
+
 	status, err := loadDesktopStatus()
 	if err != nil {
 		return nil, err
@@ -901,7 +947,7 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 		return nil, false, section
 	}
 	if !exists {
-		section.Checks = append(section.Checks, doctorWarn("Config file not found", "Run: bgit setup"))
+		section.Checks = append(section.Checks, doctorWarn("bgit is not set up on this computer", "Open Settings and choose Run setup again"))
 		return nil, false, section
 	}
 
@@ -915,13 +961,13 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 
 	section.Checks = append(section.Checks, doctorPass("Config file valid"))
 	if len(cfg.Users) == 0 {
-		section.Checks = append(section.Checks, doctorWarn("No identities configured", "Add an identity in the desktop app or run: bgit add"))
+		section.Checks = append(section.Checks, doctorWarn("No identities configured", "Add an identity on the Identities page"))
 	} else {
 		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("%d identity(s) configured", len(cfg.Users))))
 	}
 
 	if cfg.ActiveUser == "" {
-		section.Checks = append(section.Checks, doctorWarn("No active identity set", "Use an identity from the desktop app or run: bgit use <alias>"))
+		section.Checks = append(section.Checks, doctorWarn("No active identity set", "Choose Use on an identity on the Identities page"))
 	} else if cfg.FindUserByAlias(cfg.ActiveUser) == nil {
 		section.Checks = append(section.Checks, doctorFail(fmt.Sprintf("Active identity '%s' not found in config", cfg.ActiveUser), ""))
 	} else {
@@ -963,13 +1009,13 @@ func desktopSSHChecks(cfg *config.Config) DoctorSection {
 
 	content, err := os.ReadFile(sshConfigPath)
 	if os.IsNotExist(err) {
-		section.Checks = append(section.Checks, doctorWarn("SSH config file not found", "Run: bgit sync --fix"))
+		section.Checks = append(section.Checks, doctorWarn("SSH config file not found", "Edit and save any identity to recreate it"))
 	} else if err != nil {
 		section.Checks = append(section.Checks, doctorFail(fmt.Sprintf("Cannot read SSH config: %v", err), ""))
 	} else if coressh.HasManagedSection(string(content)) {
 		section.Checks = append(section.Checks, doctorPass("SSH config has bgit managed entries"))
 	} else {
-		section.Checks = append(section.Checks, doctorWarn("SSH config missing bgit managed entries", "Run: bgit sync --fix"))
+		section.Checks = append(section.Checks, doctorWarn("SSH config missing bgit managed entries", "Edit and save any identity to recreate them"))
 	}
 
 	return section
@@ -977,7 +1023,7 @@ func desktopSSHChecks(cfg *config.Config) DoctorSection {
 
 func desktopSSHKeyCheck(user config.User) DoctorCheckView {
 	if user.SSHKeyPath == "" {
-		return doctorWarn(fmt.Sprintf("No SSH key path for '%s'", user.Alias), fmt.Sprintf("Update '%s' in the desktop app or run: bgit update %s --ssh-key <path>", user.Alias, user.Alias))
+		return doctorWarn(fmt.Sprintf("No SSH key path for '%s'", user.Alias), fmt.Sprintf("Edit '%s' on the Identities page and choose an SSH key", user.Alias))
 	}
 
 	info, err := os.Stat(user.SSHKeyPath)
@@ -1029,13 +1075,13 @@ func desktopGitChecks(cfg *config.Config) DoctorSection {
 	section := DoctorSection{Title: "Git Config"}
 
 	if !git.IsGitInstalled() {
-		section.Checks = append(section.Checks, doctorFail("Git is not installed", "Install Git and run bgit setup"))
+		section.Checks = append(section.Checks, doctorFail("Git is not installed", "Install Git from https://git-scm.com/downloads, then restart bgit"))
 		return section
 	}
 	section.Checks = append(section.Checks, doctorPass("Git is installed"))
 
 	if cfg.ActiveUser == "" {
-		section.Checks = append(section.Checks, doctorWarn("No active identity to compare with global Git config", "Use an identity from the desktop app"))
+		section.Checks = append(section.Checks, doctorWarn("No active identity to compare with global Git config", "Choose Use on an identity on the Identities page"))
 		return section
 	}
 
@@ -1053,12 +1099,12 @@ func desktopGitChecks(cfg *config.Config) DoctorSection {
 	if name == user.Name {
 		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("user.name = %s", name)))
 	} else {
-		section.Checks = append(section.Checks, doctorWarn(fmt.Sprintf("user.name mismatch: '%s' expected '%s'", name, user.Name), "Run: bgit sync --fix"))
+		section.Checks = append(section.Checks, doctorWarn(fmt.Sprintf("user.name mismatch: '%s' expected '%s'", name, user.Name), "Choose Use on the active identity again to rewrite the global Git identity"))
 	}
 	if email == user.Email {
 		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("user.email = %s", email)))
 	} else {
-		section.Checks = append(section.Checks, doctorWarn(fmt.Sprintf("user.email mismatch: '%s' expected '%s'", email, user.Email), "Run: bgit sync --fix"))
+		section.Checks = append(section.Checks, doctorWarn(fmt.Sprintf("user.email mismatch: '%s' expected '%s'", email, user.Email), "Choose Use on the active identity again to rewrite the global Git identity"))
 	}
 
 	return section

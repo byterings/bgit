@@ -146,3 +146,34 @@ type DoctorCheckView struct {
 	Message string `json:"message"`
 	Fix     string `json:"fix,omitempty"`
 }
+
+// OnboardingState describes what first-run setup still has to do.
+type OnboardingState struct {
+	GitInstalled     bool   `json:"gitInstalled"`
+	GitVersion       string `json:"gitVersion,omitempty"`
+	Configured       bool   `json:"configured"`
+	SetupCompleted   bool   `json:"setupCompleted"`
+	PushProtection   bool   `json:"pushProtection"`
+	HooksPath        string `json:"hooksPath,omitempty"`
+	HooksPathManaged bool   `json:"hooksPathManaged"`
+	IdentityCount    int    `json:"identityCount"`
+	ActiveAlias      string `json:"activeAlias,omitempty"`
+	// Needed is true while the wizard still has a required step left.
+	Needed bool `json:"needed"`
+}
+
+// ConnectionTestResult is the outcome of an SSH connection test to GitHub.
+type ConnectionTestResult struct {
+	Alias          string `json:"alias"`
+	GitHubUsername string `json:"githubUsername"`
+	Passed         bool   `json:"passed"`
+	Authenticated  string `json:"authenticated,omitempty"`
+	Message        string `json:"message"`
+	Fix            string `json:"fix,omitempty"`
+}
+
+// AppInfo carries build and install details for the Settings page.
+type AppInfo struct {
+	Version        string `json:"version"`
+	HookHelperPath string `json:"hookHelperPath,omitempty"`
+}

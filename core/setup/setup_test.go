@@ -241,3 +241,77 @@ func TestFallbackHookBehavior(t *testing.T) {
 		}
 	})
 }
+
+func TestEnsureHookRepairsMissingAndStaleHooks(t *testing.T) {
+	home := testenv.Isolate(t)
+	// Keep PATH free of any real bgit so the classic hook counts as broken.
+	binDir := filepath.Join(home, "bin")
+	if err := os.MkdirAll(binDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		t.Skip("git is not installed")
+	}
+	if err := os.Symlink(gitPath, filepath.Join(binDir, "git")); err != nil {
+		t.Skipf("cannot symlink git: %v", err)
+	}
+	t.Setenv("PATH", binDir)
+
+	helper := writeFakeBgit(t, filepath.Join(home, "app"), "bgit-desktop", 0)
+
+	cfg, _, err := EnsureConfigInitialized()
+	if err != nil {
+		t.Fatalf("init failed: %v", err)
+	}
+
+	// Not set up yet: nothing to repair.
+	if changed, err := EnsureHook(cfg, helper); err != nil || changed {
+		t.Fatalf("EnsureHook before setup: changed=%v err=%v", changed, err)
+	}
+
+	// Simulate a config imported from another machine: marked as set up, but
+	// this machine has no hook and no hooks path.
+	cfg.SetupCompleted = true
+	if err := config.SaveConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := EnsureHook(cfg, helper)
+	if err != nil || !changed {
+		t.Fatalf("EnsureHook after import: changed=%v err=%v", changed, err)
+	}
+	state, err := InspectHook()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !state.Active() || state.HelperPath != filepath.ToSlash(helper) {
+		t.Fatalf("hook should be active with the helper: %+v", state)
+	}
+
+	// Up to date: no change.
+	if changed, err := EnsureHook(cfg, helper); err != nil || changed {
+		t.Fatalf("EnsureHook when current: changed=%v err=%v", changed, err)
+	}
+
+	// The app moved: the baked helper is outdated and must be rewritten.
+	moved := writeFakeBgit(t, filepath.Join(home, "app2"), "bgit-desktop", 0)
+	if changed, err := EnsureHook(cfg, moved); err != nil || !changed {
+		t.Fatalf("EnsureHook after move: changed=%v err=%v", changed, err)
+	}
+	if got, _ := InstalledHookHelperPath(); got != filepath.ToSlash(moved) {
+		t.Fatalf("helper = %q, want %q", got, moved)
+	}
+
+	// A hooks path the user chose on purpose is never overwritten.
+	custom := filepath.Join(home, "custom-hooks")
+	testenv.Git(t, home, "config", "--global", "core.hooksPath", custom)
+	if changed, err := EnsureHook(cfg, helper); err != nil || changed {
+		t.Fatalf("EnsureHook with custom hooks path: changed=%v err=%v", changed, err)
+	}
+	if got, _ := GlobalHooksPath(); got != custom {
+		t.Fatalf("custom hooks path was replaced with %q", got)
+	}
+	if state, _ := InspectHook(); state.Active() {
+		t.Fatalf("hook must not be reported active with a custom hooks path: %+v", state)
+	}
+}

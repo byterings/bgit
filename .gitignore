@@ -32,7 +32,7 @@ Thumbs.db
 # Build artifacts
 dist/
 !desktop/frontend/dist/
-!desktop/frontend/dist/index.html
+!desktop/frontend/dist/**
 build/
 release/
 

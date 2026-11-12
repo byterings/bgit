@@ -877,6 +877,46 @@ Why:
 
 ---
 
+### R-022
+
+- Status: done
+
+Files Changed:
+
+- core/setup/setup.go
+- core/setup/setup_test.go
+- core/check/check.go
+- core/check/check_test.go
+- core/models/setup.go
+- internal/git/gitconfig.go
+- internal/testenv/testenv.go
+- cmd/setup.go
+- cmd/check.go
+- cmd/uninstall.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Moved config initialization, managed pre-push hook installation, and global hooks path handling from `cmd/setup.go` into `core/setup`.
+- Moved the push safety decisions (expected identity, Git identity match, expected origin URL) from `cmd/check.go` into `core/check`, and added a non-interactive `Inspect` report and `Fix` for desktop use.
+- The managed hook can now be generated with a fallback helper binary. Without a helper the hook is byte-for-byte the previous CLI hook.
+- CLI commands keep their prompts and messages and call the shared packages for the logic.
+- Added the first Go unit tests in the repository, running against an isolated HOME and Git config.
+
+Why:
+
+- The desktop app could not call setup or check logic while it lived in `cmd/`. Sharing it keeps the CLI and desktop app on one implementation.
+
+Validation:
+
+- `go test ./core/... ./internal/...` passes.
+- `make test-integration` passes.
+- A before/after comparison of CLI output for setup, check, bind, sync, and uninstall scenarios showed identical output.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -899,8 +939,7 @@ None
 
 ## Pending
 
-- R-022 to R-032 (desktop-first direction) are planned in `roadmap.md` and pending. None are implemented.
-  - R-022 Core Setup and Check Extraction
+- R-023 to R-032 (desktop-first direction) are planned in `roadmap.md` and pending.
   - R-023 Desktop First-Run Onboarding
   - R-024 Desktop Clone and Add Existing Repository
   - R-025 Desktop Workspaces
@@ -915,7 +954,7 @@ None
 
 Known gaps behind the desktop-first items (verified in code, 2026-11-12):
 
-- Setup, hook installation, check, clone, and uninstall logic lives in `cmd/` and is not callable from `desktop/`.
+- Clone and uninstall logic lives in `cmd/` and is not callable from `desktop/`. Setup, hook installation, and check were extracted in R-022.
 - The managed pre-push hook runs `bgit check --from-hook`, so it needs a `bgit` binary on PATH; desktop-only installs do not have one.
 - The desktop app has no setup, clone, workspace management, remote fix/restore, or uninstall actions.
 - Desktop release artifacts are raw binaries, not installers.

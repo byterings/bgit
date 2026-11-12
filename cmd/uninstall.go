@@ -10,6 +10,7 @@ import (
 
 	"github.com/byterings/bgit/core/config"
 	corerepo "github.com/byterings/bgit/core/repo"
+	coresetup "github.com/byterings/bgit/core/setup"
 	coressh "github.com/byterings/bgit/core/ssh"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
@@ -291,43 +292,7 @@ func removeSSHConfigEntries() error {
 }
 
 func restoreGlobalHooksPath(cfg *config.Config) error {
-	currentPath, err := getGlobalHooksPath()
-	if err != nil {
-		return err
-	}
-
-	if currentPath == "" {
-		return nil
-	}
-
-	if !isBgitHooksPath(currentPath) {
-		return nil
-	}
-
-	if cfg != nil && cfg.PreviousHooksPathSet {
-		if cfg.PreviousHooksPath == "" {
-			return unsetGlobalConfig("core.hooksPath")
-		}
-		return setGlobalHooksPath(cfg.PreviousHooksPath)
-	}
-
-	return unsetGlobalConfig("core.hooksPath")
-}
-
-func isBgitHooksPath(path string) bool {
-	cleaned := filepath.ToSlash(filepath.Clean(path))
-	if strings.Contains(cleaned, "/.bgit/hooks") || strings.HasSuffix(cleaned, ".bgit/hooks") {
-		return true
-	}
-
-	hookPath := filepath.Join(path, prePushHookName)
-	content, err := os.ReadFile(hookPath)
-	if err != nil {
-		return false
-	}
-
-	return strings.Contains(string(content), "BEGIN BGIT MANAGED") ||
-		coressh.HasManagedSection(string(content))
+	return coresetup.RestoreGlobalHooksPath(cfg)
 }
 
 func restoreGitIdentity(cfg *config.Config) {

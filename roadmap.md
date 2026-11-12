@@ -261,7 +261,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Core Setup and Check Extraction
 - Description: Move setup, managed pre-push hook installation, and push safety check logic from `cmd/` into `/core` so the desktop app can reuse it, without changing CLI behavior or output
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

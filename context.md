@@ -19,6 +19,8 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 - `core/models`: shared reusable domain and result structs used across config, identity, repo, and SSH core packages.
 - `core/export`: archive-generation and import logic for `.bgit` backups. It preserves the `R-009` inner tar+gzip archive layout, stores configured identity SSH key pairs under `payload/keys/`, wraps that payload in an encrypted outer file envelope, and can decrypt/import the archived config and keys onto another machine.
 - `core/repo`: workspace and binding operations, remote URL conversion, clone auto-bind support, and repository owner resolution for safety checks.
+- `core/setup`: one-time setup shared by the CLI and desktop app: config initialization, managed pre-push hook generation and installation, and global `core.hooksPath` get/set/restore. The hook can carry a fallback helper binary path for installs without `bgit` on PATH; with no helper it is the classic CLI hook.
+- `core/check`: push safety decisions shared by `bgit check` and the desktop app: expected identity for a repository (binding, workspace, remote host alias, then active user), Git identity match, expected origin URL, plus a non-interactive `Inspect` report and `Fix`.
 - `core/ssh`: SSH key generation/validation, managed `~/.ssh/config` updates, SSH agent helpers, and GitHub SSH connectivity checks.
 - Core APIs now prefer structured result objects from `core/models` over mixed tuple-style returns for mutations and operational checks.
 - `cmd/export.go`: creates encrypted `.bgit` archives in the managed backup directory, prompting interactively for a password and confirmation before encrypting the unchanged inner archive payload.
@@ -31,6 +33,7 @@ bgit is a Go CLI for managing multiple Git identities on one machine. It switche
 
 ## Testing
 - `make test`: runs `go test ./...` with an isolated Go build cache under `/tmp`.
+- Go unit tests use `internal/testenv` to isolate HOME and Git global/system config in a temp directory, so they never touch real bgit, Git, or SSH state.
 - `make test-integration`: runs real CLI integration tests on the host using isolated `HOME`/`XDG_CONFIG_HOME`, `GIT_CONFIG_NOSYSTEM=1`, disposable repositories, config-validation regression cases, and cleanup preservation via `BGIT_TEST_KEEP_TMP=1` when needed.
 - `make test-docker`: builds `Dockerfile.test` and runs the same integration suite inside a disposable Linux container.
 - `make test-backup-portability`: simulates Machine A and Machine B with separate temporary HOME directories, exports encrypted backups with SSH keys on Machine A, imports them on Machine B, and verifies config, key files, SSH config regeneration, and identity functionality.

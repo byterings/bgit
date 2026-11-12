@@ -153,3 +153,32 @@ func setStableCommandDir(cmd *exec.Cmd) {
 	}
 	cmd.Dir = string(os.PathSeparator)
 }
+
+// GlobalCommand builds a git command that does not depend on the process
+// working directory. Desktop processes can start with a missing or unrelated
+// working directory, so global Git commands always run from a stable one.
+func GlobalCommand(args ...string) *exec.Cmd {
+	cmd := exec.Command("git", args...)
+	setStableCommandDir(cmd)
+	return cmd
+}
+
+// GetRemoteURL returns the URL of a remote in the given repository.
+func GetRemoteURL(repoPath, remote string) (string, error) {
+	cmd := exec.Command("git", "-C", repoPath, "remote", "get-url", remote)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// SetRemoteURL updates the URL of a remote in the given repository.
+func SetRemoteURL(repoPath, remote, url string) error {
+	cmd := exec.Command("git", "-C", repoPath, "remote", "set-url", remote, url)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git remote set-url failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
+}

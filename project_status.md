@@ -1009,6 +1009,43 @@ Validation:
 
 ---
 
+### R-030
+
+- Status: done
+
+Files Changed:
+
+- core/gitops/run.go
+- core/gitops/status.go
+- core/gitops/diff.go
+- core/gitops/commit.go
+- core/gitops/branches.go
+- core/gitops/log.go
+- core/gitops/sync.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added `core/gitops`, a wrapper around the Git command line for status, per-file diff, commit (all changes or selected files), discard, branches, history, commit details, fetch, pull, push, clone, and abort merge.
+- Every command runs without prompts: SSH runs in batch mode, editors and terminal prompts are disabled, and network commands have timeouts.
+- Failures are returned with a category (auth, network, rejected, safety, conflict, dirty, identity, and others) and a plain-language message.
+- Commits and pull merges take the author identity as an argument, so they do not depend on the Git config in effect.
+- Paths and commit ids coming from the UI are validated so they cannot leave the repository or be read as Git options.
+
+Why:
+
+- The desktop app needs everyday Git operations with structured results. The CLI does not use this package.
+
+Validation:
+
+- `go test ./core/gitops/` covers each operation against real repositories and local bare remotes, including partial commits, discard, rejected push, merge on pull, and conflict then abort.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -1037,7 +1074,6 @@ None
   - R-026 Desktop Repository Health
   - R-028 Desktop Uninstall and Cleanup
   - R-029 Desktop Installers and Signing
-  - R-030 Core Git Operations
   - R-031 Desktop Changes and Commit
   - R-032 Desktop Sync, Branches, and History
 - R-021 remains pending until implemented and recorded here with matching IDs. It is now the final item before v1.0.0.

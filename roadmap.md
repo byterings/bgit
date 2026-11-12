@@ -333,7 +333,7 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Title: Core Git Operations
 - Description: Add a `/core/gitops` module that wraps the Git CLI for status, diff, stage, unstage, discard, commit, branches, history, fetch, pull, and push, returning structured results
 - Priority: High
-- Status: pending
+- Status: done
 
 ---
 

@@ -15,6 +15,7 @@ The desktop app now works on its own: first-run setup, repositories with clone a
 - **Desktop first-run setup** - A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup
 - **Desktop repositories** - A Repositories page clones GitHub repositories with a chosen identity, adds existing local repositories, shows whether each one matches its identity, and fixes mismatches with one click
 - **Desktop Git workflow** - Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity
+- **CLI and desktop app share one setup** - The desktop app reads and writes the same configuration as the CLI. Opening it on a machine already set up with the CLI changes nothing, and changes made with either tool show up in the other
 - **Desktop workspaces** - Workspace folders can be added and removed in the app, and repositories found inside them are listed with the workspace identity
 - **GitHub key helper and connection test** - Identity details can copy the SSH key, open the GitHub key settings page, and test that GitHub accepts the key for the expected account
 - **Desktop settings and removal** - A Settings page shows and repairs push protection and can remove bgit from the computer, restoring repository remotes, SSH config, Git hooks, and the previous Git identity
@@ -26,6 +27,7 @@ The desktop app now works on its own: first-run setup, repositories with clone a
 - **Remote alignment when adding a repository** - Adding or rebinding a repository in the desktop app now also rewrites its GitHub remote to the identity's SSH key, so the next push is not blocked
 - **No console windows on Windows** - Git and SSH commands started by the desktop app no longer open console windows
 - **macOS desktop release bundle** - The release workflow now builds the macOS app bundle; the previous step skipped packaging and could not produce it
+- **Desktop window on small screens** - The window opens maximised on small screens such as 1366x768, the repository view fills the window so its buttons stay reachable, and re-drawing a page no longer replays animations
 
 ## [0.9.0] - 2026-06-17 (Phase 9)
 

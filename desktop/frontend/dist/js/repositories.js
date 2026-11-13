@@ -43,6 +43,7 @@
     }
     state.loading = true;
     state.stale = false;
+    const before = JSON.stringify([state.list, state.error]);
     try {
       state.list = await api().ListRepositories();
       state.error = "";
@@ -50,7 +51,10 @@
       state.error = String(error);
     } finally {
       state.loading = false;
-      if (currentPage === "repositories") {
+      // Re-draw only when something actually changed, so reopening the page
+      // or returning to the window does not flicker.
+      const changed = JSON.stringify([state.list, state.error]) !== before;
+      if (changed && currentPage === "repositories") {
         render(currentStatus, currentDoctor);
       }
     }
@@ -380,7 +384,7 @@
         dialog.close();
         finishChange(result);
         if (result.repository?.path && typeof openRepository === "function") {
-          openRepository(result.repository.path);
+          openRepository(result.repository.path, result.repository);
         }
       } catch (error) {
         showError(errorBox, String(error));
@@ -528,7 +532,9 @@
         switch (button.dataset.action) {
           case "repos-open":
             if (typeof openRepository === "function") {
-              openRepository(path);
+              // The row is passed along so the repository opens with its
+              // name, identity, and branch already on screen.
+              openRepository(path, (state.list?.repositories || []).find((repo) => repo.path === path));
             }
             break;
           case "repos-fix":
@@ -571,6 +577,12 @@
     bind,
     enter() {
       state.stale = true;
+    },
+    // The window came back into focus: Git or the CLI may have changed things.
+    focus() {
+      if (identities().length > 0) {
+        loadList();
+      }
     },
   });
 })();

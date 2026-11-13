@@ -56,8 +56,10 @@
 
   // ---------- Opening and refreshing ----------
 
-  window.openRepository = (path) => {
-    Object.assign(view, freshView(), { path });
+  // known is the repository as the list already shows it; with it the header
+  // is drawn at once and only the file list waits for Git.
+  window.openRepository = (path, known = null) => {
+    Object.assign(view, freshView(), { path, repository: known });
     transitionToPage("repo");
     refresh();
   };
@@ -129,11 +131,6 @@
     }
   }
 
-  window.addEventListener("focus", () => {
-    if (currentPage === "repo" && !view.busy) {
-      refresh({ quiet: true });
-    }
-  });
 
   // ---------- Page skeleton ----------
 
@@ -359,7 +356,7 @@
   function drawBody() {
     const body = el("repoBody");
     if (!view.status) {
-      body.innerHTML = view.error ? "" : `<p class="muted repo-loading"><span class="spinner" aria-hidden="true"></span> Loading repository</p>`;
+      body.innerHTML = view.error ? "" : `<div class="repo-split repo-split-loading"><p class="muted"><span class="spinner" aria-hidden="true"></span> Reading changes</p></div>`;
       return;
     }
     if (view.tab === "history") {
@@ -495,7 +492,7 @@
     const repo = view.repository;
     form.innerHTML = `
       <input name="summary" placeholder="Summary (required)" maxlength="200" autocomplete="off" value="${escapeHtml(view.summary)}" aria-label="Commit summary" />
-      <textarea name="description" rows="3" placeholder="Description (optional)" aria-label="Commit description">${escapeHtml(view.description)}</textarea>
+      <textarea name="description" rows="2" placeholder="Description (optional)" aria-label="Commit description">${escapeHtml(view.description)}</textarea>
       <button type="submit" class="primary" id="commitButton" ${canCommit() ? "" : "disabled"}>${commitButtonLabel()}</button>
       <span class="commit-hint muted" id="commitHint">${escapeHtml(commitProblem() || (repo?.alias ? `Commits as ${repo.identityName} <${repo.identityEmail}>` : ""))}</span>
     `;
@@ -1127,7 +1124,15 @@
   registerPage({
     id: "repo",
     navParent: "repositories",
+    // The panes scroll on their own, so the page fills the window.
+    fill: true,
     render: page,
     bind,
+    // Files were probably edited while the window was in the background.
+    focus() {
+      if (!view.busy) {
+        refresh({ quiet: true });
+      }
+    },
   });
 })();

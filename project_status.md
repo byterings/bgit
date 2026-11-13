@@ -1332,9 +1332,15 @@ Done so far:
 - `make desktop-harness` failed to serve the page because the frontend folder was resolved relative to the wrong directory; the harness now finds it from the repository root or from `desktop/`.
 - `BGIT_DESKTOP_LOG=trace` makes the built app print every call between the window and the backend.
 
+- Small screens (found on a 1366x768 laptop): the default window was taller than the screen, so the bottom of the app was out of reach. The window now opens maximised on small screens, the repository view fills the window with its own scrolling panes, dialogs never grow past the window, and spacing is tighter on short windows.
+- Smoothness: a page now fades in only when the page changes (every re-draw used to replay the animation), page switches are immediate, scroll position is restored without a visible jump, and the top bar no longer blurs the page behind it. Lists re-draw only when their data changed.
+- CLI and app together: opening the app on a machine set up with the CLI changes nothing (config, hook, Git config, and SSH config stay byte-for-byte the same). The app no longer turns push protection on by itself when Git has no hooks path; the dashboard shows that it is off instead. Returning to the window picks up changes made with the CLI or Git.
+- `tests/coexistence.sh` (`make test-coexistence`) runs the real CLI binary and the desktop backend against one configuration in both install orders, including fix, commit, hook hand-over, and removal with either tool.
+- Linux window now has the bgit icon and groups under the installed launcher. `BGIT_DESKTOP_GPU=on` opts in to GPU drawing; software drawing stays the default because GPU drawing leaves the window blank on some drivers.
+
 Still to do before v1.0.0:
 
-- Build and run the real Wails app on Windows and macOS, and click through every screen in the real window on Linux. On Linux (Ubuntu 24.04, WebKitGTK 4.1) the app builds, opens, loads all frontend files, and its first backend calls succeed; CLI mode of the built binary (`status`, `setup`, `check --from-hook`) works. The screens themselves have only been driven in Chrome through the dev harness.
+- Build and run the real Wails app on Windows and macOS, and click through every screen in the real window on Linux (the dashboard was captured from the real window; the repository view and lists were captured in the same web engine through the dev harness; nobody has clicked through the real window with a mouse yet). On Linux (Ubuntu 24.04, WebKitGTK 4.1) the app builds, opens, loads all frontend files, and its first backend calls succeed; CLI mode of the built binary (`status`, `setup`, `check --from-hook`) works. The screens themselves have only been driven in Chrome through the dev harness.
 - Run the release workflow once and install each artifact (Windows installer, macOS disk image, Linux `.deb`).
 - Test against real GitHub accounts: add key, test connection, clone, push, pull.
 - Test Windows-specific code that cannot run here: console attachment in CLI mode, hidden child process windows, and the hook calling the installed `.exe`.

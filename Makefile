@@ -1,4 +1,4 @@
-.PHONY: test test-desktop test-ui test-integration test-docker test-backup-portability test-real desktop-dev desktop-build desktop-harness
+.PHONY: test test-desktop test-ui test-coexistence test-integration test-docker test-backup-portability test-real desktop-dev desktop-build desktop-harness
 
 test:
 	GOCACHE=/tmp/bgit-gocache go test ./...
@@ -12,6 +12,11 @@ test-desktop:
 # harness. Needs Node, Chrome or Chromium, and `npm install` in desktop/uitest.
 test-ui:
 	cd desktop/uitest && npm install --no-audit --no-fund && npm test
+
+# The real CLI and the desktop backend on one configuration, in either
+# install order. Needs curl.
+test-coexistence:
+	bash tests/coexistence.sh
 
 test-integration:
 	bash tests/integration.sh

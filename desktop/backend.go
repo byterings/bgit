@@ -854,7 +854,7 @@ func importDesktopBackup(request BackupImportRequest) (*BackupActionResult, erro
 
 	// A backup restored on a new machine says setup is complete, but this
 	// machine has no push safety hook yet.
-	repairDesktopHook()
+	enableProtectionAfterRestore()
 
 	status, err := loadDesktopStatus()
 	if err != nil {

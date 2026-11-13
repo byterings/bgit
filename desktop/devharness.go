@@ -86,6 +86,8 @@ func main() {
 	}
 
 	app := NewApp()
+	// The same repair the real app runs when its window starts.
+	repairDesktopHook()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/__harness/bridge.js", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")

@@ -29,7 +29,6 @@
         overflow: hidden;
         overscroll-behavior: none;
         scrollbar-gutter: stable;
-        scroll-behavior: smooth;
       }
       body {
         width: 100%;
@@ -102,7 +101,6 @@
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: none;
-        scroll-behavior: smooth;
       }
       main {
         max-width: 1180px;
@@ -114,8 +112,8 @@
         top: 0;
         z-index: 10;
         border-bottom: 1px solid var(--border);
-        background: rgb(248 250 252 / 0.94);
-        backdrop-filter: blur(10px);
+        /* A solid bar: blurring the page behind it makes scrolling stutter. */
+        background: var(--bg);
       }
       .topbar-inner {
         display: flex;
@@ -174,24 +172,19 @@
         gap: 8px;
       }
       .page-view {
-        animation: page-in 220ms ease-out;
         min-height: 320px;
-        transition:
-          opacity 160ms ease,
-          transform 160ms ease;
       }
-      .page-view.page-exit {
-        opacity: 0;
-        transform: translateY(6px);
+      /* Only a change of page fades in. Re-drawing the same page after an
+         action or a refresh must not animate, or the page appears to flicker. */
+      .page-view.page-enter {
+        animation: page-in 120ms ease-out;
       }
       @keyframes page-in {
         from {
           opacity: 0;
-          transform: translateY(8px);
         }
         to {
           opacity: 1;
-          transform: translateY(0);
         }
       }
       header,
@@ -1689,13 +1682,7 @@
         if (shell && lastRenderedPage) {
           pageScrollPositions[lastRenderedPage] = shell.scrollTop;
         }
-        const view = document.querySelector(".page-view");
-        if (!view) {
-          render(currentStatus, currentDoctor);
-          return;
-        }
-        view.classList.add("page-exit");
-        window.setTimeout(() => render(currentStatus, currentDoctor), 120);
+        render(currentStatus, currentDoctor);
       }
 
       function renderTopbar(status, doctor) {
@@ -2012,6 +1999,14 @@
           : "Not checked";
         return `
           ${pageHeading("Dashboard", "A quick view of your identities, repositories, and health.")}
+          ${
+            currentOnboarding && !currentOnboarding.pushProtection
+              ? `<div class="note warn repo-banner dashboard-banner">
+                  <span><strong>Push protection is off</strong>Pushes are not checked against the repository identity right now.</span>
+                  <button type="button" data-page-jump="settings">Open Settings</button>
+                </div>`
+              : ""
+          }
           <section class="summary">
             <div class="metric"><span>Identities</span><strong>${status.identityCount || 0}</strong></div>
             <div class="metric"><span>Bound Repositories</span><strong>${status.bindingCount || 0}</strong></div>
@@ -2123,7 +2118,10 @@
         target.className = "";
         renderNavigation();
         renderTopbar(status, doctor);
-        target.innerHTML = `<div class="page-view">${currentPageContent(status, doctor)}</div>`;
+        // Pages that manage their own panes fill the window instead of scrolling.
+        document.body.classList.toggle("page-fill", Boolean(featurePages[currentPage]?.fill));
+        const enterClass = pageChanged || !hadRendered ? " page-enter" : "";
+        target.innerHTML = `<div class="page-view${enterClass}">${currentPageContent(status, doctor)}</div>`;
         lastRenderedPage = currentPage;
         bindForms();
         bindIdentityActions();
@@ -2142,15 +2140,12 @@
         if (!preserveScroll) {
           return;
         }
-        requestAnimationFrame(() => {
-          const shell = document.getElementById("contentShell");
-          if (shell) {
-            shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
-            return;
-          }
-          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-          window.scrollTo({ top: Math.min(previousScrollY, maxScroll), left: 0, behavior: "auto" });
-        });
+        // Restored in the same frame as the re-draw, so the page never
+        // visibly jumps to the top and back.
+        const shell = document.getElementById("contentShell");
+        if (shell) {
+          shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
+        }
       }
 
       function formPayload(form) {
@@ -2822,6 +2817,50 @@
         }
       }
 
+      // The bgit CLI and Git share this app's data. When the window comes back
+      // into focus, pick up whatever changed outside the app, without
+      // re-drawing anything when nothing changed.
+      let lastFocusRefresh = 0;
+      async function refreshOnFocus() {
+        if (!api() || !currentStatus || activeActionText) {
+          return;
+        }
+        if (document.querySelector("dialog[open]") || !document.getElementById("onboarding").hidden) {
+          return;
+        }
+        const now = Date.now();
+        if (now - lastFocusRefresh < 4000) {
+          return;
+        }
+        lastFocusRefresh = now;
+        try {
+          const [status, onboarding] = await Promise.all([api().GetStatus(), api().GetOnboardingState()]);
+          const changed = JSON.stringify([status, onboarding]) !== JSON.stringify([currentStatus, currentOnboarding]);
+          if (changed) {
+            currentOnboarding = onboarding;
+            if (onboarding.needed) {
+              // For example bgit was removed with the CLI: start over.
+              await load();
+              return;
+            }
+            const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+            if (featurePages[currentPage]?.fill || typing) {
+              // Keep the page as it is; only the shared state and top bar move on.
+              currentStatus = status;
+              renderTopbar(status, currentDoctor);
+            } else {
+              render(status, currentDoctor);
+            }
+          }
+          if (featurePages[currentPage]?.focus) {
+            featurePages[currentPage].focus();
+          }
+        } catch (error) {
+          // A failed background refresh is not worth interrupting the user.
+        }
+      }
+      window.addEventListener("focus", refreshOnFocus);
+
       document.getElementById("cancelEdit").addEventListener("click", () => {
         document.getElementById("editDialog").close();
       });
@@ -2849,7 +2888,16 @@
     <script src="js/settings.js"></script>
     <script>
       // Started last so every feature module is registered before first render.
-      load();
+      // A "#page=<id>" or "#repo=<path>" address opens that screen directly;
+      // the dev harness uses it to show one screen without clicking through.
+      load().then(() => {
+        const start = new URLSearchParams(window.location.hash.slice(1));
+        if (start.get("repo") && typeof openRepository === "function") {
+          openRepository(start.get("repo"));
+        } else if (start.get("page") && (featurePages[start.get("page")] || pages.some((page) => page.id === start.get("page")))) {
+          transitionToPage(start.get("page"));
+        }
+      });
     </script>
   </body>
 </html>

@@ -13,10 +13,14 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed build/appicon.png
+var appIcon []byte
 
 func main() {
 	configureHookHelper()
@@ -44,14 +48,22 @@ func main() {
 		LogLevelProduction: logLevel,
 		Title:              "bgit",
 		Width:              1180,
-		Height:             760,
-		MinWidth:           860,
+		Height:             720,
+		MinWidth:           900,
 		MinHeight:          560,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 248, G: 250, B: 252, A: 1},
-		OnStartup:        app.startup,
+		Linux: &linux.Options{
+			Icon: appIcon,
+			// Matches the installed desktop entry, so the desktop groups the
+			// window under the bgit launcher icon.
+			ProgramName:      "bgit-desktop",
+			WebviewGpuPolicy: linuxGpuPolicy(),
+		},
+		OnStartup:  app.startup,
+		OnDomReady: app.domReady,
 		Bind: []interface{}{
 			app,
 		},
@@ -59,4 +71,15 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
+}
+
+// linuxGpuPolicy chooses how the Linux web view draws. Software drawing is
+// the default because GPU drawing leaves the window blank on some graphics
+// drivers. BGIT_DESKTOP_GPU=on lets the web view use the GPU when a page
+// asks for it, which can make scrolling smoother where it works.
+func linuxGpuPolicy() linux.WebviewGpuPolicy {
+	if strings.EqualFold(os.Getenv("BGIT_DESKTOP_GPU"), "on") {
+		return linux.WebviewGpuPolicyOnDemand
+	}
+	return linux.WebviewGpuPolicyNever
 }

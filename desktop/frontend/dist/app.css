@@ -377,7 +377,7 @@ label textarea {
 .repo-record {
   display: grid;
   /* A fixed actions column keeps the other columns aligned between rows. */
-  grid-template-columns: minmax(180px, 1.6fr) minmax(140px, 1fr) minmax(140px, 1fr) 250px;
+  grid-template-columns: minmax(160px, 1.6fr) minmax(120px, 1fr) minmax(120px, 1fr) 232px;
   gap: 8px 20px;
   align-items: center;
   border: 1px solid var(--border);
@@ -468,13 +468,14 @@ label textarea {
   color: var(--muted);
 }
 
-@media (max-width: 1100px) {
-  .repo-record {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+/* Narrower windows: name on its own line, the rest in one row below it. */
+@media (max-width: 1000px) {
+  .repo-record,
+  .repo-record.workspace-record {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   }
-  .repo-actions {
+  .repo-main {
     grid-column: 1 / -1;
-    justify-content: flex-start;
   }
 }
 @media (max-width: 560px) {
@@ -518,6 +519,9 @@ button.primary .count-pill {
 }
 .repo-heading {
   display: grid;
+  /* Takes the free space, so the identity line is not cut to the width of
+     the repository name. */
+  flex: 1 1 260px;
   gap: 4px;
   min-width: 0;
 }
@@ -534,6 +538,7 @@ button.primary .count-pill {
   font-size: 13px;
 }
 .repo-heading-meta .avatar {
+  flex: 0 0 22px;
   width: 22px;
   height: 22px;
   font-size: 10px;
@@ -568,9 +573,15 @@ button.primary .count-pill {
   min-width: 120px;
   max-width: 240px;
   border: 0;
-  background: transparent;
-  padding: 0 8px 0 2px;
+  /* Drawn the same in every web engine: no native button look, own arrow. */
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 8px center / 14px;
+  padding: 0 28px 0 2px;
   font-weight: 600;
+  cursor: pointer;
 }
 #repoBanners {
   display: grid;
@@ -718,8 +729,8 @@ button.primary .count-pill {
   padding: 12px;
 }
 .commit-box textarea {
-  min-height: 60px;
-  max-height: 160px;
+  min-height: 46px;
+  max-height: 140px;
 }
 .commit-hint {
   font-size: 12px;
@@ -937,7 +948,7 @@ button.primary .count-pill {
 /* ---------- Workspaces and settings ---------- */
 
 .workspace-record {
-  grid-template-columns: minmax(180px, 1.6fr) minmax(140px, 1fr) minmax(120px, 0.8fr) 250px;
+  grid-template-columns: minmax(160px, 1.6fr) minmax(120px, 1fr) minmax(110px, 0.8fr) 232px;
 }
 .settings-heading {
   display: flex;
@@ -968,4 +979,126 @@ button.primary .count-pill {
 }
 .panel h3 {
   margin-top: 18px;
+}
+
+/* ---------- Window sizes ---------- */
+
+/* Page actions stay on one line next to the heading. */
+.page-actions {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+/* A dialog never grows past the window; its content scrolls instead. */
+dialog {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.dashboard-banner {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.repo-split-loading {
+  display: grid;
+  place-items: center;
+}
+
+/* Pages with their own scrolling panes (the repository view) fill the
+   window exactly: nothing is pushed below the bottom edge. */
+body.page-fill .content-shell {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+body.page-fill .topbar-inner,
+body.page-fill main {
+  max-width: none;
+}
+body.page-fill main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  padding-bottom: 16px;
+}
+body.page-fill #app,
+body.page-fill .page-view,
+body.page-fill .repo-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+body.page-fill .repo-view {
+  gap: 12px;
+}
+body.page-fill #repoBody {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+body.page-fill .repo-split {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+/* Laptop screens such as 1366 x 768: tighter spacing so more fits. */
+@media (max-height: 800px) {
+  main {
+    padding: 18px 24px 24px;
+  }
+  .topbar-inner {
+    padding: 10px 24px;
+  }
+  .page-heading {
+    margin-bottom: 14px;
+  }
+  h1 {
+    margin-bottom: 4px;
+    font-size: 24px;
+  }
+  .panel {
+    margin-top: 16px;
+    padding: 16px;
+  }
+  .sidebar {
+    padding: 16px 12px;
+  }
+  .brand {
+    margin-bottom: 16px;
+  }
+  .empty {
+    min-height: 120px;
+  }
+  .repo-heading h1 {
+    font-size: 20px;
+  }
+  .ob-main {
+    padding: 28px 24px;
+  }
+}
+@media (min-width: 821px) and (max-width: 1400px) {
+  .app-shell {
+    grid-template-columns: 216px minmax(0, 1fr);
+  }
+}
+
+/* Narrow windows stack the panes, so the page scrolls again. */
+@media (max-width: 820px) {
+  body.page-fill .content-shell {
+    display: block;
+    overflow-y: auto;
+  }
+  body.page-fill main,
+  body.page-fill #app,
+  body.page-fill .page-view,
+  body.page-fill .repo-view,
+  body.page-fill #repoBody {
+    display: block;
+  }
+  body.page-fill .repo-view {
+    display: grid;
+  }
 }

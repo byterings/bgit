@@ -29,6 +29,11 @@ func (a *App) startup(ctx context.Context) {
 	repairDesktopHook()
 }
 
+// domReady runs once the window exists and its page has loaded.
+func (a *App) domReady(ctx context.Context) {
+	fitWindowToScreen(ctx)
+}
+
 func (a *App) GetStatus() (*DesktopStatus, error) {
 	return loadDesktopStatus()
 }

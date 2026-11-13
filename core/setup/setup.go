@@ -402,10 +402,11 @@ func InspectHook() (*HookState, error) {
 // EnsureHook repairs the managed hook for a config that already completed
 // setup. It returns true when it changed something.
 //
-// It re-applies setup when no global hooks path is configured (for example
-// after importing a backup on a new machine) and rewrites the hook when the
-// helper it points at is missing or outdated. A hooks path that the user
-// pointed somewhere else on purpose is left alone.
+// It only repairs what bgit already owns: a managed hooks folder whose hook
+// file is missing, or a hook that points at a helper that moved. It never
+// turns push protection on by itself. When Git's hooks path is unset or
+// points somewhere else, that was either the user's choice or the state of a
+// machine set up with the CLI, and it is left exactly as it is.
 func EnsureHook(cfg *config.Config, helperPath string) (bool, error) {
 	if cfg == nil || !cfg.SetupCompleted {
 		return false, nil
@@ -415,15 +416,22 @@ func EnsureHook(cfg *config.Config, helperPath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if !state.HooksPathManaged {
+		return false, nil
+	}
 
-	if state.HooksPath == "" || (state.HooksPathManaged && !state.HookExists) {
-		if _, err := Apply(cfg, Options{HookHelperPath: helperPath}); err != nil {
+	if !state.HookExists {
+		hooksDir, err := ManagedHooksDir()
+		if err != nil {
+			return false, err
+		}
+		if err := platform.MkdirSecure(hooksDir); err != nil {
+			return false, fmt.Errorf("failed to create hooks directory: %w", err)
+		}
+		if err := InstallManagedPrePushHook(hooksDir, helperPath); err != nil {
 			return false, err
 		}
 		return true, nil
-	}
-	if !state.HooksPathManaged {
-		return false, nil
 	}
 
 	helperPath = strings.TrimSpace(helperPath)

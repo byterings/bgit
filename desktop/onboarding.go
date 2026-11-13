@@ -81,8 +81,10 @@ func ensureDesktopSetup(cfg *config.Config) error {
 	return nil
 }
 
-// repairDesktopHook keeps the managed hook usable across app updates, moves,
-// and backup imports. Failures are not fatal for the app, so they are ignored.
+// repairDesktopHook keeps a hook that bgit already manages usable across app
+// updates and moves. It never turns push protection on, and it leaves a
+// working CLI hook untouched. Failures are not fatal for the app, so they are
+// ignored.
 func repairDesktopHook() {
 	exists, err := config.ConfigExists()
 	if err != nil || !exists {
@@ -93,6 +95,26 @@ func repairDesktopHook() {
 		return
 	}
 	_, _ = coresetup.EnsureHook(cfg, hookHelperPath())
+}
+
+// enableProtectionAfterRestore turns push protection on after a backup was
+// restored, which is something the user asked for. A hooks folder the user
+// set up themselves is not replaced; the dashboard then shows that push
+// protection is off and offers to turn it on.
+func enableProtectionAfterRestore() {
+	exists, err := config.ConfigExists()
+	if err != nil || !exists {
+		return
+	}
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		return
+	}
+	state, err := coresetup.InspectHook()
+	if err != nil || (state.HooksPath != "" && !state.HooksPathManaged) {
+		return
+	}
+	_, _ = coresetup.Apply(cfg, coresetup.Options{HookHelperPath: hookHelperPath()})
 }
 
 func gitVersion() string {

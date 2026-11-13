@@ -19,6 +19,10 @@
           "description": "Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity"
         },
         {
+          "title": "CLI and desktop app share one setup",
+          "description": "The desktop app reads and writes the same configuration as the CLI. Opening it on a machine already set up with the CLI changes nothing, and changes made with either tool show up in the other"
+        },
+        {
           "title": "Desktop workspaces",
           "description": "Workspace folders can be added and removed in the app, and repositories found inside them are listed with the workspace identity"
         },
@@ -55,6 +59,10 @@
         {
           "title": "macOS desktop release bundle",
           "description": "The release workflow now builds the macOS app bundle; the previous step skipped packaging and could not produce it"
+        },
+        {
+          "title": "Desktop window on small screens",
+          "description": "The window opens maximised on small screens such as 1366x768, the repository view fills the window so its buttons stay reachable, and re-drawing a page no longer replays animations"
         }
       ],
       "breaking_changes": []

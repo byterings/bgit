@@ -270,15 +270,31 @@ func TestEnsureHookRepairsMissingAndStaleHooks(t *testing.T) {
 		t.Fatalf("EnsureHook before setup: changed=%v err=%v", changed, err)
 	}
 
-	// Simulate a config imported from another machine: marked as set up, but
-	// this machine has no hook and no hooks path.
+	// A config imported from another machine says setup is complete, but Git
+	// has no hooks path here. That is not repaired silently: turning push
+	// protection on is an explicit action.
 	cfg.SetupCompleted = true
 	if err := config.SaveConfig(cfg); err != nil {
 		t.Fatal(err)
 	}
+	if changed, err := EnsureHook(cfg, helper); err != nil || changed {
+		t.Fatalf("EnsureHook with no hooks path: changed=%v err=%v", changed, err)
+	}
+	if got, _ := GlobalHooksPath(); got != "" {
+		t.Fatalf("hooks path must stay unset, got %q", got)
+	}
+
+	// Once protection is on, a deleted hook file is put back.
+	result, err := Apply(cfg, Options{HookHelperPath: helper})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(result.HookPath); err != nil {
+		t.Fatal(err)
+	}
 	changed, err := EnsureHook(cfg, helper)
 	if err != nil || !changed {
-		t.Fatalf("EnsureHook after import: changed=%v err=%v", changed, err)
+		t.Fatalf("EnsureHook with a missing hook file: changed=%v err=%v", changed, err)
 	}
 	state, err := InspectHook()
 	if err != nil {
@@ -352,5 +368,30 @@ func TestApplyCanRememberALaterCustomHooksPath(t *testing.T) {
 	}
 	if got, _ := GlobalHooksPath(); got != custom {
 		t.Fatalf("restored hooks path = %q, want %q", got, custom)
+	}
+}
+
+func TestEnsureHookLeavesAWorkingCLIHookAlone(t *testing.T) {
+	home := testenv.Isolate(t)
+	// A machine set up with the CLI: classic hook, and bgit is on PATH.
+	testenv.StubBgit(t, home, 0)
+	helper := writeFakeBgit(t, filepath.Join(home, "app"), "bgit-desktop", 0)
+
+	cfg, _, err := EnsureConfigInitialized()
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Apply(cfg, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changed, err := EnsureHook(cfg, helper)
+	if err != nil || changed {
+		t.Fatalf("EnsureHook on a CLI machine: changed=%v err=%v", changed, err)
+	}
+	content, err := os.ReadFile(result.HookPath)
+	if err != nil || string(content) != classicHook {
+		t.Fatalf("the CLI hook must stay byte-for-byte the same, got:\n%s", content)
 	}
 }

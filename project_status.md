@@ -80,6 +80,15 @@ Recent desktop UI polish update:
 - Panels, rows, controls, and toasts now use subtle transitions to reduce abrupt visual updates.
 - Review fixes added one consistent inline SVG icon set, copy buttons for long values, stronger active identity highlighting, generic copied feedback, and scroll-position preservation during dashboard updates.
 
+Desktop redesign (R-033), which replaces the sidebar layout described in the older notes below:
+
+- Navigation is a top bar: bgit mark, Dashboard, Repositories, Identities, Workspaces, Doctor, a repository search box, the push protection status, session activity, the default identity switcher, and Settings. There is no sidebar.
+- Dark theme by default, with Light and System choices in Settings. The choice is stored in the app's local storage, not in the bgit configuration.
+- An open repository has its own header (branch menu, sync status, Fetch, Pull, Push) and tabs: Changes (file list, diff with syntax colours, commit panel), History, Branches, Remotes, Identity.
+- Identities is a list with a detail view (Git configuration, GitHub connection, SSH key, repositories). Switching the default identity in the top bar states that bound repositories and workspaces keep their identity.
+- Doctor groups checks into areas and says why each area matters. Settings has General, Appearance, Push protection, Backup & Restore, and Advanced sections.
+- Not in the app because the backend has no support for them, and no placeholder controls were added: creating a new repository, merging branches from the app, adding or editing remotes, a commit graph, side-by-side diffs, staging individual lines, and editing an existing workspace.
+
 Recent desktop navigation update:
 
 - Desktop UI is organized into a sticky sidebar shell with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages.
@@ -1301,6 +1310,85 @@ Validation:
 - The `.deb` script was run locally with a stand-in binary and the package metadata and contents were inspected.
 - The workflow passes `actionlint`.
 - Not verified: the workflow has not run on GitHub, so the Windows installer, the macOS disk image, and both signing paths are untested. No `.rpm` or AppImage is produced.
+
+---
+
+### R-033
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/css/tokens.css
+- desktop/frontend/dist/css/base.css
+- desktop/frontend/dist/css/components.css
+- desktop/frontend/dist/css/shell.css
+- desktop/frontend/dist/css/pages.css
+- desktop/frontend/dist/js/ui.js
+- desktop/frontend/dist/js/core.js
+- desktop/frontend/dist/js/shell.js
+- desktop/frontend/dist/js/highlight.js
+- desktop/frontend/dist/js/dashboard.js
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/js/identities.js
+- desktop/frontend/dist/js/workspaces.js
+- desktop/frontend/dist/js/doctor.js
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/js/onboarding.js
+- desktop/frontend/dist/app.css (removed)
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- desktop/app.go
+- desktop/backend.go
+- desktop/gitclient.go
+- desktop/models.go
+- desktop/main.go
+- core/gitops/remotes.go
+- core/gitops/run.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- desktop/uitest/lib.js
+- desktop/uitest/client.test.js
+- desktop/uitest/dashboard.test.js
+- desktop/uitest/identities.test.js
+- desktop/uitest/layout.test.js
+- desktop/uitest/repos.test.js
+- desktop/uitest/settings.test.js
+- desktop/uitest/wizard.test.js
+- changelog.json
+- CHANGELOG.md
+- README.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- The desktop frontend was rewritten as one design system: colour, spacing, and type tokens in `css/tokens.css` (dark by default, light override), shared controls in `css/base.css` and `css/components.css`, and one file per screen under `js/`.
+- Navigation moved from a sidebar to a top bar with repository search (Ctrl/Cmd+K), push protection status, session activity, the default identity switcher, and Settings.
+- Repository workspace: header with branch menu and Fetch, Pull, Push; Changes tab with file list, syntax-coloured diff, and commit panel showing who the commit will be recorded as; History, Branches, Remotes, and Identity tabs.
+- Identity manager with list and detail view; Workspaces as cards listing their repositories; Doctor grouped into areas with the reason each matters; Settings split into sections; setup guide with a step indicator. All earlier flows are kept: clone, add existing, fix, change identity, remove, backup export and restore, push protection repair, removal.
+- Dialogs, menus, context menus, tooltips, notifications, empty states, and loading states are shared components. A dialog cannot be dismissed while its action is still running.
+- Keyboard: Ctrl/Cmd+K search, Ctrl/Cmd+1-5 navigation, Ctrl/Cmd+, settings, Ctrl/Cmd+Enter commit, / to filter the repository list, Esc to close.
+- Two small backend additions the new screens needed, both read from or delegated to Git: `ListRemotes` (Remotes tab) and `DeleteBranch` (Branches tab). Deleting a branch whose commits exist nowhere else is refused first and needs a second, explicit confirmation.
+- Doctor messages from the desktop backend now read "2 identities configured" instead of "2 identity(s) configured". CLI output is unchanged.
+- The window background is the dark theme colour, so the window does not flash white while loading.
+- UI tests were rewritten for the new layout and extended: seven scenarios cover setup, identities, the repository list, the repository workspace (commit, discard, push, history, branches, remotes, fetch, pull, conflict, fix and push), dashboard and Doctor, settings (workspaces, push protection, backup and restore, removal), and layout (window sizes, themes, shortcuts, outside changes).
+
+Why:
+
+- The earlier screens worked but were built one at a time and did not look or behave like one product. The redesign makes the app usable without Git or CLI knowledge while keeping everything it could already do.
+
+Validation:
+
+- `make test`, `make test-desktop`, `make test-integration`, `make test-coexistence`, and `make test-ui` (7 scenarios) pass.
+- `go vet` passes for Linux, Windows, and macOS targets of the desktop package.
+- No file under `cmd/` or `internal/` changed, and the CLI does not import `core/gitops`, so CLI behaviour and output are unchanged.
+- The built app was opened on a throwaway home on Linux (WebKitGTK 2.52) and the dashboard checked; the repository and identities screens were checked in the same web engine through the dev harness.
+- Not verified: Windows (WebView2) and macOS (WKWebView) rendering, and clicking through the built app window by hand; interaction is covered by the headless Chrome tests against the real backend.
 
 ---
 

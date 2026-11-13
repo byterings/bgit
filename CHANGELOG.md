@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.12.0] - 2026-11-12 (Phase 10)
+## [0.12.0] - 2026-11-13 (Phase 10)
 
-The desktop app now works on its own: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.
+The desktop app now works on its own, with a redesigned interface: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.
 
 ### Added
+- **Redesigned desktop interface** - The desktop app has a new look built as one design system: top navigation with repository search, a dark theme by default with a light option, a three-part repository view (files, diff, commit) with History, Branches, Remotes, and Identity tabs, an identity manager, a diagnostic Doctor, and keyboard shortcuts
 - **Desktop first-run setup** - A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup
 - **Desktop repositories** - A Repositories page clones GitHub repositories with a chosen identity, adds existing local repositories, shows whether each one matches its identity, and fixes mismatches with one click
 - **Desktop Git workflow** - Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity
@@ -20,6 +21,7 @@ The desktop app now works on its own: first-run setup, repositories with clone a
 - **GitHub key helper and connection test** - Identity details can copy the SSH key, open the GitHub key settings page, and test that GitHub accepts the key for the expected account
 - **Desktop settings and removal** - A Settings page shows and repairs push protection and can remove bgit from the computer, restoring repository remotes, SSH config, Git hooks, and the previous Git identity
 - **Desktop installers** - Releases include a Windows installer, a macOS disk image, and a Debian package for the desktop app, with optional code signing
+- **Remotes and branch deletion in the desktop app** - A repository shows its remotes and whether origin is routed through the right identity, and branches can be deleted, with a second confirmation before deleting a branch whose commits exist nowhere else
 
 ### Fixed
 - **Push protection without the CLI** - The desktop app can answer the pre-push check itself, so push protection works when only the desktop app is installed. If neither bgit nor the app can be found, the hook lets the push through with a notice instead of blocking it

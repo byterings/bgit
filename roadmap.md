@@ -353,6 +353,15 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Priority: High
 - Status: done
 
+---
+
+### R-033
+
+- Title: Desktop UI/UX Redesign
+- Description: Redesign the desktop frontend as one coherent design system: top navigation instead of a sidebar, dark theme by default with a light theme, a three-part repository workspace (files, diff, commit) with History, Branches, Remotes, and Identity tabs, an identity manager, diagnostic Doctor, categorised Settings, and a redesigned setup guide. No change to CLI behaviour or to how Git, backups, or identities work
+- Priority: High
+- Status: done
+
 ## Release Milestones
 
 - Note : once a milestone is reached, give a reminder to update the roadmap and release notes and to release a new version.
@@ -457,6 +466,7 @@ Release after:
 - R-030
 - R-031
 - R-032
+- R-033
 
 ---
 

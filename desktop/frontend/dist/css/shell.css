@@ -1,0 +1,305 @@
+/* Application frame: the top bar, the page container, and page headings. */
+.app {
+  display: grid;
+  grid-template-rows: var(--appbar) minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+}
+
+/* ---------- Top bar ---------- */
+.appbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  padding: 0 12px 0 14px;
+}
+.appbar-left,
+.appbar-right {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+.appbar-right {
+  justify-content: flex-end;
+}
+.brand {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-right: 14px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.brand-mark {
+  width: 22px;
+  height: 22px;
+}
+.nav-tabs {
+  display: flex;
+  align-items: stretch;
+  height: var(--appbar);
+  min-width: 0;
+}
+.nav-tab {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 0;
+  background: none;
+  padding: 0 11px;
+  color: var(--text-2);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 110ms ease;
+}
+.nav-tab:hover {
+  color: var(--text);
+}
+.nav-tab.active {
+  color: var(--text);
+}
+.nav-tab.active::before {
+  content: "";
+  position: absolute;
+  right: 9px;
+  bottom: 0;
+  left: 9px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent);
+}
+.appbar-center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+.global-search {
+  display: flex;
+  width: min(100%, 380px);
+  gap: 8px;
+  align-items: center;
+  height: var(--control);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: 0 8px 0 10px;
+  color: var(--text-3);
+  cursor: text;
+  transition: border-color 110ms ease;
+}
+.global-search:hover {
+  border-color: var(--border-strong);
+}
+.global-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.global-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  outline: none;
+}
+.global-search input::placeholder {
+  color: var(--text-3);
+}
+.global-search .kbd + .kbd {
+  margin-left: -5px;
+}
+.status-pill {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: var(--control-sm);
+  margin-right: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.status-pill.is-on {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+.status-pill.is-off {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+.icon-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.icon-btn {
+  position: relative;
+}
+.icon-btn-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--bg-2);
+  border-radius: 999px;
+  background: var(--accent);
+  box-sizing: content-box;
+}
+.identity-switch {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  max-width: 200px;
+  height: var(--control);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0 9px 0 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 110ms ease,
+    border-color 110ms ease;
+}
+.identity-switch:hover,
+.identity-switch[aria-expanded="true"] {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.identity-switch > .icon {
+  color: var(--text-3);
+}
+.identity-menu .menu-label,
+.search-pop .menu-label {
+  display: grid;
+  gap: 0;
+  line-height: 1.3;
+}
+.identity-menu .menu-label .muted,
+.search-pop .menu-label .muted {
+  font-size: 11px;
+}
+.identity-menu .menu-item,
+.search-pop .menu-item {
+  min-height: 40px;
+}
+.activity-pop {
+  padding: 4px;
+}
+.activity-empty {
+  padding: 10px 12px 14px;
+}
+.activity-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 7px 8px;
+}
+.activity-item .dot {
+  margin-top: 6px;
+}
+.activity-item div {
+  display: grid;
+  gap: 1px;
+}
+.activity-item .muted {
+  font-size: 12px;
+}
+
+/* ---------- Page container ---------- */
+.view {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: none;
+}
+/* Pages with their own scrolling panes fill the window exactly. */
+.view.fill {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.view.fill > .page-root {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+/* Only a change of page fades in. */
+.page-root.page-enter {
+  animation: fade-in 120ms ease-out;
+}
+.page {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+}
+.page.narrow {
+  max-width: 920px;
+}
+.page-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.page-head .page-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.page-head .cluster {
+  flex: none;
+  flex-wrap: nowrap;
+}
+.section-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+@media (max-height: 760px) {
+  .page {
+    gap: 16px;
+    padding: 18px 20px 28px;
+  }
+}
+@media (max-width: 1040px) {
+  .appbar {
+    gap: 10px;
+  }
+  .status-pill > span:not(.icon),
+  .global-search .kbd {
+    display: none;
+  }
+  .status-pill {
+    padding: 0 7px;
+  }
+  .nav-tab {
+    padding: 0 8px;
+  }
+  .brand {
+    margin-right: 6px;
+  }
+  .brand span {
+    display: none;
+  }
+}

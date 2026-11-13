@@ -109,7 +109,32 @@ exec sh -c "$*"
     home, page, browser, problems, url,
     async open() { await page.goto(url, { waitUntil: "networkidle0" }); await ctx.settle(); },
     async settle(ms = 350) { await new Promise((r) => setTimeout(r, ms)); },
-    async shot(name, fullPage = false) { const file = path.join(SHOTS, name + ".png"); await page.screenshot({ path: file, fullPage }); return file; },
+    // Screenshots are taken without notifications and with the pointer parked,
+    // so they show the screen and not a passing toast or tooltip.
+    async shot(name, { keepToasts = false } = {}) {
+      const size = page.viewport();
+      await page.mouse.move(2, size.height - 2);
+      if (!keepToasts) await page.evaluate(() => { document.getElementById("toasts").innerHTML = ""; });
+      await ctx.settle(250);
+      const file = path.join(SHOTS, name + ".png");
+      await page.screenshot({ path: file });
+      return file;
+    },
+    // Main navigation in the top bar: dashboard, repositories, identities, workspaces, doctor, settings.
+    async nav(pageId) { await ctx.click(`#appbar [data-nav="${pageId}"]`); },
+    async waitDialog(id) { await page.waitForSelector(`#${id}[open]`, { timeout: 10000 }); await ctx.settle(200); },
+    async submitDialog(id) { await ctx.click(`#${id} [data-dialog-submit]`); },
+    async cancelDialog(id) { await ctx.click(`#${id} [data-dialog-cancel]`); await ctx.waitDialogClosed(id); },
+    // Dialogs are removed from the page when they close.
+    async waitDialogClosed(id, timeout = 30000) { await page.waitForFunction((i) => !document.getElementById(i), { timeout }, id); await ctx.settle(250); },
+    async dialogError(id, timeout = 30000) {
+      await page.waitForFunction((i) => { const box = document.querySelector(`#${i} [data-dialog-error]`); return box && !box.hidden; }, { timeout }, id);
+      return ctx.text(`#${id} [data-dialog-error]`);
+    },
+    async menuItem(label) { await ctx.clickText(label, ".popover .menu-item"); },
+    // What the app does when its window comes back to the front.
+    async focusWindow() { await page.evaluate(() => { lastFocusRefresh = 0; window.dispatchEvent(new Event("focus")); }); await ctx.settle(150); },
+    async waitGone(text, timeout = 20000) { await page.waitForFunction((t) => !document.body.innerText.includes(t), { timeout }, text); await ctx.settle(150); },
     async text(selector = "body") { return page.$eval(selector, (el) => el.innerText); },
     async click(selector) { await page.waitForSelector(selector, { visible: true, timeout: 8000 }); await page.click(selector); await ctx.settle(); },
     async clickText(text, scope = "button") {

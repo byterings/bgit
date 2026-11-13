@@ -1,201 +1,182 @@
-// Workspaces page: folders where every repository inside uses one identity.
-//
-// Uses the shared helpers defined in index.html.
+// Workspaces: folders where every repository inside uses one identity.
 (() => {
-  function identities() {
-    return currentStatus?.identities || [];
+  // Repositories that live inside a workspace folder, bound or not.
+  function reposIn(workspace) {
+    const prefix = workspace.path.replace(/[\\/]+$/, "");
+    return repositories().filter((repo) => repo.path.startsWith(`${prefix}/`) || repo.path.startsWith(`${prefix}\\`));
   }
 
-  function page(status) {
-    const workspaces = status.workspaces || [];
+  function card(workspace) {
+    const repos = reposIn(workspace);
+    const problem = !workspace.exists ? "This folder no longer exists." : workspace.missingIdentity ? `Identity '${workspace.alias}' no longer exists.` : "";
+    return `
+      <section class="card workspace-card">
+        <div class="card-head">
+          <div class="workspace-title">
+            <span class="workspace-icon">${icon("layers")}</span>
+            <div class="grow">
+              <h2 class="truncate">${escapeHtml(baseName(workspace.path))}</h2>
+              <span class="mono faint truncate-start"><span>${escapeHtml(workspace.path)}</span></span>
+            </div>
+          </div>
+          <div class="cluster">
+            ${identityChip(workspace.alias)}
+            <button type="button" class="icon-btn sm" data-action="workspace-menu" data-path="${escapeHtml(workspace.path)}" data-alias="${escapeHtml(workspace.alias)}" aria-label="Workspace actions" aria-haspopup="menu">${icon("more")}</button>
+          </div>
+        </div>
+        ${problem ? `<div class="card-body">${banner({ tone: "danger", title: problem, text: "Remove this workspace, or restore what is missing." })}</div>` : ""}
+        ${
+          workspace.exists
+            ? repos.length > 0
+              ? `<div class="mini-list padded">
+                  ${repos
+                    .map(
+                      (repo) => `
+                        <button type="button" class="mini-row" data-action="open-repo" data-path="${escapeHtml(repo.path)}">
+                          ${icon("repo", "sm")}<strong class="truncate">${escapeHtml(repo.name)}</strong>
+                          <span class="faint truncate">${icon("branch", "sm")}${escapeHtml(repo.branch || "No branch")}</span>
+                          ${repo.alias !== workspace.alias ? `<span class="faint">bound to ${escapeHtml(repo.alias)}</span>` : ""}
+                          ${repo.health === "ok" ? "" : badge(repo.health === "attention" ? "Needs fix" : "Blocked", repo.health === "attention" ? "warning" : "danger")}
+                        </button>`,
+                    )
+                    .join("")}
+                </div>`
+              : emptyState({
+                  iconName: "repo",
+                  title: "No repositories in this folder yet",
+                  text: `Anything cloned into this folder uses '${workspace.alias}'.`,
+                  actions: `<button type="button" class="btn btn-sm" data-action="clone-repo" data-alias="${escapeHtml(workspace.alias)}">${icon("download", "sm")}Clone into this workspace</button>`,
+                  compact: true,
+                })
+            : ""
+        }
+      </section>`;
+  }
+
+  function page() {
+    const workspaces = state.status?.workspaces || [];
     const canAdd = identities().length > 0;
-    const actions = `<button type="button" class="primary" data-ws="add" ${canAdd ? "" : "disabled"}><span class="icon" aria-hidden="true">${iconSvg("plus")}</span>Add workspace</button>`;
     return `
-      ${pageHeading("Workspaces", "Every repository inside a workspace folder uses that workspace's identity.", actions)}
-      ${
-        workspaces.length === 0
-          ? `<section class="panel empty">
-              <div class="empty-stack">
-                <p>No workspaces yet. Add a folder such as "work" or "clients" so everything inside it uses one identity.</p>
-                ${canAdd ? "" : `<p class="muted">Add an identity first.</p>`}
-              </div>
-            </section>`
-          : `<section class="repo-list">${workspaces.map(row).join("")}</section>`
-      }
-    `;
+      <div class="page narrow">
+        <header class="page-head">
+          <div class="page-title">
+            <h1>Workspaces</h1>
+            <p>A workspace is a folder. Every repository inside it uses the workspace's identity.</p>
+          </div>
+          <div class="cluster">
+            <button type="button" class="btn btn-primary" data-action="add-workspace" ${canAdd ? "" : "disabled"}>${icon("plus")}Add workspace</button>
+          </div>
+        </header>
+        ${
+          workspaces.length === 0
+            ? `<section class="card">${emptyState({
+                iconName: "layers",
+                title: "No workspaces yet",
+                text: canAdd
+                  ? "Point bgit at a folder such as work or clients. Repositories you put there get that identity without binding each one."
+                  : "Add an identity first, then choose a folder for it.",
+                actions: canAdd ? `<button type="button" class="btn btn-primary" data-action="add-workspace">${icon("plus")}Add workspace</button>` : `<button type="button" class="btn btn-primary" data-action="add-identity">${icon("plus")}Add identity</button>`,
+              })}</section>`
+            : workspaces.map(card).join("")
+        }
+      </div>`;
   }
 
-  function row(workspace) {
-    const identity = identities().find((item) => item.alias === workspace.alias);
-    const problem = !workspace.exists
-      ? "This folder no longer exists."
-      : workspace.missingIdentity
-        ? `Identity '${workspace.alias}' no longer exists.`
-        : "";
-    const count = workspace.repositoryCount || 0;
-    return `
-      <article class="repo-record workspace-record ${problem ? "blocked" : ""}">
-        <div class="repo-main">
-          <div class="repo-title">
-            <strong class="truncate" title="${escapeHtml(workspace.path)}">${escapeHtml(workspace.path.split(/[\\/]/).filter(Boolean).pop() || workspace.path)}</strong>
-            ${problem ? `<span class="badge error">Problem</span>` : ""}
-          </div>
-          <span class="muted truncate repo-location" title="${escapeHtml(workspace.path)}">${escapeHtml(workspace.path)}</span>
-        </div>
-        <div class="repo-identity">
-          ${identity ? avatarBlock(identity) : `<span class="avatar" aria-hidden="true">?</span>`}
-          <div class="identity-details">
-            <strong class="truncate">${escapeHtml(workspace.alias)}</strong>
-            <span class="muted truncate">${escapeHtml(workspace.identityEmail || "")}</span>
+  async function addWorkspace() {
+    const result = await openDialog({
+      id: "workspaceDialog",
+      title: "Add a workspace",
+      description: "Repositories in this folder and its subfolders use the identity you choose.",
+      submitLabel: "Add workspace",
+      busyLabel: "Adding",
+      body: `
+        <div class="field">
+          <label for="workspacePath">Folder</label>
+          <div class="input-group">
+            <input class="input mono" id="workspacePath" name="path" placeholder="Choose a folder" autocomplete="off" spellcheck="false" autofocus />
+            <button type="button" class="btn" data-browse>${icon("folder")}Browse</button>
           </div>
         </div>
-        <div class="repo-branch">
-          <span>${workspace.exists ? `${count} repositor${count === 1 ? "y" : "ies"}` : "Folder not found"}</span>
-        </div>
-        <div class="actions repo-actions">
-          ${iconButton({ action: "ws-remove", icon: "trash", label: `Remove workspace ${workspace.path}`, path: workspace.path, danger: true })}
-          ${workspace.exists && count > 0 ? `<button type="button" data-page-jump="repositories">View repositories</button>` : ""}
-        </div>
-        ${problem ? `<ul class="repo-problems"><li>${escapeHtml(problem)}</li></ul>` : ""}
-      </article>
-    `;
-  }
-
-  function ensureDialog() {
-    if (document.getElementById("workspaceDialog")) {
+        <div class="field">
+          <label for="workspaceAlias">Identity</label>
+          <select class="select" id="workspaceAlias" name="alias">
+            ${identities()
+              .map((identity) => `<option value="${escapeHtml(identity.alias)}" ${identity.active ? "selected" : ""}>${escapeHtml(identity.alias)} · ${escapeHtml(identity.email)}</option>`)
+              .join("")}
+          </select>
+        </div>`,
+      onOpen({ form, setError }) {
+        form.querySelector("[data-browse]").addEventListener("click", async () => {
+          try {
+            const folder = await api().ChooseWorkspaceFolder();
+            if (folder) {
+              form.elements.path.value = folder;
+            }
+          } catch (error) {
+            setError(errorText(error));
+          }
+        });
+      },
+      async onSubmit(form) {
+        const request = { path: form.elements.path.value.trim(), alias: form.elements.alias.value };
+        if (!request.path) throw new Error("Choose the workspace folder.");
+        const added = await api().AddWorkspace(request);
+        return { ...added, path: request.path };
+      },
+    });
+    if (!result?.status) {
       return;
     }
-    document.body.insertAdjacentHTML(
-      "beforeend",
-      `
-      <dialog id="workspaceDialog">
-        <form id="workspaceForm" class="dialog-body" method="dialog" novalidate>
-          <h2>Add a workspace</h2>
-          <div class="form-stack">
-            <div class="field-group">
-              <span>Folder</span>
-              <div class="field-control">
-                <input name="path" placeholder="Choose a folder" required />
-                <button type="button" id="workspaceChoose" title="Choose folder" aria-label="Choose folder">
-                  <span class="icon" aria-hidden="true">${iconSvg("folder")}</span>
-                </button>
-              </div>
-              <span class="field-hint">Repositories in this folder and its subfolders use the identity below.</span>
-            </div>
-            <label>
-              Identity
-              <select name="alias" required></select>
-            </label>
-            <div id="workspaceError" class="note error" role="alert" hidden></div>
-          </div>
-          <div class="dialog-actions">
-            <button type="button" id="workspaceCancel">Cancel</button>
-            <button type="submit" class="primary" id="workspaceSubmit">Add workspace</button>
-          </div>
-        </form>
-      </dialog>
-    `,
-    );
-
-    const dialog = document.getElementById("workspaceDialog");
-    const form = document.getElementById("workspaceForm");
-    const errorBox = document.getElementById("workspaceError");
-    const showError = (message) => {
-      errorBox.textContent = message;
-      errorBox.hidden = !message;
-    };
-
-    document.getElementById("workspaceCancel").addEventListener("click", () => dialog.close());
-    document.getElementById("workspaceChoose").addEventListener("click", async () => {
-      try {
-        const folder = await api().ChooseWorkspaceFolder();
-        if (folder) {
-          form.elements.path.value = folder;
-        }
-      } catch (error) {
-        showError(String(error));
-      }
-    });
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const request = { path: form.elements.path.value.trim(), alias: form.elements.alias.value };
-      if (!request.path) {
-        showError("Choose the workspace folder.");
-        return;
-      }
-      showError("");
-      const submit = document.getElementById("workspaceSubmit");
-      submit.disabled = true;
-      try {
-        const result = await api().AddWorkspace(request);
-        dialog.close();
-        finish(result);
-        const added = (result.status?.workspaces || []).find((workspace) => workspace.path === request.path);
-        if (added?.repositoryCount > 0) {
-          notify({
-            title: "Repositories found",
-            message: `${added.repositoryCount} repositor${added.repositoryCount === 1 ? "y" : "ies"} in this workspace. Open Repositories to check that they match the identity.`,
-            tone: "warn",
-            timeout: 9000,
-          });
-        }
-      } catch (error) {
-        showError(String(error));
-      } finally {
-        submit.disabled = false;
-      }
-    });
-  }
-
-  function finish(result) {
-    if (typeof invalidateRepositories === "function") {
-      invalidateRepositories();
+    finishAction(result, { activity: "Workspaces" });
+    const added = (result.status.workspaces || []).find((workspace) => workspace.path === result.path);
+    if (added?.repositoryCount > 0) {
+      notify({
+        title: `${plural(added.repositoryCount, "repository", "repositories")} found in this workspace`,
+        message: "Open Repositories to check that they match the identity.",
+        tone: "warning",
+        timeout: 9000,
+      });
     }
-    addActivity(result.message, "Workspaces", "success");
-    notify({ title: "Done", message: result.message, tone: "success" });
-    render(result.status || currentStatus, currentDoctor);
   }
 
-  function bind(target) {
-    ensureDialog();
-
-    target.querySelectorAll("[data-ws='add']").forEach((button) => {
-      button.addEventListener("click", () => {
-        const form = document.getElementById("workspaceForm");
-        form.reset();
-        form.elements.alias.innerHTML = identities()
-          .map(
-            (identity) =>
-              `<option value="${escapeHtml(identity.alias)}" ${identity.active ? "selected" : ""}>${escapeHtml(identity.alias)} (${escapeHtml(identity.email)})</option>`,
-          )
-          .join("");
-        document.getElementById("workspaceError").hidden = true;
-        document.getElementById("workspaceDialog").showModal();
-      });
+  async function removeWorkspace(path) {
+    const confirmed = await confirmAction({
+      title: `Remove workspace ${baseName(path)}?`,
+      message: "bgit stops applying an identity to this folder.",
+      warning: "The folder and its repositories are not deleted. Repositories that are not bound go back to your default identity.",
+      acceptLabel: "Remove",
+      danger: true,
     });
-
-    target.querySelectorAll("[data-action='ws-remove']").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const confirmed = await confirmAction({
-          title: "Remove workspace",
-          message: "Stop using this folder as a workspace?",
-          warning: "The folder and its repositories are not deleted. Repositories that are not bound go back to your default identity.",
-          acceptLabel: "Remove",
-          danger: true,
-        });
-        if (!confirmed) {
-          return;
-        }
-        button.disabled = true;
-        try {
-          finish(await api().RemoveWorkspace(button.dataset.path));
-        } catch (error) {
-          notify({ title: "Action failed", message: String(error), tone: "error" });
-          button.disabled = false;
-        }
-      });
-    });
+    if (!confirmed) {
+      return;
+    }
+    try {
+      finishAction(await api().RemoveWorkspace(path), { activity: "Workspaces" });
+    } catch (error) {
+      notify({ title: "Could not remove the workspace", message: errorText(error), tone: "danger" });
+    }
   }
 
-  registerPage({ id: "workspaces", render: page, bind });
+  registerPage({
+    id: "workspaces",
+    render: page,
+    enter() {
+      loadRepositories();
+    },
+    actions: {
+      "add-workspace": () => addWorkspace(),
+      "workspace-menu"(element) {
+        openMenu(
+          element,
+          [
+            { label: "Clone into this workspace", icon: "download", onSelect: () => openCloneDialog({ alias: element.dataset.alias }) },
+            { label: "Copy path", icon: "copy", onSelect: () => copyText(element.dataset.path, "Path copied") },
+            { separator: true },
+            { label: "Remove workspace", icon: "trash", danger: true, onSelect: () => removeWorkspace(element.dataset.path) },
+          ],
+          { align: "end" },
+        );
+      },
+    },
+  });
 })();

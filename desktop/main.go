@@ -54,7 +54,9 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 248, G: 250, B: 252, A: 1},
+		// The dark theme's background, so the window never flashes white
+		// before the page has loaded.
+		BackgroundColour: &options.RGBA{R: 11, G: 15, B: 25, A: 255},
 		Linux: &linux.Options{
 			Icon: appIcon,
 			// Matches the installed desktop entry, so the desktop groups the

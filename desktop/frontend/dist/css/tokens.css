@@ -1,0 +1,118 @@
+/* Design tokens. Dark is the default theme; light overrides the same names.
+   Components never use raw colors, only these variables. */
+:root {
+  color-scheme: dark;
+
+  --bg: #0b0f19;
+  --bg-2: #101827;
+  --surface: #151e2e;
+  --surface-2: #1b2638;
+  --surface-3: #223049;
+  --border: #293449;
+  --border-strong: #3a4862;
+
+  --text: #e5e7eb;
+  --text-2: #94a3b8;
+  --text-3: #6b7a90;
+
+  --accent: #8b5cf6;
+  --accent-strong: #7c3aed;
+  --accent-stronger: #6d28d9;
+  --accent-text: #c4b5fd;
+  --accent-soft: rgba(139, 92, 246, 0.16);
+  --accent-ring: rgba(139, 92, 246, 0.55);
+  --on-accent: #ffffff;
+
+  --success: #22c55e;
+  --success-text: #4ade80;
+  --success-soft: rgba(34, 197, 94, 0.13);
+  --warning: #f59e0b;
+  --warning-text: #fbbf24;
+  --warning-soft: rgba(245, 158, 11, 0.13);
+  --danger: #ef4444;
+  --danger-text: #f87171;
+  --danger-soft: rgba(239, 68, 68, 0.13);
+  --info: #3b82f6;
+  --info-text: #7db4ff;
+  --info-soft: rgba(59, 130, 246, 0.15);
+
+  --diff-add: rgba(34, 197, 94, 0.12);
+  --diff-add-gutter: rgba(34, 197, 94, 0.2);
+  --diff-del: rgba(239, 68, 68, 0.12);
+  --diff-del-gutter: rgba(239, 68, 68, 0.2);
+  --diff-hunk: rgba(59, 130, 246, 0.1);
+
+  --syntax-keyword: #c4b5fd;
+  --syntax-string: #86efac;
+  --syntax-comment: #6b7a90;
+  --syntax-number: #fdba74;
+  --syntax-title: #7dd3fc;
+
+  --overlay: rgba(3, 6, 12, 0.62);
+  --shadow-pop: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+
+  --radius-s: 4px;
+  --radius: 6px;
+  --radius-l: 10px;
+
+  --font: Inter, "Segoe UI", system-ui, -apple-system, "Noto Sans", Ubuntu, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --control: 30px;
+  --control-sm: 26px;
+  --control-lg: 36px;
+  --appbar: 48px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f5f9;
+  --bg-2: #eceef4;
+  --surface: #ffffff;
+  --surface-2: #f6f7fb;
+  --surface-3: #eceef4;
+  --border: #dde1ea;
+  --border-strong: #c3c9d6;
+
+  --text: #111827;
+  --text-2: #566074;
+  --text-3: #8791a3;
+
+  --accent: #7c3aed;
+  --accent-strong: #7c3aed;
+  --accent-stronger: #6d28d9;
+  --accent-text: #6d28d9;
+  --accent-soft: rgba(124, 58, 237, 0.1);
+  --accent-ring: rgba(124, 58, 237, 0.4);
+
+  --success: #16a34a;
+  --success-text: #15803d;
+  --success-soft: rgba(22, 163, 74, 0.1);
+  --warning: #d97706;
+  --warning-text: #b45309;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --danger: #dc2626;
+  --danger-text: #b91c1c;
+  --danger-soft: rgba(220, 38, 38, 0.09);
+  --info: #2563eb;
+  --info-text: #1d4ed8;
+  --info-soft: rgba(37, 99, 235, 0.09);
+
+  --diff-add: rgba(22, 163, 74, 0.11);
+  --diff-add-gutter: rgba(22, 163, 74, 0.2);
+  --diff-del: rgba(220, 38, 38, 0.09);
+  --diff-del-gutter: rgba(220, 38, 38, 0.17);
+  --diff-hunk: rgba(37, 99, 235, 0.07);
+
+  --syntax-keyword: #7c3aed;
+  --syntax-string: #15803d;
+  --syntax-comment: #8791a3;
+  --syntax-number: #c2410c;
+  --syntax-title: #0369a1;
+
+  --overlay: rgba(15, 23, 42, 0.38);
+  --shadow-pop: 0 14px 36px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  --shadow-card: none;
+}

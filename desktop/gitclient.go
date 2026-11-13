@@ -275,3 +275,24 @@ func abortDesktopMerge(ctx context.Context, path string) (*GitActionResult, erro
 	}
 	return session.gitSuccess(ctx, "Merge cancelled", "")
 }
+
+func listDesktopRemotes(ctx context.Context, path string) ([]models.GitRemote, error) {
+	session, err := openRepoSession(path)
+	if err != nil {
+		return nil, err
+	}
+	return gitops.ListRemotes(ctx, session.entry.path)
+}
+
+// deleteDesktopBranch deletes a local branch. An unmerged branch is reported
+// with its own result kind so the UI can ask before forcing.
+func deleteDesktopBranch(ctx context.Context, request DeleteBranchRequest) (*GitActionResult, error) {
+	session, err := openRepoSession(request.Path)
+	if err != nil {
+		return nil, err
+	}
+	if err := gitops.DeleteBranch(ctx, session.entry.path, request.Name, request.Force); err != nil {
+		return session.gitFailure(ctx, err)
+	}
+	return session.gitSuccess(ctx, fmt.Sprintf("Deleted branch %s", strings.TrimSpace(request.Name)), "")
+}

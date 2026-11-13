@@ -206,6 +206,14 @@ func (a *App) CreateBranch(request BranchRequest) (*GitActionResult, error) {
 	return createDesktopBranch(a.context(), request)
 }
 
+func (a *App) DeleteBranch(request DeleteBranchRequest) (*GitActionResult, error) {
+	return deleteDesktopBranch(a.context(), request)
+}
+
+func (a *App) ListRemotes(path string) ([]models.GitRemote, error) {
+	return listDesktopRemotes(a.context(), path)
+}
+
 func (a *App) GetHistory(request HistoryRequest) ([]models.GitCommit, error) {
 	return getDesktopHistory(a.context(), request)
 }

@@ -66,6 +66,10 @@ export function CreateBranch(arg1) {
   return window['go']['main']['App']['CreateBranch'](arg1);
 }
 
+export function DeleteBranch(arg1) {
+  return window['go']['main']['App']['DeleteBranch'](arg1);
+}
+
 export function DeleteIdentity(arg1) {
   return window['go']['main']['App']['DeleteIdentity'](arg1);
 }
@@ -144,6 +148,10 @@ export function ListBranches(arg1) {
 
 export function ListIdentities() {
   return window['go']['main']['App']['ListIdentities']();
+}
+
+export function ListRemotes(arg1) {
+  return window['go']['main']['App']['ListRemotes'](arg1);
 }
 
 export function ListRepositories() {

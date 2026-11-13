@@ -51,6 +51,12 @@ const ICONS = {
   star: '<path d="m12 3 2.700 5.600 6.100.900-4.400 4.300 1 6.100-5.400-2.900-5.400 2.900 1-6.100L3.200 9.500l6.100-.900L12 3Z"/>',
   keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.010"/><path d="M10 10h.010"/><path d="M14 10h.010"/><path d="M18 10h.010"/><path d="M7 14h10"/>',
   dot: '<circle cx="12" cy="12" r="3"/>',
+  sidebar: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+  "sidebar-open": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="m14 10 2 2-2 2"/>',
+  wrap: '<path d="M3 6h18"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><path d="m16 16-2 2 2 2"/><path d="M3 18h7"/>',
+  "chevron-up": '<path d="m18 15-6-6-6 6"/>',
+  "arrow-up": '<path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>',
+  "arrow-down": '<path d="M12 5v14"/><path d="m18 13-6 6-6-6"/>',
 };
 
 function icon(name, className = "") {
@@ -123,6 +129,11 @@ function emptyState({ iconName = "info", title, text = "", actions = "", compact
       ${text ? `<p>${escapeHtml(text)}</p>` : ""}
       ${actions ? `<div class="cluster">${actions}</div>` : ""}
     </div>`;
+}
+
+// Placeholder rows for a list that is still loading.
+function skeletonRows(count) {
+  return `<div aria-busy="true" aria-label="Loading">${'<div class="skeleton-row"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>'.repeat(count)}</div>`;
 }
 
 function loadingLine(text) {
@@ -480,4 +491,78 @@ async function withBusy(button, busyLabel, action) {
       button.innerHTML = idleHtml;
     }
   }
+}
+
+// ---------- Resizable panes ----------
+// A splitter is a thin handle between two panes. Dragging it (or using the
+// arrow keys when it has focus) changes one CSS variable on the container,
+// e.g. --side-w. CSS clamps the variable, so the layout stays valid when the
+// window shrinks. The size is remembered per key; double-click resets it.
+// reverse: the resized pane sits after the handle (right or below).
+function bindSplitter(handle, { container, variable, key, fallback, min, max, axis = "x", reverse = false }) {
+  if (!handle || !container) {
+    return;
+  }
+  const limit = (value) => Math.round(Math.max(min, Math.min(max(), value)));
+  const apply = (value, remember) => {
+    const size = limit(value);
+    container.style.setProperty(variable, `${size}px`);
+    handle.setAttribute("aria-valuenow", String(size));
+    if (remember) {
+      prefs.set(`split.${key}`, size);
+    }
+    return size;
+  };
+  // Measure what is really shown: CSS may have clamped the stored size.
+  const current = () => {
+    const pane = reverse ? handle.nextElementSibling : handle.previousElementSibling;
+    const rect = pane?.getBoundingClientRect();
+    return rect ? (axis === "x" ? rect.width : rect.height) : prefs.get(`split.${key}`, fallback);
+  };
+
+  handle.setAttribute("role", "separator");
+  handle.setAttribute("tabindex", "0");
+  handle.setAttribute("aria-orientation", axis === "x" ? "vertical" : "horizontal");
+  handle.setAttribute("aria-valuemin", String(min));
+  apply(prefs.get(`split.${key}`, fallback), false);
+
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    const start = axis === "x" ? event.clientX : event.clientY;
+    const startSize = current();
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("dragging");
+    document.body.classList.add(axis === "x" ? "resizing-x" : "resizing-y");
+    const move = (moveEvent) => {
+      const delta = (axis === "x" ? moveEvent.clientX : moveEvent.clientY) - start;
+      apply(startSize + (reverse ? -delta : delta), false);
+    };
+    const stop = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.classList.remove("dragging");
+      document.body.classList.remove("resizing-x", "resizing-y");
+      apply(current(), true);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", stop, { once: true });
+    handle.addEventListener("pointercancel", stop, { once: true });
+  });
+  handle.addEventListener("dblclick", () => apply(fallback, true));
+  handle.addEventListener("keydown", (event) => {
+    const grow = axis === "x" ? (reverse ? "ArrowLeft" : "ArrowRight") : reverse ? "ArrowUp" : "ArrowDown";
+    const shrink = axis === "x" ? (reverse ? "ArrowRight" : "ArrowLeft") : reverse ? "ArrowDown" : "ArrowUp";
+    const step = event.shiftKey ? 64 : 16;
+    let next = null;
+    if (event.key === grow) next = current() + step;
+    if (event.key === shrink) next = current() - step;
+    if (event.key === "Home") next = min;
+    if (event.key === "End") next = max();
+    if (next !== null) {
+      event.preventDefault();
+      apply(next, true);
+    }
+  });
 }

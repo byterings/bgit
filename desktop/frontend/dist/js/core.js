@@ -233,6 +233,9 @@ registerActions({
   copy(element) {
     copyText(element.dataset.value, element.dataset.copied || "Copied to clipboard");
   },
+  "retry-repos"(element) {
+    withBusy(element, "Loading", () => loadRepositories());
+  },
   "open-setup"() {
     openOnboarding("welcome");
   },

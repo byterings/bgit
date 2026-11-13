@@ -59,13 +59,14 @@ function renderAppbar() {
   bar.innerHTML = `
     <div class="appbar-left">
       <button type="button" class="brand" data-action="navigate" data-page="dashboard" aria-label="bgit dashboard">${BRAND_MARK}<span>bgit</span></button>
-      <nav class="nav-tabs" aria-label="Main">
+      <nav class="nav-tabs" id="navTabs" aria-label="Main">
         ${NAV_ITEMS.map(
           (item, index) => `
             <button type="button" class="nav-tab ${activeNav === item.id ? "active" : ""}" data-action="navigate" data-page="${item.id}" data-nav="${item.id}" ${activeNav === item.id ? 'aria-current="page"' : ""} data-tip="${MOD_KEY}+${index + 1}">
               ${escapeHtml(item.label)}${navMarker(item.id)}
             </button>`,
         ).join("")}
+        <button type="button" class="nav-tab nav-more" id="navMore" data-action="nav-more" aria-haspopup="menu" aria-expanded="false" hidden>More${icon("chevron-down", "sm")}</button>
       </nav>
     </div>
     <div class="appbar-center">
@@ -82,15 +83,48 @@ function renderAppbar() {
       <button type="button" class="icon-btn" data-action="appbar-activity" aria-label="Activity" data-tip="Activity in this session" data-tip-align="end">
         ${icon("bell")}${state.unseenActivity > 0 ? `<span class="icon-btn-dot"></span>` : ""}
       </button>
-      <button type="button" class="identity-switch" id="identitySwitch" data-action="appbar-identity" aria-haspopup="menu" aria-expanded="false" data-tip="Default identity" data-tip-align="end">
+      <button type="button" class="identity-switch" id="identitySwitch" data-action="appbar-identity" aria-haspopup="menu" aria-expanded="false" aria-label="Default identity: ${escapeHtml(active?.alias || "none")}" data-tip="Used by repositories without an identity of their own" data-tip-align="end">
         ${active ? avatar(active, "sm") : `<span class="avatar sm" aria-hidden="true">?</span>`}
-        <span class="truncate">${escapeHtml(active?.alias || "No identity")}</span>
+        <span class="identity-switch-text"><span class="identity-switch-label">Default</span><strong class="truncate">${escapeHtml(active?.alias || "No identity")}</strong></span>
         ${icon("chevron-down", "sm")}
       </button>
       <button type="button" class="icon-btn ${state.page === "settings" ? "active" : ""}" data-action="navigate" data-page="settings" data-nav="settings" aria-label="Settings" data-tip="Settings (${MOD_KEY}+,)" data-tip-align="end">${icon("settings")}</button>
     </div>`;
 
   bindGlobalSearch();
+  fitNav();
+}
+
+// ---------- Navigation overflow ----------
+// When the window is too narrow for every tab, the last tabs move into a
+// "More" menu instead of colliding with the search box.
+function fitNav() {
+  const nav = document.getElementById("navTabs");
+  const more = document.getElementById("navMore");
+  if (!nav || !more) {
+    return;
+  }
+  const tabs = [...nav.querySelectorAll(".nav-tab[data-nav]")];
+  tabs.forEach((tab) => (tab.hidden = false));
+  more.hidden = true;
+  if (nav.scrollWidth <= nav.clientWidth) {
+    return;
+  }
+  more.hidden = false;
+  for (let index = tabs.length - 1; index > 0 && nav.scrollWidth > nav.clientWidth; index -= 1) {
+    tabs[index].hidden = true;
+  }
+  const hiddenActive = tabs.some((tab) => tab.hidden && tab.classList.contains("active"));
+  const hiddenMarker = tabs.some((tab) => tab.hidden && tab.querySelector(".dot"));
+  more.classList.toggle("active", hiddenActive);
+  more.querySelector(".dot")?.remove();
+  if (hiddenMarker) {
+    more.insertAdjacentHTML("beforeend", `<span class="dot is-warning"></span>`);
+  }
+}
+
+if (window.ResizeObserver) {
+  new ResizeObserver(() => fitNav()).observe(document.getElementById("appbar"));
 }
 
 // ---------- Identity switcher ----------
@@ -105,11 +139,31 @@ async function setDefaultIdentity(alias) {
 }
 
 registerActions({
+  "nav-more"(button) {
+    const hidden = NAV_ITEMS.filter((item) => document.querySelector(`#navTabs [data-nav="${item.id}"]`)?.hidden);
+    const activeNav = currentPage().nav || state.page;
+    openMenu(
+      button,
+      hidden.map((item) => ({
+        label: item.label,
+        active: item.id === activeNav,
+        checked: item.id === activeNav,
+        hint: `${MOD_KEY}+${NAV_ITEMS.indexOf(item) + 1}`,
+        onSelect: () => navigate(item.id),
+      })),
+      { width: 220 },
+    );
+  },
+
   "appbar-identity"(button) {
+    // In a repository, its own identity is marked too, so the default and
+    // the identity this repository commits with are never confused.
+    const repoAlias = state.page === "repo" ? window.currentRepositoryAlias?.() : "";
     const items = [{ heading: "Default identity" }];
     for (const identity of identities()) {
+      const tags = repoAlias && identity.alias === repoAlias ? `<span class="badge is-accent">This repository</span>` : "";
       items.push({
-        html: `${avatar(identity, "sm")}<span class="menu-label"><strong class="truncate">${escapeHtml(identity.alias)}</strong><span class="muted truncate">${escapeHtml(identity.email)}</span></span>`,
+        html: `${avatar(identity, "sm")}<span class="menu-label"><strong class="truncate">${escapeHtml(identity.alias)}</strong><span class="muted truncate">${escapeHtml(identity.email)}</span></span>${tags}`,
         checked: identity.active,
         onSelect: () => {
           if (!identity.active) {
@@ -129,7 +183,9 @@ registerActions({
       width: 300,
       className: "identity-menu",
       // Switching here does not touch repositories that have their own identity.
-      note: "The default identity applies to repositories without an identity of their own. Bound repositories and workspaces keep theirs.",
+      note: repoAlias
+        ? "Switching the default does not change this repository unless it follows the default. Change a repository's identity from its header."
+        : "The default identity applies to repositories without an identity of their own. Bound repositories and workspaces keep theirs.",
     });
   },
 

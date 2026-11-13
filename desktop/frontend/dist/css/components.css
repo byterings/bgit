@@ -672,3 +672,55 @@ dialog.dialog::backdrop {
   background: var(--info-soft);
   color: var(--info-text);
 }
+
+/* ---------- Splitters (resizable panes) ---------- */
+.splitter {
+  position: relative;
+  flex: none;
+  z-index: 2;
+  outline: none;
+  touch-action: none;
+}
+.splitter.x {
+  width: var(--splitter);
+  cursor: col-resize;
+}
+.splitter.y {
+  height: var(--splitter);
+  cursor: row-resize;
+}
+/* The visible line is thin; the grab area is the whole handle. */
+.splitter::before {
+  content: "";
+  position: absolute;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color 120ms ease;
+}
+.splitter.x::before {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+}
+.splitter.y::before {
+  right: 0;
+  left: 0;
+  top: calc(50% - 1.5px);
+  height: 3px;
+}
+.splitter:hover::before,
+.splitter.dragging::before,
+.splitter:focus-visible::before {
+  background: var(--accent);
+}
+body.resizing-x,
+body.resizing-x * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+body.resizing-y,
+body.resizing-y * {
+  cursor: row-resize !important;
+  user-select: none !important;
+}

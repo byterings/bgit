@@ -46,7 +46,7 @@ irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
 
 The desktop app does everything without a terminal: first-run setup, identities and SSH keys, cloning, repository health, and everyday Git work (changes, commit, pull, push, branches, history). It does not need the CLI.
 
-Navigation is a bar across the top: Dashboard, Repositories, Identities, Workspaces, Doctor, and Settings. The app opens in a dark theme; a light theme is in Settings. Useful shortcuts: `Ctrl+K` (`⌘K` on macOS) searches repositories, `Ctrl+1` to `Ctrl+5` switch areas, and `Ctrl+Enter` commits.
+Navigation is a bar across the top: Dashboard, Repositories, Identities, Workspaces, Doctor, and Settings. The app opens in a dark theme; a light theme is in Settings. Useful shortcuts: `Ctrl+K` (`⌘K` on macOS) searches repositories, `Ctrl+1` to `Ctrl+5` switch areas, `Ctrl+Enter` commits, and `Ctrl+B` hides or shows the file list in a repository. In a repository, the header shows which identity commits there and why; the file list and commit area can be resized by dragging their edges.
 
 Download it from [GitHub Releases](https://github.com/byterings/bgit/releases/latest):
 

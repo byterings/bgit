@@ -113,10 +113,10 @@
 
   function list() {
     if (state.reposError) {
-      return banner({ tone: "danger", title: "Repositories could not be loaded", text: state.reposError });
+      return banner({ tone: "danger", title: "Repositories could not be loaded", text: state.reposError, actions: `<button type="button" class="btn btn-sm" data-action="retry-repos">${icon("refresh", "sm")}Try again</button>` });
     }
     if (!state.repos) {
-      return `<section class="card">${'<div class="skeleton-row"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>'.repeat(5)}</section>`;
+      return `<section class="card">${skeletonRows(5)}</section>`;
     }
     if (repositories().length === 0) {
       return `<section class="card">${emptyState({

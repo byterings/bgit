@@ -53,11 +53,28 @@
       </section>`;
   }
 
+  // The order bgit uses to choose an identity for a repository (see
+  // core/check ResolveExpected). Shown so workspaces are understood in
+  // relation to bound repositories and the default identity.
+  function precedenceCard() {
+    const fallback = activeIdentity();
+    return `
+      <section class="card">
+        <div class="card-head"><h2>How bgit picks an identity</h2></div>
+        <ol class="precedence">
+          <li><span class="precedence-n">1</span><div><strong>Bound repository</strong><span class="muted">A repository you added or cloned with an identity keeps it.</span></div></li>
+          <li><span class="precedence-n">2</span><div><strong>Workspace folder</strong><span class="muted">Otherwise, the identity of the workspace the repository is in.</span></div></li>
+          <li><span class="precedence-n">3</span><div><strong>Remote address</strong><span class="muted">Otherwise, an identity named in the remote address.</span></div></li>
+          <li><span class="precedence-n">4</span><div><strong>Default identity</strong><span class="muted">Everything else${fallback ? `: currently ${escapeHtml(fallback.alias)}` : ""}.</span></div></li>
+        </ol>
+      </section>`;
+  }
+
   function page() {
     const workspaces = state.status?.workspaces || [];
     const canAdd = identities().length > 0;
     return `
-      <div class="page narrow">
+      <div class="page">
         <header class="page-head">
           <div class="page-title">
             <h1>Workspaces</h1>
@@ -67,6 +84,8 @@
             <button type="button" class="btn btn-primary" data-action="add-workspace" ${canAdd ? "" : "disabled"}>${icon("plus")}Add workspace</button>
           </div>
         </header>
+        <div class="side-layout">
+        <div class="stack">
         ${
           workspaces.length === 0
             ? `<section class="card">${emptyState({
@@ -79,6 +98,9 @@
               })}</section>`
             : workspaces.map(card).join("")
         }
+        </div>
+        <aside class="stack">${precedenceCard()}</aside>
+        </div>
       </div>`;
   }
 

@@ -362,6 +362,13 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Priority: High
 - Status: done
 
+### R-034
+
+- Title: Desktop UI/UX Refinement
+- Description: Refine the redesigned desktop app without redesigning it: resizable and collapsible panes in the repository workspace, a diff that marks the changed part of each line and can wrap, clearer sync status, a "Commits as" identity control that explains where a repository's identity comes from and how it relates to the default identity, top navigation that overflows into a "More" menu in narrow windows, higher contrast for secondary text, fewer nested cards, retry actions on load errors, and window-size tests at 1366x768, 1280x720, 1024x768, and 960x640. No backend or CLI change
+- Priority: High
+- Status: done
+
 ## Release Milestones
 
 - Note : once a milestone is reached, give a reminder to update the roadmap and release notes and to release a new version.
@@ -467,6 +474,7 @@ Release after:
 - R-031
 - R-032
 - R-033
+- R-034
 
 ---
 

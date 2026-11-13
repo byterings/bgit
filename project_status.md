@@ -87,6 +87,7 @@ Desktop redesign (R-033), which replaces the sidebar layout described in the old
 - An open repository has its own header (branch menu, sync status, Fetch, Pull, Push) and tabs: Changes (file list, diff with syntax colours, commit panel), History, Branches, Remotes, Identity.
 - Identities is a list with a detail view (Git configuration, GitHub connection, SSH key, repositories). Switching the default identity in the top bar states that bound repositories and workspaces keep their identity.
 - Doctor groups checks into areas and says why each area matters. Settings has General, Appearance, Push protection, Backup & Restore, and Advanced sections.
+- Refinement (R-034): in the Changes tab the file list and commit area share one sidebar whose width (and the commit area's height) can be dragged; the sidebar collapses to a narrow rail (Ctrl/Cmd+B) that keeps the selected-file count and a commit button. The header shows "Commits as <identity> · Bound/Workspace/From remote/Default", which opens a card explaining why that identity applies and how it relates to the default identity; the top-bar switcher is labelled "Default". Tabs that do not fit the window move into a "More" menu.
 - Not in the app because the backend has no support for them, and no placeholder controls were added: creating a new repository, merging branches from the app, adding or editing remotes, a commit graph, side-by-side diffs, staging individual lines, and editing an existing workspace.
 
 Recent desktop navigation update:
@@ -1389,6 +1390,56 @@ Validation:
 - No file under `cmd/` or `internal/` changed, and the CLI does not import `core/gitops`, so CLI behaviour and output are unchanged.
 - The built app was opened on a throwaway home on Linux (WebKitGTK 2.52) and the dashboard checked; the repository and identities screens were checked in the same web engine through the dev harness.
 - Not verified: Windows (WebView2) and macOS (WKWebView) rendering, and clicking through the built app window by hand; interaction is covered by the headless Chrome tests against the real backend.
+
+### R-034
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/css/tokens.css
+- desktop/frontend/dist/css/components.css
+- desktop/frontend/dist/css/shell.css
+- desktop/frontend/dist/css/pages.css
+- desktop/frontend/dist/js/ui.js
+- desktop/frontend/dist/js/core.js
+- desktop/frontend/dist/js/shell.js
+- desktop/frontend/dist/js/dashboard.js
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/js/workspaces.js
+- desktop/uitest/lib.js
+- desktop/uitest/layout.test.js
+- README.md
+- changelog.json
+- CHANGELOG.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Repository workspace, Changes tab: the file list and the commit area are one sidebar, so the diff gets the rest of the width at every window size. A splitter sets the sidebar width and another sets the commit area height (drag, arrow keys, double-click to reset; remembered in local storage). The sidebar collapses to a rail (button or Ctrl/Cmd+B) that shows how many files are selected and opens the commit area at the summary.
+- File list: arrow keys move the selection and Space includes or leaves out a file; a file left out of the commit is shown struck through and dimmed. The commit area is flat (no box inside a box), with "Commit to <branch>", who the commit is recorded as, summary with a length counter, description, and the commit button.
+- Diff: the changed characters inside a replaced line are marked, long lines can be wrapped (remembered), the header steps to the previous or next file, binary files get their own message, and hunk headers and line numbers are easier to read. History has resizable commit list and file list columns.
+- Header: the sync state is always visible as a coloured status (up to date, n to push, n to pull, not published, no remote); Fetch, Pull, and Push keep their counts and become icon buttons in narrow windows; Pull is outlined when commits are waiting.
+- Identity: the header shows "Commits as <identity>" with where it comes from (Bound, Workspace, From remote, Default). Clicking it opens a card with the name and email on commits, the GitHub account, why this identity applies, whether the default identity applies here, any mismatch with a Fix button, and Change identity. The top-bar switcher is labelled "Default" and, inside a repository, marks that repository's identity. The Identity tab lists the default identity next to the repository's own. Workspaces explains the order bgit uses to pick an identity (bound repository, workspace, remote address, default), matching `core/check.ResolveExpected`.
+- Navigation: tabs that do not fit move into a "More" menu, which is marked when the open page or a warning is inside it.
+- Consistency: secondary and tertiary text meet 4.5:1 contrast on the app's surfaces in both themes; Settings and Workspaces use the full page width like the other screens; the backup explanation is an intro line instead of a separate card; the dashboard has a Health card (push protection and the last Doctor result).
+- States: a failed repository list load shows the error with "Try again" on the dashboard and the Repositories page; a repository that cannot be read offers "Try again"; a clean working tree with unpushed commits offers Push; loading lists share one skeleton.
+
+Why:
+
+- The redesign's direction was kept; this pass makes the most-used screen give the diff more room, makes the identity that applies to a repository impossible to confuse with the default identity, and keeps every control usable in smaller windows.
+
+Validation:
+
+- `make test`, `make test-desktop`, `make test-integration`, `make test-coexistence`, and `make test-ui` (7 scenarios) pass.
+- The layout scenario now checks 1366x768, 1280x720, 1024x768, and 960x640: the repository page fits without page scrolling, the commit button is in view, nothing scrolls sideways, no two controls in the top bar or repository header overlap, every main area is reachable, and every screen fits. It also checks the More menu at 860 wide, dragging and keyboard use of the splitters, collapsing the sidebar, keyboard file navigation, the wrap toggle, and the identity card.
+- The same geometry was measured in WebKitGTK 2.52 (the Linux app's engine) at 1366x768, 1024x768, 960x640, and 860x600: no overlaps, no sideways scrolling, the commit button inside the window, and More only at 860.
+- No backend or CLI file changed.
+- Not verified: Windows (WebView2) and macOS (WKWebView) rendering.
 
 ---
 

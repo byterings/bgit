@@ -12,8 +12,9 @@
   --border-strong: #3a4862;
 
   --text: #e5e7eb;
-  --text-2: #94a3b8;
-  --text-3: #6b7a90;
+  /* Secondary and tertiary text keep at least 4.5:1 on every surface. */
+  --text-2: #a3b0c3;
+  --text-3: #8391a7;
 
   --accent: #8b5cf6;
   --accent-strong: #7c3aed;
@@ -41,10 +42,12 @@
   --diff-del: rgba(239, 68, 68, 0.12);
   --diff-del-gutter: rgba(239, 68, 68, 0.2);
   --diff-hunk: rgba(59, 130, 246, 0.1);
+  --diff-add-word: rgba(34, 197, 94, 0.34);
+  --diff-del-word: rgba(239, 68, 68, 0.34);
 
   --syntax-keyword: #c4b5fd;
   --syntax-string: #86efac;
-  --syntax-comment: #6b7a90;
+  --syntax-comment: #7f8ca3;
   --syntax-number: #fdba74;
   --syntax-title: #7dd3fc;
 
@@ -63,6 +66,7 @@
   --control-sm: 26px;
   --control-lg: 36px;
   --appbar: 48px;
+  --splitter: 9px;
 }
 
 [data-theme="light"] {
@@ -77,8 +81,8 @@
   --border-strong: #c3c9d6;
 
   --text: #111827;
-  --text-2: #566074;
-  --text-3: #8791a3;
+  --text-2: #4b5568;
+  --text-3: #687184;
 
   --accent: #7c3aed;
   --accent-strong: #7c3aed;
@@ -105,10 +109,12 @@
   --diff-del: rgba(220, 38, 38, 0.09);
   --diff-del-gutter: rgba(220, 38, 38, 0.17);
   --diff-hunk: rgba(37, 99, 235, 0.07);
+  --diff-add-word: rgba(22, 163, 74, 0.28);
+  --diff-del-word: rgba(220, 38, 38, 0.22);
 
   --syntax-keyword: #7c3aed;
   --syntax-string: #15803d;
-  --syntax-comment: #8791a3;
+  --syntax-comment: #6b7486;
   --syntax-number: #c2410c;
   --syntax-title: #0369a1;
 

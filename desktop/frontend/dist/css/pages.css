@@ -308,6 +308,33 @@
   color: var(--text);
 }
 
+.health-rows {
+  display: grid;
+  padding: 4px 0;
+}
+.health-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 9px 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.health-row:hover {
+  background: var(--surface-2);
+}
+.health-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.35;
+}
+.health-text .muted {
+  font-size: 12px;
+}
+
 /* ---------- Repositories ---------- */
 .list-toolbar {
   display: flex;
@@ -419,36 +446,78 @@ button.repo-main:hover strong {
 }
 .ws-title {
   display: flex;
-  gap: 8px;
-  align-items: center;
-  min-width: 0;
-}
-.ws-name {
-  display: flex;
+  flex: 1 1 260px;
   gap: 10px;
   align-items: center;
   min-width: 0;
 }
-.ws-name h1 {
+.ws-title h1 {
+  min-width: 0;
   font-size: 16px;
 }
+/* "Commits as": the identity of this repository, always in view. */
 .ws-identity {
-  border: 0;
-  background: none;
-  padding: 0;
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  max-width: 300px;
+  height: var(--control-sm);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  padding: 0 8px 0 10px;
+  color: var(--text);
+  font-size: 12px;
   cursor: pointer;
+  transition:
+    border-color 110ms ease,
+    background-color 110ms ease;
 }
-.ws-identity:hover .chip {
+.ws-identity:hover,
+.ws-identity[aria-expanded="true"] {
   border-color: var(--accent);
+}
+.ws-identity strong {
+  font-weight: 600;
+}
+.ws-identity-label {
+  color: var(--text-2);
+}
+.ws-identity-source {
+  border-left: 1px solid var(--border-strong);
+  padding-left: 6px;
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+.ws-identity > .icon:last-child {
+  color: var(--text-3);
+}
+.ws-identity.is-attention {
+  border-color: var(--warning);
+}
+.ws-identity.is-missing {
+  border-color: transparent;
+  background: var(--warning-soft);
+  color: var(--warning-text);
 }
 .ws-tools {
   display: flex;
+  flex: none;
   gap: 6px;
   align-items: center;
   min-width: 0;
+  margin-left: auto;
+}
+.ws-tools-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: var(--border);
 }
 .ws-branch {
-  max-width: 240px;
+  max-width: 220px;
   font-family: var(--mono);
   font-size: 12px;
 }
@@ -457,16 +526,41 @@ button.repo-main:hover strong {
 }
 .ws-sync {
   display: inline-flex;
-  gap: 5px;
+  gap: 6px;
   align-items: center;
   min-width: 0;
-  max-width: 240px;
-  margin: 0 6px;
+  max-width: 260px;
+  height: var(--control-sm);
+  border-radius: 999px;
+  background: var(--surface-3);
+  padding: 0 10px;
   color: var(--text-2);
   font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
 }
-.ws-sync.is-synced {
+.ws-sync .icon + .icon,
+.ws-sync .icon:not(:first-child) {
+  margin-left: 4px;
+}
+.ws-sync.is-success {
+  background: var(--success-soft);
   color: var(--success-text);
+}
+.ws-sync.is-accent {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.ws-sync.is-warning {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+.ws-sync.is-info {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+.btn-attention {
+  border-color: var(--warning);
 }
 .ws-tabbar {
   border-bottom: 1px solid var(--border);
@@ -536,28 +630,62 @@ button.repo-main:hover strong {
   padding: 14px 12px;
   color: var(--text-2);
 }
+/* Changes: one sidebar (file list over the commit area) and the diff.
+   The sidebar width and the commit area height are dragged with splitters;
+   CSS clamps both so any window size stays usable. */
 .changes {
-  display: grid;
+  display: flex;
   flex: 1;
-  grid-template-columns: 280px minmax(0, 1fr) 300px;
-  grid-template-areas: "files diff commit";
-  gap: 12px;
   min-height: 0;
 }
-.files-pane {
-  grid-area: files;
+.side-pane {
+  flex: none;
+  width: clamp(240px, var(--side-w, 320px), 45%);
 }
 .diff-pane {
-  grid-area: diff;
+  flex: 1;
 }
-.commit-pane {
-  grid-area: commit;
-  overflow-y: auto;
+.changes > .splitter.x {
+  margin: 0 1px;
+}
+.side-rail {
+  display: none;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  width: 40px;
+  margin-right: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  padding: 6px 0;
+}
+.rail-count {
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.changes.side-collapsed .side-pane,
+.changes.side-collapsed > .splitter {
+  display: none;
+}
+.changes.side-collapsed .side-rail {
+  display: flex;
+}
+.pane-head-tools {
+  display: inline-flex;
+  gap: 2px;
 }
 .file-rows {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  outline: none;
+}
+.file-rows:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-ring);
 }
 .file-row {
   display: grid;
@@ -579,27 +707,68 @@ button.repo-main:hover strong {
   border-left-color: var(--accent);
   background: var(--accent-soft);
 }
+.file-rows:focus .file-row.selected {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+/* A file left out of the commit stays listed but recedes. */
+.file-row.is-excluded .file-name,
+.file-row.is-excluded .file-status {
+  opacity: 0.5;
+}
+.file-row.is-excluded .file-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+.commit-area {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  height: clamp(196px, var(--commit-h, 236px), calc(100% - 140px));
+  /* Never smaller than its controls: the file list gives way instead. */
+  min-height: min-content;
+  border-top: 1px solid var(--border);
+}
+.side-pane > .splitter.y {
+  margin: -5px 0 -4px;
+}
 .file-name {
   font-size: 12.5px;
 }
 .diff-head {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  min-height: 38px;
+  min-height: 40px;
   border-bottom: 1px solid var(--border);
   padding: 4px 8px 4px 12px;
+}
+.diff-path {
+  font-size: 12.5px;
+  font-weight: 500;
 }
 .diff-stat {
   display: inline-flex;
   flex: none;
   gap: 8px;
+  font-size: 12px;
 }
 .diff-stat .add {
   color: var(--success-text);
 }
 .diff-stat .del {
   color: var(--danger-text);
+}
+.diff-step {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  align-items: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+[data-action="diff-wrap"][aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
 }
 .diff-scroll {
   flex: 1;
@@ -612,8 +781,9 @@ button.repo-main:hover strong {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 12.5px;
+  line-height: 20px;
+  tab-size: 4;
 }
 .diff td {
   padding: 0;
@@ -621,9 +791,10 @@ button.repo-main:hover strong {
 }
 .diff .num {
   width: 1%;
-  min-width: 42px;
-  padding: 0 8px;
+  min-width: 44px;
+  padding: 0 10px 0 8px;
   color: var(--text-3);
+  font-size: 11.5px;
   text-align: right;
   white-space: nowrap;
   user-select: none;
@@ -632,12 +803,16 @@ button.repo-main:hover strong {
   border-right: 1px solid var(--border);
 }
 .diff .code {
-  padding: 0 14px 0 4px;
+  padding: 0 16px 0 4px;
   white-space: pre;
+}
+.diff.wrap .code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .diff .marker {
   display: inline-block;
-  width: 16px;
+  width: 18px;
   color: var(--text-3);
   text-align: center;
   user-select: none;
@@ -647,6 +822,7 @@ button.repo-main:hover strong {
 }
 .diff tr.add .num {
   background: var(--diff-add-gutter);
+  color: var(--success-text);
 }
 .diff tr.add .marker {
   color: var(--success-text);
@@ -656,16 +832,35 @@ button.repo-main:hover strong {
 }
 .diff tr.del .num {
   background: var(--diff-del-gutter);
+  color: var(--danger-text);
 }
 .diff tr.del .marker {
   color: var(--danger-text);
 }
+/* The characters that changed inside a replaced line. */
+.diff mark {
+  border-radius: 2px;
+  color: inherit;
+}
+.diff tr.add mark {
+  background: var(--diff-add-word);
+}
+.diff tr.del mark {
+  background: var(--diff-del-word);
+}
 .diff tr.hunk td {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   background: var(--diff-hunk);
   color: var(--info-text);
+  font-size: 11.5px;
+  line-height: 26px;
+}
+.diff tr.hunk:first-child td {
+  border-top: 0;
 }
 .diff tr.hunk .code {
-  padding-left: 20px;
+  padding-left: 22px;
 }
 .diff tr.note .code {
   padding-left: 20px;
@@ -689,53 +884,100 @@ button.repo-main:hover strong {
   color: var(--syntax-title);
 }
 .commit-form {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  padding: 10px 12px 10px;
 }
 .commit-identity {
   display: grid;
+  flex: none;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-2);
-  padding: 8px 10px;
 }
 .commit-identity > div {
   display: grid;
   min-width: 0;
-  line-height: 1.3;
+  line-height: 1.25;
+}
+.commit-identity strong {
+  font-size: 12.5px;
 }
 .commit-identity .muted {
-  font-size: 12px;
+  font-size: 11.5px;
 }
 .commit-identity.is-missing {
-  border-color: transparent;
+  border-radius: var(--radius);
   background: var(--warning-soft);
+  padding: 6px 8px;
   color: var(--warning-text);
+}
+.badge-btn {
+  border: 0;
+  cursor: pointer;
+}
+.badge-btn:hover {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.commit-target {
+  flex: none;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.commit-summary {
+  position: relative;
+  flex: none;
+}
+.commit-summary .input {
+  padding-right: 52px;
+}
+.commit-count {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.commit-count.is-long {
+  color: var(--warning-text);
+}
+.commit-form .textarea {
+  flex: 1 0 34px;
+  height: 34px;
+  min-height: 34px;
+  resize: none;
+}
+.commit-form .btn-block {
+  flex: none;
 }
 .commit-hint {
   display: flex;
+  flex: none;
   gap: 4px;
   align-items: center;
   justify-content: center;
+  min-height: 16px;
   color: var(--text-3);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 .commit-hint .is-problem {
   color: var(--warning-text);
 }
-#summaryCount.is-long {
-  color: var(--warning-text);
-}
 .sync-hint {
   display: grid;
+  flex: none;
   gap: 2px;
-  margin-top: auto;
   border-top: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 4px 12px;
 }
 .sync-hint:empty {
   display: none;
@@ -750,11 +992,16 @@ button.repo-main:hover strong {
   font-size: 12px;
 }
 .history {
-  display: grid;
+  display: flex;
   flex: 1;
-  grid-template-columns: 340px minmax(0, 1fr);
-  gap: 12px;
   min-height: 0;
+}
+.history-list {
+  flex: none;
+  width: clamp(240px, var(--history-w, 340px), 50%);
+}
+.commit-detail {
+  flex: 1;
 }
 .commit-rows {
   display: flex;
@@ -824,16 +1071,21 @@ button.repo-main:hover strong {
   flex: 1;
 }
 .commit-split {
-  display: grid;
+  display: flex;
   flex: 1;
-  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 0;
 }
 .commit-files {
-  border-right: 1px solid var(--border);
+  flex: none;
+  width: clamp(160px, var(--commit-files-w, 240px), 50%);
+}
+.commit-split > .splitter.x {
+  margin: 0 -4px;
+  background: linear-gradient(var(--border), var(--border)) center / 1px 100% no-repeat;
 }
 .commit-diff {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
@@ -889,6 +1141,35 @@ button.repo-main:hover strong {
 }
 .remote-name > .icon {
   color: var(--text-3);
+}
+.repo-id-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.repo-id-card-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.repo-id-card-head > div {
+  display: grid;
+  min-width: 0;
+}
+.repo-id-card-head strong {
+  font-size: 14px;
+}
+.repo-id-card .cluster {
+  margin-top: 2px;
+}
+.identity-lead {
+  color: var(--text-2);
+}
+.identity-lead strong {
+  color: var(--text);
+  font-weight: 600;
 }
 .identity-summary {
   display: flex;
@@ -1108,7 +1389,7 @@ details.passed[open] summary {
 /* ---------- Settings ---------- */
 .settings-layout {
   display: grid;
-  grid-template-columns: 200px minmax(0, 760px);
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -1440,35 +1721,10 @@ details.passed[open] summary {
 
 /* ---------- Narrower windows ---------- */
 @media (max-width: 1180px) {
-  /* Commit moves under the file list; the diff keeps the full height. */
-  .changes {
-    grid-template-columns: 300px minmax(0, 1fr);
-    /* The file list keeps a usable height; the commit panel scrolls when the
-       window is too short for both. */
-    grid-template-rows: minmax(170px, 1fr) minmax(0, max-content);
-    grid-template-areas:
-      "files diff"
-      "commit diff";
-  }
-  .commit-form {
-    gap: 8px;
-    padding: 10px 12px;
-  }
-  .commit-form textarea {
-    height: 50px;
-    min-height: 44px;
-  }
-  .commit-identity {
-    padding: 5px 8px;
-  }
-  .commit-identity .muted,
-  .commit-form .eyebrow {
+  /* The header keeps every action; secondary words go first. */
+  .ws-identity-label,
+  .ws-sync-detail {
     display: none;
-  }
-  .commit-identity .avatar {
-    width: 22px;
-    height: 22px;
-    font-size: 10px;
   }
   .dash-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -1485,9 +1741,6 @@ details.passed[open] summary {
   .recent-opened {
     display: none;
   }
-  .ws-sync {
-    display: none;
-  }
   .identity-layout {
     grid-template-columns: 280px minmax(0, 1fr);
   }
@@ -1500,22 +1753,14 @@ details.passed[open] summary {
   .detail-section:nth-last-child(2) {
     border-bottom: 1px solid var(--border);
   }
-  .history {
-    grid-template-columns: 300px minmax(0, 1fr);
-  }
 }
-/* Narrow and short (near the minimum window size): the commit panel gives
-   up its description label so the commit button stays in view. */
-@media (max-width: 1180px) and (max-height: 620px) {
-  .changes {
-    grid-template-rows: minmax(150px, 1fr) minmax(0, max-content);
-  }
-  .commit-form label[for="commitDescription"] {
+@media (max-width: 1100px) {
+  .sync-btn .btn-label,
+  .ws-tools-sep {
     display: none;
   }
-  .commit-form textarea {
-    height: 36px;
-    min-height: 36px;
+  .sync-btn {
+    padding: 0 9px;
   }
 }
 @media (max-width: 980px) {
@@ -1541,7 +1786,76 @@ details.passed[open] summary {
   .ob-steps li.current .ob-step-label {
     display: inline;
   }
-  .commit-split {
-    grid-template-columns: 200px minmax(0, 1fr);
+}
+.health-row .check-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+}
+.health-row .check-icon .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Main column with a narrower explanatory column beside it. */
+.side-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  align-items: start;
+}
+.precedence {
+  display: grid;
+  margin: 0;
+  padding: 8px 0;
+  list-style: none;
+}
+.precedence li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 16px;
+}
+.precedence li > div {
+  display: grid;
+  gap: 1px;
+  line-height: 1.4;
+}
+.precedence .muted {
+  font-size: 12px;
+}
+.precedence-n {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.section-intro {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--bg-2);
+  padding: 12px 16px;
+  color: var(--text-2);
+}
+.section-intro > .icon {
+  margin-top: 2px;
+  color: var(--accent-text);
+}
+.section-intro strong {
+  color: var(--text);
+}
+@media (max-width: 1040px) {
+  .side-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

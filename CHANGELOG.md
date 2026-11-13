@@ -13,6 +13,7 @@ The desktop app now works on its own, with a redesigned interface: first-run set
 
 ### Added
 - **Redesigned desktop interface** - The desktop app has a new look built as one design system: top navigation with repository search, a dark theme by default with a light option, a three-part repository view (files, diff, commit) with History, Branches, Remotes, and Identity tabs, an identity manager, a diagnostic Doctor, and keyboard shortcuts
+- **Desktop interface refinements** - The repository view gives the diff more room with a resizable, collapsible file list and commit area, marks the changed part of each line, and always shows the sync state; the header says which identity commits in the repository and why; navigation fits smaller windows with a More menu
 - **Desktop first-run setup** - A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup
 - **Desktop repositories** - A Repositories page clones GitHub repositories with a chosen identity, adds existing local repositories, shows whether each one matches its identity, and fixes mismatches with one click
 - **Desktop Git workflow** - Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity

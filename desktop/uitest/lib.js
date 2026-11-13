@@ -121,7 +121,17 @@ exec sh -c "$*"
       return file;
     },
     // Main navigation in the top bar: dashboard, repositories, identities, workspaces, doctor, settings.
-    async nav(pageId) { await ctx.click(`#appbar [data-nav="${pageId}"]`); },
+    // A tab that does not fit the window is reached through the "More" menu.
+    async nav(pageId) {
+      const hidden = await page.$eval(`#appbar [data-nav="${pageId}"]`, (el) => el.hidden).catch(() => false);
+      if (!hidden) {
+        await ctx.click(`#appbar [data-nav="${pageId}"]`);
+        return;
+      }
+      await ctx.click("#navMore");
+      const label = { dashboard: "Dashboard", repositories: "Repositories", identities: "Identities", workspaces: "Workspaces", doctor: "Doctor" }[pageId];
+      await ctx.menuItem(label);
+    },
     async waitDialog(id) { await page.waitForSelector(`#${id}[open]`, { timeout: 10000 }); await ctx.settle(200); },
     async submitDialog(id) { await ctx.click(`#${id} [data-dialog-submit]`); },
     async cancelDialog(id) { await ctx.click(`#${id} [data-dialog-cancel]`); await ctx.waitDialogClosed(id); },

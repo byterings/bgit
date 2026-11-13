@@ -140,6 +140,36 @@
       </section>`;
   }
 
+  // Health at a glance, from the last Doctor run and push protection. Every
+  // number here comes from a real check.
+  function healthCard() {
+    const doctor = state.doctor;
+    const protectedNow = Boolean(state.onboarding?.pushProtection);
+    const checks = (doctor?.sections || []).flatMap((section) => section.checks || []);
+    const failed = doctor?.errors || 0;
+    const warned = doctor?.warnings || 0;
+    const passed = Math.max(0, checks.length - failed - warned);
+    const tone = failed > 0 ? "danger" : warned > 0 ? "warning" : "success";
+    const summary = !doctor ? "Not checked yet" : failed > 0 ? plural(failed, "problem", "problems") : warned > 0 ? plural(warned, "warning", "warnings") : "Everything looks good";
+    return `
+      <section class="card">
+        <div class="card-head">
+          <h2>Health</h2>
+          <button type="button" class="btn btn-sm btn-ghost" data-action="navigate" data-page="doctor">Doctor${icon("chevron-right", "sm")}</button>
+        </div>
+        <div class="health-rows">
+          <button type="button" class="health-row" data-action="navigate" data-page="settings" data-section="protection">
+            <span class="check-icon is-${protectedNow ? "success" : "warning"}">${icon(protectedNow ? "shield-check" : "shield-off")}</span>
+            <span class="health-text"><strong>Push protection</strong><span class="muted">${protectedNow ? "Every push is checked" : "Pushes are not checked"}</span></span>
+          </button>
+          <button type="button" class="health-row" data-action="navigate" data-page="doctor">
+            <span class="check-icon is-${doctor ? tone : ""}">${icon(tone === "success" ? "check" : "alert")}</span>
+            <span class="health-text"><strong>${escapeHtml(summary)}</strong><span class="muted">${doctor ? `${plural(passed, "check", "checks")} passed${state.doctorRunAt ? ` · ${timeAgo(state.doctorRunAt)}` : ""}` : "Open Doctor to run the checks"}</span></span>
+          </button>
+        </div>
+      </section>`;
+  }
+
   // First use: no repositories yet. Shows the way in instead of empty numbers.
   function getStarted() {
     const active = activeIdentity();
@@ -172,10 +202,14 @@
       })}</div>`;
     }
     if (!state.repos) {
-      return `<div class="page">${heading()}<section class="card">${'<div class="skeleton-row"><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span></div>'.repeat(4)}</section></div>`;
+      return `<div class="page">${heading()}${
+        state.reposError
+          ? banner({ tone: "danger", title: "Repositories could not be loaded", text: state.reposError, actions: `<button type="button" class="btn btn-sm" data-action="retry-repos">${icon("refresh", "sm")}Try again</button>` })
+          : `<section class="card">${skeletonRows(4)}</section>`
+      }</div>`;
     }
     if (repositories().length === 0) {
-      return `<div class="page">${heading()}${attention()}<div class="dash-grid">${getStarted()}<aside class="stack">${identitiesCard()}</aside></div></div>`;
+      return `<div class="page">${heading()}${attention()}<div class="dash-grid">${getStarted()}<aside class="stack">${identitiesCard()}${healthCard()}</aside></div></div>`;
     }
     return `
       <div class="page">
@@ -184,7 +218,7 @@
         ${stats()}
         <div class="dash-grid">
           ${recent()}
-          <aside class="stack">${identitiesCard()}</aside>
+          <aside class="stack">${identitiesCard()}${healthCard()}</aside>
         </div>
       </div>`;
   }

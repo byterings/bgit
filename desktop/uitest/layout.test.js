@@ -24,7 +24,7 @@ run(async (ui) => {
   await ui.waitText("storefront");
 
   // ---- navigation is in the top bar, in the agreed order
-  const tabs = await ui.page.$$eval("#appbar .nav-tab", (els) => els.map((el) => el.innerText.trim()));
+  const tabs = await ui.page.$$eval("#appbar .nav-tab[data-nav]", (els) => els.map((el) => el.innerText.trim()));
   expect(tabs.join(",") === "Dashboard,Repositories,Identities,Workspaces,Doctor", "top navigation lists the five areas");
   expect((await ui.page.$$("aside.sidebar, #sidebarNav")).length === 0, "there is no sidebar");
 
@@ -49,7 +49,9 @@ run(async (ui) => {
   expect(await ui.page.evaluate(() => document.activeElement.id === "repoSearch"), "/ focuses the repository filter");
   await ui.page.evaluate(() => document.activeElement.blur());
 
-  // ---- the repository view fits the window: nothing below the bottom edge
+  // ---- the repository view at common desktop window sizes: everything fits,
+  // nothing in the top bar or the repository header overlaps, every action
+  // stays inside the window.
   await ui.click(`[data-action="open-repo"][data-path="${repo}"]`);
   await ui.waitText("31 of 31 files selected");
   await ui.page.waitForSelector(".diff tr.add");
@@ -66,31 +68,162 @@ run(async (ui) => {
       diffScrolls: document.querySelector(".diff-scroll").scrollHeight > document.querySelector(".diff-scroll").clientHeight,
     };
   });
-  let box = await measure();
-  expect(box.commit <= box.height && box.split <= box.height, `commit button is inside the window (${box.commit} of ${box.height})`);
-  expect(box.pageScroll === 0, "the repository page itself does not scroll");
-  expect(box.listScrolls && box.diffScrolls, "the file list and the diff scroll on their own");
-  expect((await overflow()) <= 0, "nothing sticks out sideways at 1366 wide");
-  await ui.shot("layout-repo-1366x768");
+  // Pairs of visible controls in one bar whose boxes overlap, and controls
+  // that leave the window.
+  const collisions = () => ui.page.evaluate(() => {
+    const shown = (el) => el.offsetParent !== null && !el.hidden && el.getBoundingClientRect().width > 0;
+    const name = (el) => el.id || el.dataset.action || el.dataset.nav || el.className.split(" ")[0] || el.tagName;
+    const groups = {
+      appbar: document.querySelectorAll("#appbar .brand, #appbar .nav-tab, #globalSearchBox, #appbar .appbar-right > *"),
+      header: document.querySelectorAll("#wsHead .ws-title > *, #wsHead .ws-tools > *:not(.ws-tools-sep)"),
+    };
+    const problems = [];
+    for (const [group, list] of Object.entries(groups)) {
+      const items = [...list].filter(shown).map((el) => ({ name: name(el), r: el.getBoundingClientRect() }));
+      for (const item of items) {
+        if (item.r.left < 0 || item.r.right > window.innerWidth + 0.5) problems.push(`${group}: ${item.name} leaves the window`);
+      }
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          const a = items[i].r, b = items[j].r;
+          const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (x > 1 && y > 1) problems.push(`${group}: ${items[i].name} overlaps ${items[j].name}`);
+        }
+      }
+    }
+    return problems;
+  });
+  const reachable = () => ui.page.evaluate(() => {
+    const tabs = [...document.querySelectorAll("#appbar .nav-tab[data-nav]")];
+    const more = document.getElementById("navMore");
+    return tabs.every((tab) => !tab.hidden) || (!more.hidden && more.getBoundingClientRect().right <= window.innerWidth);
+  });
 
-  // ---- a narrow window keeps every part reachable
-  await ui.page.setViewport({ width: 960, height: 640 });
-  await ui.settle(300);
-  box = await measure();
-  expect(box.commit <= box.height, `commit button is inside a 960x640 window (${box.commit} of ${box.height})`);
-  expect((await overflow()) <= 0, "nothing sticks out sideways at 960 wide");
-  const navVisible = await ui.page.$$eval("#appbar .nav-tab", (els) => els.every((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right <= window.innerWidth; }));
-  expect(navVisible, "navigation stays visible in a narrow window");
-  const toolsVisible = await ui.page.$eval('#wsHead [data-action="ws-push"]', (el) => { const r = el.getBoundingClientRect(); return r.right <= window.innerWidth && r.left >= 0; });
-  expect(toolsVisible, "push stays reachable in a narrow window");
-  await ui.shot("layout-repo-960x640");
-  for (const page of ["dashboard", "repositories", "identities", "workspaces", "doctor", "settings"]) {
-    await ui.nav(page);
-    await ui.settle(250);
-    expect((await overflow()) <= 0, `${page} fits a 960 wide window`);
-    await ui.shot(`layout-${page}-960x640`);
+  for (const [width, height] of [[1366, 768], [1280, 720], [1024, 768], [960, 640]]) {
+    const size = `${width}x${height}`;
+    await ui.page.setViewport({ width, height });
+    await ui.settle(300);
+    const box = await measure();
+    expect(box.commit <= box.height && box.split <= box.height, `${size}: commit button is inside the window (${box.commit} of ${box.height})`);
+    expect(box.pageScroll === 0, `${size}: the repository page itself does not scroll`);
+    expect(box.listScrolls && box.diffScrolls, `${size}: the file list and the diff scroll on their own`);
+    expect((await overflow()) <= 0, `${size}: nothing sticks out sideways`);
+    const clashes = await collisions();
+    expect(clashes.length === 0, `${size}: no overlapping controls${clashes.length ? ` (${clashes.join("; ")})` : ""}`);
+    expect(await reachable(), `${size}: every main area is reachable from the top bar`);
+    const tools = await ui.page.$$eval("#wsHead .ws-tools button", (els) => els.every((el) => { const r = el.getBoundingClientRect(); return r.right <= window.innerWidth && r.left >= 0 && r.width > 0; }));
+    expect(tools, `${size}: branch, fetch, pull, push, and more stay reachable`);
+    await ui.shot(`layout-repo-${size}`);
+    for (const page of ["dashboard", "repositories", "identities", "workspaces", "doctor", "settings"]) {
+      await ui.nav(page);
+      await ui.settle(250);
+      expect((await overflow()) <= 0, `${size}: ${page} fits sideways`);
+      const pageClashes = await collisions();
+      expect(pageClashes.length === 0, `${size}: ${page} top bar has no overlapping controls${pageClashes.length ? ` (${pageClashes.join("; ")})` : ""}`);
+      await ui.shot(`layout-${page}-${size}`);
+    }
+    await ui.nav("repositories");
+    await ui.click(`[data-action="open-repo"][data-path="${repo}"]`);
+    await ui.page.waitForSelector(".diff tr.add");
+    await ui.settle(200);
   }
+
+  // ---- very narrow: the last tabs move into "More" instead of colliding
+  await ui.page.setViewport({ width: 860, height: 600 });
+  await ui.settle(300);
+  const moreShown = await ui.page.$eval("#navMore", (el) => !el.hidden);
+  expect(moreShown, "tabs that do not fit move into a More menu");
+  expect((await collisions()).length === 0, "the narrow top bar has no overlapping controls");
+  await ui.click("#navMore");
+  await ui.page.waitForSelector(".popover .menu-item");
+  await ui.shot("layout-nav-more-860");
+  await ui.page.keyboard.press("Escape");
+  await ui.nav("doctor");
+  expect(await ui.page.evaluate(() => state.page === "doctor"), "a tab inside More still opens its page");
+  expect(await ui.page.$eval("#navMore", (el) => el.classList.contains("active")), "More is marked when the open page is inside it");
   await ui.page.setViewport({ width: 1366, height: 699 });
+  await ui.settle(300);
+  expect(await ui.page.$eval("#navMore", (el) => el.hidden), "with room again every tab is back in the bar");
+
+  // ---- panes: resize, collapse, and keyboard navigation in the file list
+  await ui.nav("repositories");
+  await ui.click(`[data-action="open-repo"][data-path="${repo}"]`);
+  await ui.page.waitForSelector(".diff tr.add");
+  await ui.settle(200);
+  const sideWidth = () => ui.page.$eval("#sidePane", (el) => Math.round(el.getBoundingClientRect().width));
+  const before = await sideWidth();
+  const handle = await ui.page.$eval("#sideSplitter", (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await ui.page.mouse.move(handle.x, handle.y);
+  await ui.page.mouse.down();
+  await ui.page.mouse.move(handle.x + 120, handle.y, { steps: 6 });
+  await ui.page.mouse.up();
+  await ui.settle(200);
+  const wider = await sideWidth();
+  expect(wider >= before + 100, `dragging the splitter widens the file list (${before} -> ${wider})`);
+  expect(await ui.page.evaluate(() => prefs.get("split.side", 0) > 0), "the new width is remembered");
+  await ui.page.focus("#sideSplitter");
+  await ui.page.keyboard.press("ArrowLeft");
+  await ui.settle(100);
+  expect((await sideWidth()) < wider, "the splitter also works with the keyboard");
+  await ui.page.click("#sideSplitter", { clickCount: 2 });
+  await ui.settle(150);
+  expect(Math.abs((await sideWidth()) - 320) <= 2, "double-clicking the splitter restores the default width");
+  const commitHeight = () => ui.page.$eval("#commitArea", (el) => Math.round(el.getBoundingClientRect().height));
+  const commitBefore = await commitHeight();
+  const rowHandle = await ui.page.$eval("#commitSplitter", (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await ui.page.mouse.move(rowHandle.x, rowHandle.y);
+  await ui.page.mouse.down();
+  await ui.page.mouse.move(rowHandle.x, rowHandle.y - 80, { steps: 6 });
+  await ui.page.mouse.up();
+  await ui.settle(150);
+  expect((await commitHeight()) >= commitBefore + 60, "dragging up gives the commit message more room");
+  await ui.shot("layout-repo-resized");
+
+  // collapse the file list: the diff takes the width, commit stays one click away
+  const diffWidth = () => ui.page.$eval("#diffPane", (el) => Math.round(el.getBoundingClientRect().width));
+  const diffBefore = await diffWidth();
+  await ui.click('#sidePane [data-action="side-toggle"]');
+  expect((await diffWidth()) > diffBefore + 200, "hiding the file list gives the diff the room");
+  expect((await ui.text("#railCount")) === "31/31", "the collapsed rail still shows how many files are selected");
+  await ui.shot("layout-repo-collapsed");
+  await ui.click('.side-rail [data-action="side-commit"]');
+  expect(await ui.page.evaluate(() => document.activeElement?.id === "commitSummary"), "commit from the rail opens the panel at the summary");
+  await ui.page.evaluate(() => document.activeElement.blur());
+  await chord("b");
+  expect(await ui.page.$eval("#changesLayout", (el) => el.classList.contains("side-collapsed")), `${"Ctrl"}+B hides the file list`);
+  await chord("b");
+  expect(await ui.page.$eval("#changesLayout", (el) => !el.classList.contains("side-collapsed")), `${"Ctrl"}+B shows it again`);
+
+  // keyboard: arrows move through files, Space leaves one out of the commit
+  await ui.click('.file-row[data-file="README.md"] .file-name');
+  await ui.page.keyboard.press("ArrowDown");
+  await ui.settle(300);
+  const second = await ui.page.$eval(".file-row.selected", (el) => el.dataset.file);
+  expect(second !== "README.md", "ArrowDown selects the next file");
+  await ui.page.waitForFunction((f) => document.getElementById("diffPane").dataset.file === f, {}, second);
+  await ui.page.keyboard.press(" ");
+  await ui.settle(150);
+  expect(await ui.page.$eval(".file-row.selected", (el) => el.classList.contains("is-excluded")), "Space leaves the selected file out and shows it as left out");
+  expect((await ui.text("#selectionText")).startsWith("30 of 31"), "the selection count follows");
+  await ui.page.keyboard.press(" ");
+  await ui.settle(150);
+  await ui.click('#diffPane [data-action="diff-step"][data-step="1"]');
+  expect(await ui.page.$eval(".file-row.selected", (el, f) => el.dataset.file !== f, second), "the diff header steps to the next file");
+  await ui.click('#diffPane [data-action="diff-wrap"]');
+  expect(await ui.page.$eval("#diffPane .diff", (el) => el.classList.contains("wrap")), "long lines can be wrapped");
+  await ui.click('#diffPane [data-action="diff-wrap"]');
+
+  // the identity in the header explains itself
+  await ui.click('#wsHead [data-action="ws-identity"]');
+  await ui.page.waitForSelector(".identity-pop");
+  const card = await ui.text(".identity-pop");
+  expect(card.includes("Work Dev") && card.includes("bound"), "the header identity says who commits here and why");
+  await ui.shot("layout-repo-identity-card");
+  await ui.page.keyboard.press("Escape");
+  await ui.click("#identitySwitch");
+  expect((await ui.text(".popover")).includes("This repository"), "the identity switcher marks the identity of the open repository");
+  await ui.page.keyboard.press("Escape");
 
   // ---- a dialog taller than the window scrolls instead of being cut off
   await ui.nav("identities");

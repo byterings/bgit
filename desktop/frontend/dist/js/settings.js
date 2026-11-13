@@ -13,6 +13,9 @@
     ["Go to Dashboard … Doctor", [MOD_KEY, "1 – 5"]],
     ["Open Settings", [MOD_KEY, ","]],
     ["Commit (in a repository)", [MOD_KEY, "Enter"]],
+    ["Hide or show the file list (in a repository)", [MOD_KEY, "B"]],
+    ["Move through changed files (file list focused)", ["↑", "↓"]],
+    ["Include or leave out the selected file", ["Space"]],
     ["Filter the repository list", ["/"]],
     ["Close a menu or dialog", ["Esc"]],
   ];
@@ -123,12 +126,10 @@
   function backup() {
     const last = view.lastImport;
     return `
-      <section class="card">
-        <div class="card-head"><h2>${icon("lock")}Encrypted backups</h2></div>
-        <div class="card-body">
-          <p>A backup holds your identities, their SSH keys, bound repositories, and workspaces in one <code>.bgit</code> file, encrypted with your password (Argon2id and AES-256-GCM). The password cannot be recovered.</p>
-        </div>
-      </section>
+      <div class="section-intro">
+        ${icon("lock")}
+        <p>A backup holds your identities, their SSH keys, bound repositories, and workspaces in one <code>.bgit</code> file, encrypted with your password (Argon2id and AES-256-GCM). <strong>The password cannot be recovered.</strong></p>
+      </div>
       <div class="backup-grid">
         <section class="card">
           <div class="card-head"><h2>Export a backup</h2></div>

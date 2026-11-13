@@ -369,6 +369,13 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Priority: High
 - Status: done
 
+### R-035
+
+- Title: Desktop App Install Guide
+- Description: Explain how to install, update, and uninstall the desktop app on Windows, macOS, and Linux (Debian/Ubuntu package and other distributions), including first-launch warnings for unsigned releases, in the README, the GitHub release notes, and the website docs. Set version.txt to the release the changelog describes so the release workflow publishes the desktop downloads
+- Priority: High
+- Status: done
+
 ## Release Milestones
 
 - Note : once a milestone is reached, give a reminder to update the roadmap and release notes and to release a new version.
@@ -475,6 +482,7 @@ Release after:
 - R-032
 - R-033
 - R-034
+- R-035
 
 ---
 

@@ -8,13 +8,14 @@ import (
 
 	"github.com/byterings/bgit/core/config"
 	"github.com/byterings/bgit/core/models"
+	"github.com/byterings/bgit/internal/platform"
 )
 
 // StartSSHAgent starts the platform SSH agent if bgit can do so.
 func StartSSHAgent() {
 	if runtime.GOOS == "windows" {
-		exec.Command("powershell", "-Command", "Start-Service ssh-agent").Run()
-		exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic").Run()
+		platform.PrepareCommand(exec.Command("powershell", "-Command", "Start-Service ssh-agent")).Run()
+		platform.PrepareCommand(exec.Command("powershell", "-Command", "Set-Service -Name ssh-agent -StartupType Automatic")).Run()
 	}
 }
 
@@ -36,14 +37,14 @@ type KeyLoadResult = models.KeyLoadResult
 
 // ListAgentKeys returns the output of ssh-add -l.
 func ListAgentKeys() (*CommandOutputResult, error) {
-	cmd := exec.Command("ssh-add", "-l")
+	cmd := platform.PrepareCommand(exec.Command("ssh-add", "-l"))
 	output, err := cmd.CombinedOutput()
 	return &CommandOutputResult{Output: string(output)}, err
 }
 
 // AddKeyToAgent adds the given key path to the SSH agent.
 func AddKeyToAgent(path string) (*CommandOutputResult, error) {
-	cmd := exec.Command("ssh-add", path)
+	cmd := platform.PrepareCommand(exec.Command("ssh-add", path))
 	output, err := cmd.CombinedOutput()
 	return &CommandOutputResult{Output: string(output)}, err
 }

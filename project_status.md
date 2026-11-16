@@ -11,10 +11,13 @@ bgit is a Go/Cobra CLI for managing multiple Git identities. The current impleme
 - clone, remote fix/restore, status, active, prompt, doctor, sync, setup, and uninstall
 - managed pre-push safety checks
 - uninstall recovery for hooks, remotes, and Git identity
+- desktop first-run setup wizard, repositories (clone, add existing, health, fix), workspaces, settings, and removal
+- desktop everyday Git work: changes, diff, commit, discard, branches, history, fetch, pull, push
 - desktop notifications, confirmation dialogs, and action status indicators
 - desktop encrypted backup export/import with file selection, password prompts, and restore summaries
 - desktop SSH public key display and copy action for GitHub setup
 - desktop GitHub avatar display with initials fallback
+- desktop release workflow artifacts for Linux, Windows, and macOS
 - automated validation with unit command coverage, comprehensive import/export integration tests, backup portability tests, Docker tests, and guarded real-account acceptance tests
 
 Code remains the source of truth for current behavior.
@@ -111,6 +114,12 @@ Recent desktop UI refinement update:
 - Add Identity now prevents conflicting SSH key choices by making generated keys and existing private-key paths mutually exclusive.
 - Repository binding edit mode now shows an explicit editing state with Update Binding and Cancel actions.
 - Backup, binding, detection, and edit/save actions now use consistent primary action styling and explicit submit flows.
+
+Recent desktop packaging update:
+
+- GitHub release workflow now builds and uploads desktop artifacts for Linux, Windows, and macOS alongside the existing CLI binaries.
+- Release notes now use the same CLI installation commands as the site documentation and list the released desktop artifacts explicitly.
+- README installation instructions now match the site installation steps for Linux, macOS, and Windows.
 
 ---
 
@@ -845,6 +854,456 @@ Milestone:
 
 ---
 
+### R-020
+
+- Status: done
+
+Files Changed:
+
+- .github/workflows/release.yml
+- README.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Split the release workflow into metadata, CLI build, Linux desktop build, Windows desktop build, macOS desktop build, and final release jobs.
+- Added native desktop release artifact generation for Linux, Windows, and macOS using Wails on their corresponding GitHub Actions runners.
+- Aggregated CLI and desktop artifacts into the final GitHub release so all desktop platforms are published from the same workflow.
+- Updated generated release notes to use the same CLI installation steps as the site documentation and to list all desktop artifacts explicitly.
+- Updated README installation instructions to match the documented Linux, macOS, and Windows install flow.
+
+Why:
+
+- Completes cross-platform desktop release packaging while keeping the CLI release behavior intact and aligning repo documentation with the published installation steps.
+
+---
+
+### R-022
+
+- Status: done
+
+Files Changed:
+
+- core/setup/setup.go
+- core/setup/setup_test.go
+- core/check/check.go
+- core/check/check_test.go
+- core/models/setup.go
+- internal/git/gitconfig.go
+- internal/testenv/testenv.go
+- cmd/setup.go
+- cmd/check.go
+- cmd/uninstall.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Moved config initialization, managed pre-push hook installation, and global hooks path handling from `cmd/setup.go` into `core/setup`.
+- Moved the push safety decisions (expected identity, Git identity match, expected origin URL) from `cmd/check.go` into `core/check`, and added a non-interactive `Inspect` report and `Fix` for desktop use.
+- The managed hook can now be generated with a fallback helper binary. Without a helper the hook is byte-for-byte the previous CLI hook.
+- CLI commands keep their prompts and messages and call the shared packages for the logic.
+- Added the first Go unit tests in the repository, running against an isolated HOME and Git config.
+
+Why:
+
+- The desktop app could not call setup or check logic while it lived in `cmd/`. Sharing it keeps the CLI and desktop app on one implementation.
+
+Validation:
+
+- `go test ./core/... ./internal/...` passes.
+- `make test-integration` passes.
+- A before/after comparison of CLI output for setup, check, bind, sync, and uninstall scenarios showed identical output.
+
+---
+
+### R-023
+
+- Status: done
+
+Files Changed:
+
+- desktop/main.go
+- desktop/cli.go
+- desktop/console_windows.go
+- desktop/console_other.go
+- desktop/onboarding.go
+- desktop/system.go
+- desktop/devharness.go
+- desktop/app.go
+- desktop/backend.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/app.css
+- desktop/frontend/dist/js/onboarding.js
+- desktop/frontend/dev.mjs
+- core/setup/setup.go
+- core/setup/setup_test.go
+- core/ssh/agent.go
+- core/ssh/keys.go
+- internal/git/gitconfig.go
+- internal/platform/proc.go
+- internal/platform/proc_windows.go
+- internal/platform/proc_other.go
+- cmd/root.go
+- .gitignore
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a first-run wizard that checks for Git, runs setup, adds the first identity with a generated or existing SSH key, helps add the key to GitHub, and offers restore from a `.bgit` backup instead.
+- The desktop binary now acts as the bgit CLI when started with arguments, and desktop setup writes a pre-push hook that falls back to the desktop binary when `bgit` is not on PATH. If neither exists the hook lets the push through with a notice instead of blocking every push.
+- The app repairs the hook on startup and after a backup import (app moved or updated, or backup restored on a new machine). A hooks path the user set on purpose is left alone.
+- The first identity added in the app becomes the active identity, and an existing bgit key for the same GitHub username is reused instead of failing.
+- Desktop child processes no longer open console windows on Windows. The CLI is unaffected.
+- Frontend feature code now lives in separate files under `desktop/frontend/dist/` and registers pages through a small registry in `index.html`.
+- Added a dev harness (`go run -tags devharness ./desktop -home <dir>`) that serves the frontend to a browser with the real Go backend on an isolated home directory.
+- Desktop Doctor hints now describe what to do in the app instead of CLI commands.
+
+Why:
+
+- Lets a user go from install to a working identity without the CLI, and keeps push protection working for app-only installs.
+
+Validation:
+
+- Go unit tests cover hook generation, fallback behavior, and hook repair.
+- The wizard was run end to end in headless Chrome against the dev harness: setup, hook install, validation errors, key generation, GitHub step, and finish.
+- CLI integration tests pass and CLI output is unchanged.
+- Not yet verified: the built Wails app on Linux, Windows, or macOS. Windows console attachment for CLI mode is untested.
+
+---
+
+### R-027
+
+- Status: done
+
+Files Changed:
+
+- core/ssh/connectivity.go
+- core/ssh/connectivity_test.go
+- core/models/results.go
+- desktop/system.go
+- desktop/app.go
+- desktop/models.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/js/onboarding.js
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a per-identity connection test that never prompts, reports wrong-account keys, and explains common failures in plain language.
+- Added "Copy key and open GitHub" and "Test connection" to the identity details dialog and the wizard. Adding an identity now opens its details so the key can be added to GitHub straight away.
+- External links are limited to a fixed list of HTTPS sites.
+
+Why:
+
+- Adding the key to GitHub was the one manual step with no guidance or confirmation.
+
+Validation:
+
+- Unit tests cover response classification. Both actions were exercised in the dev harness.
+- Not verified against a real GitHub account: the test environment has no registered key, so only failure paths ran.
+
+---
+
+### R-030
+
+- Status: done
+
+Files Changed:
+
+- core/gitops/run.go
+- core/gitops/status.go
+- core/gitops/diff.go
+- core/gitops/commit.go
+- core/gitops/branches.go
+- core/gitops/log.go
+- core/gitops/sync.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added `core/gitops`, a wrapper around the Git command line for status, per-file diff, commit (all changes or selected files), discard, branches, history, commit details, fetch, pull, push, clone, and abort merge.
+- Every command runs without prompts: SSH runs in batch mode, editors and terminal prompts are disabled, and network commands have timeouts.
+- Failures are returned with a category (auth, network, rejected, safety, conflict, dirty, identity, and others) and a plain-language message.
+- Commits and pull merges take the author identity as an argument, so they do not depend on the Git config in effect.
+- Paths and commit ids coming from the UI are validated so they cannot leave the repository or be read as Git options.
+
+Why:
+
+- The desktop app needs everyday Git operations with structured results. The CLI does not use this package.
+
+Validation:
+
+- `go test ./core/gitops/` covers each operation against real repositories and local bare remotes, including partial commits, discard, rejected push, merge on pull, and conflict then abort.
+
+---
+
+### R-024
+
+- Status: done
+
+Files Changed:
+
+- desktop/repos.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/app.css
+- desktop/frontend/dist/js/repositories.js
+- internal/testenv/testenv.go
+- Makefile
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Repositories page that replaces the Repository Bindings page.
+- Clone: takes a GitHub link (HTTPS, SSH, `github.com/owner/repo`, or `owner/repo`), an identity, and a folder; clones through the identity's SSH host alias, binds the clone, and sets its commit identity.
+- Add existing: binds a local repository and, in the same step, sets its commit identity and rewrites its GitHub remote to the identity's SSH host alias. Changing a repository's identity uses the same flow.
+- Removing a repository from bgit works even when its folder no longer exists.
+- Added `make test-desktop` and an offline fake GitHub for tests (`internal/testenv`) that serves local bare repositories through Git's SSH transport.
+
+Why:
+
+- A repository cloned over HTTPS and only bound had its pushes blocked by the safety check until the remote was fixed by hand.
+
+Validation:
+
+- Desktop backend tests cover clone (including an identity without access and invalid input), add existing, and identity change.
+- The page was driven end to end in headless Chrome against the dev harness.
+- Not verified against real GitHub.
+
+---
+
+### R-025
+
+- Status: done
+
+Files Changed:
+
+- desktop/workspaces.go
+- desktop/backend.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/js/workspaces.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a Workspaces page to list, add, and remove workspace folders, using the existing core workspace registration.
+- Nested or duplicate workspaces are rejected with a reason. Removing a workspace never deletes the folder.
+- Repositories found inside workspaces (up to three folder levels, skipping hidden and dependency folders) appear on the Repositories page.
+
+Why:
+
+- Workspaces were only manageable from the CLI.
+
+Validation:
+
+- Desktop backend tests and a headless Chrome run cover add, reject, list, and remove.
+
+---
+
+### R-026
+
+- Status: done
+
+Files Changed:
+
+- desktop/repos.go
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/backend_test.go
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Each repository shows a health state from the shared push safety check: Ready, Needs fix, Blocked, or Missing, with the reasons in plain language.
+- Fix aligns one repository; Fix all aligns every fixable one.
+- Repositories with a remote that is not on GitHub are shown as Blocked, because the existing push safety check rejects them.
+
+Why:
+
+- Gives the desktop app the equivalent of `bgit check` and `bgit sync --fix` across all repositories.
+
+Validation:
+
+- Desktop backend tests cover bound, workspace, non-GitHub, and missing repositories, and Fix all.
+
+---
+
+### R-028
+
+- Status: done
+
+Files Changed:
+
+- core/uninstall/uninstall.go
+- core/uninstall/exit.go
+- core/uninstall/uninstall_test.go
+- core/setup/setup.go
+- core/setup/setup_test.go
+- cmd/uninstall.go
+- desktop/settings.go
+- desktop/onboarding.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/app.css
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Moved the uninstall steps (restore remotes, remove managed SSH config, restore hooks path and Git identity, remove generated keys) from `cmd/uninstall.go` into `core/uninstall`. The CLI keeps its prompts and messages.
+- Added a Settings page with push protection status and repair, the setup guide, app information, and "Remove bgit from this computer" with an optional key deletion and a summary of what was restored.
+- Turning push protection on from the app records a custom hooks folder it replaces, so removal restores it. The CLI keeps its record-once behavior.
+
+Why:
+
+- App-only users had no way to undo bgit's changes before uninstalling the app.
+
+Validation:
+
+- `core/uninstall` unit tests and desktop backend tests cover full removal, key handling, and legacy configs.
+- CLI uninstall output was compared before and after across full and legacy scenarios and is identical.
+
+---
+
+### R-031
+
+- Status: done
+
+Files Changed:
+
+- desktop/gitclient.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- core/gitops/status.go
+- core/gitops/commit.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added a repository view with a Changes tab: changed files with checkboxes, a line-numbered diff, a commit box, and discard for one file or all.
+- Commits use the repository's bgit identity explicitly, even if the repository's Git config drifted.
+- Selecting a subset of files commits only those; everything else is left as it was.
+- A conflicted file counts as resolved once its conflict markers are gone, so a merge can be finished from the app without staging by hand.
+
+Why:
+
+- Lets users commit with the right identity without a terminal or a second Git client.
+
+Validation:
+
+- Go tests cover full and partial commits, discard of every change kind, and committing a resolved merge.
+- The view was driven end to end in headless Chrome.
+
+---
+
+### R-032
+
+- Status: done
+
+Files Changed:
+
+- desktop/gitclient.go
+- desktop/app.go
+- desktop/models.go
+- desktop/backend_test.go
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/app.css
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Added Fetch, Pull, and Push with incoming and outgoing commit counts. A branch that is not on the remote is published on first push.
+- Push checks the repository against its identity first and offers "Fix and push". A rejected push offers "Pull now".
+- A pull that stops on conflicts shows a merge banner with "Cancel merge".
+- Added a branch picker (local and remote branches), new branch creation, and a History tab with commit details and per-file diffs.
+
+Why:
+
+- Completes everyday Git work in the app.
+
+Validation:
+
+- Desktop backend tests push through the managed pre-push hook and confirm a failing check is reported as a safety block.
+- Headless Chrome runs cover push, publish, fetch, pull, rejected push, conflict, cancel merge, and fix and push, against a local stand-in for GitHub.
+- Not verified against real GitHub or with passphrase-protected SSH keys.
+
+---
+
+### R-029
+
+- Status: done (not yet run in CI)
+
+Files Changed:
+
+- .github/workflows/release.yml
+- desktop/build/appicon.png
+- desktop/build/set-product-version.mjs
+- desktop/build/linux/package-deb.sh
+- desktop/build/linux/bgit-desktop.desktop
+- desktop/build/linux/bgit-desktop.png
+- desktop/wails.json
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- .gitignore
+- README.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Windows: the release workflow builds an NSIS installer (`bgit-desktop-windows-amd64-installer.exe`) next to the portable executable.
+- macOS: the workflow builds the `bgit.app` bundle and publishes it as a `.dmg` with an Applications shortcut, plus a `.zip`. The previous macOS step passed `-nopackage` and then looked for an app bundle, which that flag does not produce.
+- Linux: `desktop/build/linux/package-deb.sh` builds a `.deb` that installs the binary, a desktop entry, and an icon, and depends on GTK 3, WebKitGTK 4.1, Git, and the OpenSSH client.
+- Code signing is optional and driven by repository secrets: `WINDOWS_CERTIFICATE` and `WINDOWS_CERTIFICATE_PASSWORD` for Windows; `MACOS_CERTIFICATE`, `MACOS_CERTIFICATE_PASSWORD`, `MACOS_SIGN_IDENTITY`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD` for macOS signing and notarization. Without them, unsigned artifacts are published.
+- Desktop builds now carry the release version, and the app icon is generated from the existing bgit logo.
+- Updated `softprops/action-gh-release` from v1 to v2 because the workflow linter reports v1 as too old to run.
+- Regenerated the Wails frontend bindings for the new backend methods.
+
+Why:
+
+- Raw binaries are hard to install and launch for users who do not use a terminal.
+
+Validation:
+
+- The `.deb` script was run locally with a stand-in binary and the package metadata and contents were inspected.
+- The workflow passes `actionlint`.
+- Not verified: the workflow has not run on GitHub, so the Windows installer, the macOS disk image, and both signing paths are untested. No `.rpm` or AppImage is produced.
+
+---
+
 ## Completed Outside Current Roadmap IDs
 
 - uninstall recovery hardening
@@ -861,13 +1320,45 @@ Milestone:
 
 ## In Progress
 
-None
+### R-021 Release Stabilization
+
+Done so far:
+
+- Changelog entry for 0.12.0 added to `changelog.json` and `CHANGELOG.md` regenerated. `version.txt` is still 0.9.0, so nothing is released until it is changed.
+- README describes the desktop app and how to install it.
+- Review fixes: the desktop binary only enters CLI mode for a leading subcommand, so Wails' own flags and the macOS launch argument open the window; the app prefers its installed location on macOS when launched from a download; background refreshes no longer replace the commit message inputs.
+- Desktop UI tests added under `desktop/uitest` (`make test-ui`): five scenarios, 79 checks, covering the wizard, identities, repositories, the repository view, workspaces, settings, and removal.
+- Unused frontend code from the old Repository Bindings and Identity Detection panels was removed.
+- `make desktop-harness` failed to serve the page because the frontend folder was resolved relative to the wrong directory; the harness now finds it from the repository root or from `desktop/`.
+- `BGIT_DESKTOP_LOG=trace` makes the built app print every call between the window and the backend.
+
+- Small screens (found on a 1366x768 laptop): the default window was taller than the screen, so the bottom of the app was out of reach. The window now opens maximised on small screens, the repository view fills the window with its own scrolling panes, dialogs never grow past the window, and spacing is tighter on short windows.
+- Smoothness: a page now fades in only when the page changes (every re-draw used to replay the animation), page switches are immediate, scroll position is restored without a visible jump, and the top bar no longer blurs the page behind it. Lists re-draw only when their data changed.
+- CLI and app together: opening the app on a machine set up with the CLI changes nothing (config, hook, Git config, and SSH config stay byte-for-byte the same). The app no longer turns push protection on by itself when Git has no hooks path; the dashboard shows that it is off instead. Returning to the window picks up changes made with the CLI or Git.
+- `tests/coexistence.sh` (`make test-coexistence`) runs the real CLI binary and the desktop backend against one configuration in both install orders, including fix, commit, hook hand-over, and removal with either tool.
+- Linux window now has the bgit icon and groups under the installed launcher. `BGIT_DESKTOP_GPU=on` opts in to GPU drawing; software drawing stays the default because GPU drawing leaves the window blank on some drivers.
+
+Still to do before v1.0.0:
+
+- Build and run the real Wails app on Windows and macOS, and click through every screen in the real window on Linux (the dashboard was captured from the real window; the repository view and lists were captured in the same web engine through the dev harness; nobody has clicked through the real window with a mouse yet). On Linux (Ubuntu 24.04, WebKitGTK 4.1) the app builds, opens, loads all frontend files, and its first backend calls succeed; CLI mode of the built binary (`status`, `setup`, `check --from-hook`) works. The screens themselves have only been driven in Chrome through the dev harness.
+- Run the release workflow once and install each artifact (Windows installer, macOS disk image, Linux `.deb`).
+- Test against real GitHub accounts: add key, test connection, clone, push, pull.
+- Test Windows-specific code that cannot run here: console attachment in CLI mode, hidden child process windows, and the hook calling the installed `.exe`.
+- Decide on code signing and add the signing secrets if wanted.
+- Update the website docs for the desktop app (separate repository).
 
 ---
 
 ## Pending
 
-- R-020 through R-021 remain pending until implemented and recorded here with matching IDs.
+- R-021 remaining items above.
+
+Known limits of the desktop app (verified in code, 2026-11-12):
+
+- Only GitHub remotes are managed. The shared push safety check rejects other hosts, so those repositories show as Blocked.
+- Git operations never prompt. An SSH key with a passphrase must already be loaded in the SSH agent.
+- Stash, rebase, tags, and resolving conflicts inside the app are not implemented. Conflicts are resolved in the user's editor.
+- Setting the global `core.hooksPath` to bgit's hooks folder means Git ignores hooks inside individual repositories (for example `.git/hooks/pre-commit`). This is existing CLI behavior.
 
 ---
 

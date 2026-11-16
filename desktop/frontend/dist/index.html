@@ -29,7 +29,6 @@
         overflow: hidden;
         overscroll-behavior: none;
         scrollbar-gutter: stable;
-        scroll-behavior: smooth;
       }
       body {
         width: 100%;
@@ -102,7 +101,6 @@
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: none;
-        scroll-behavior: smooth;
       }
       main {
         max-width: 1180px;
@@ -114,8 +112,8 @@
         top: 0;
         z-index: 10;
         border-bottom: 1px solid var(--border);
-        background: rgb(248 250 252 / 0.94);
-        backdrop-filter: blur(10px);
+        /* A solid bar: blurring the page behind it makes scrolling stutter. */
+        background: var(--bg);
       }
       .topbar-inner {
         display: flex;
@@ -174,24 +172,19 @@
         gap: 8px;
       }
       .page-view {
-        animation: page-in 220ms ease-out;
         min-height: 320px;
-        transition:
-          opacity 160ms ease,
-          transform 160ms ease;
       }
-      .page-view.page-exit {
-        opacity: 0;
-        transform: translateY(6px);
+      /* Only a change of page fades in. Re-drawing the same page after an
+         action or a refresh must not animate, or the page appears to flicker. */
+      .page-view.page-enter {
+        animation: page-in 120ms ease-out;
       }
       @keyframes page-in {
         from {
           opacity: 0;
-          transform: translateY(8px);
         }
         to {
           opacity: 1;
-          transform: translateY(0);
         }
       }
       header,
@@ -1309,6 +1302,7 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="app.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -1327,6 +1321,7 @@
         </main>
       </div>
     </div>
+    <div id="onboarding" class="onboarding" hidden></div>
     <div id="toasts" class="toast-region" aria-live="polite" aria-atomic="false"></div>
 
     <dialog id="addDialog">
@@ -1445,10 +1440,6 @@
       let toastCounter = 0;
       let lastExportPath = "";
       let lastImportPath = "";
-      let selectedRepoPath = "";
-      let selectedDetectPath = "";
-      let currentDetection = null;
-      let editingBindingPath = "";
       let currentPage = "dashboard";
       let pageHistory = [];
       let lastRenderedPage = "";
@@ -1457,12 +1448,25 @@
       let pageScrollPositions = {};
       let activityLog = [];
       let lastDoctorRunAt = "";
+      let currentOnboarding = null;
+      // Feature modules (js/*.js) add pages and icons here instead of growing
+      // this file. A page is { id, render(status, doctor), bind(root), navParent }.
+      const featurePages = {};
+      const featureIcons = {};
+      function registerPage(page) {
+        featurePages[page.id] = page;
+      }
+      function registerIcons(icons) {
+        Object.assign(featureIcons, icons);
+      }
       const pages = [
         { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+        { id: "repositories", label: "Repositories", icon: "repo" },
         { id: "identities", label: "Identities", icon: "users" },
-        { id: "bindings", label: "Repository Bindings", icon: "link" },
+        { id: "workspaces", label: "Workspaces", icon: "folder" },
         { id: "backup", label: "Backup & Restore", icon: "archive" },
         { id: "doctor", label: "Doctor", icon: "shield" },
+        { id: "settings", label: "Settings", icon: "settings" },
       ];
 
       function escapeHtml(value) {
@@ -1506,6 +1510,10 @@
           <button class="toast-close" type="button" aria-label="Dismiss notification">×</button>
         `;
         region.appendChild(toast);
+        // Keep the stack short so notifications never cover the page.
+        while (region.children.length > 3) {
+          region.firstElementChild.remove();
+        }
         const remove = () => toast.remove();
         toast.querySelector("button").addEventListener("click", remove);
         if (timeout > 0) {
@@ -1556,8 +1564,16 @@
           link: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg>',
           archive: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>',
           shield: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>',
+          repo: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.500A2.500 2.500 0 0 1 6.500 17H20"/><path d="M6.500 2H20v20H6.500A2.500 2.500 0 0 1 4 19.500v-15A2.500 2.500 0 0 1 6.500 2Z"/></svg>',
+          settings: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>',
+          plus: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+          download: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
+          upload: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></svg>',
+          branch: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>',
+          wrench: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14.700 6.300a1 1 0 0 0 0 1.400l1.600 1.600a1 1 0 0 0 1.400 0l3.770-3.770a6 6 0 0 1-7.940 7.940l-6.910 6.910a2.120 2.120 0 0 1-3-3l6.910-6.910a6 6 0 0 1 7.940-7.940l-3.760 3.760z"/></svg>',
+          open: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>',
         };
-        return icons[name] || icons.check;
+        return icons[name] || featureIcons[name] || icons.check;
       }
 
       function iconButton({ action, icon, label, alias = "", path = "", disabled = false, danger = false }) {
@@ -1635,8 +1651,10 @@
           });
           navInitialized = true;
         }
+        // Sub-pages (for example an open repository) highlight their parent entry.
+        const activeNav = featurePages[currentPage]?.navParent || currentPage;
         nav.querySelectorAll("[data-page]").forEach((button) => {
-          button.classList.toggle("active", button.dataset.page === currentPage);
+          button.classList.toggle("active", button.dataset.page === activeNav);
         });
       }
 
@@ -1656,17 +1674,15 @@
         if (rememberCurrent) {
           pageHistory.push(previousPage);
         }
+        // Lets a feature page refresh its data each time it is opened.
+        if (featurePages[page]?.enter) {
+          featurePages[page].enter();
+        }
         const shell = document.getElementById("contentShell");
         if (shell && lastRenderedPage) {
           pageScrollPositions[lastRenderedPage] = shell.scrollTop;
         }
-        const view = document.querySelector(".page-view");
-        if (!view) {
-          render(currentStatus, currentDoctor);
-          return;
-        }
-        view.classList.add("page-exit");
-        window.setTimeout(() => render(currentStatus, currentDoctor), 120);
+        render(currentStatus, currentDoctor);
       }
 
       function renderTopbar(status, doctor) {
@@ -1725,46 +1741,6 @@
             </div>
             ${actions ? `<div class="page-actions">${actions}</div>` : ""}
           </div>
-        `;
-      }
-
-      function activePanel(status) {
-        const active = status.activeIdentity;
-        if (!active) {
-          return `
-            <section class="hero-active">
-              <div>
-                <div class="hero-active-title">
-                  <span class="active-dot" aria-hidden="true"></span>
-                  <strong>No active identity</strong>
-                </div>
-                <div class="hero-active-meta">
-                  <span class="muted">Set an identity before working with repositories.</span>
-                </div>
-              </div>
-              ${addIdentityButton()}
-            </section>
-          `;
-        }
-        const effective = status.effectiveIdentity;
-        return `
-          <section class="hero-active">
-            <div>
-              <div class="hero-active-title">
-                <span class="active-dot" aria-hidden="true"></span>
-                <strong class="truncate" title="${escapeHtml(active.alias)}">${escapeHtml(active.alias)}</strong>
-              </div>
-              <div class="hero-active-meta">
-                <span class="truncate" title="${escapeHtml(active.name)}">${escapeHtml(active.name)}</span>
-                <span class="muted truncate" title="${escapeHtml(active.email)}">${escapeHtml(active.email)}</span>
-                <span class="muted truncate" title="${escapeHtml(active.githubUsername)}">GitHub: ${escapeHtml(active.githubUsername)}</span>
-              </div>
-            </div>
-            <div class="actions">
-              <span class="badge active">Active</span>
-              ${effective ? `<span class="badge">${escapeHtml(effective.source)}</span>` : ""}
-            </div>
-          </section>
         `;
       }
 
@@ -1833,186 +1809,6 @@
               </form>
             </div>
           </section>
-        `;
-      }
-
-      function repoBindingPanel(status) {
-        const identities = status.identities || [];
-        return `
-          <section class="panel">
-            <div class="section-heading">
-              <div>
-                <h2>Repository Bindings</h2>
-                <p>Pin local Git repositories to the identity they must use.</p>
-              </div>
-            </div>
-            <form id="repoBindingForm" class="binding-form">
-              ${
-                editingBindingPath
-                  ? `<div class="editing-banner">
-                      <strong>Editing binding</strong>
-                      <button type="button" data-action="cancel-binding-edit">Cancel</button>
-                    </div>`
-                  : ""
-              }
-              ${fieldWithChooser({
-                label: "Repository path",
-                name: "path",
-                value: selectedRepoPath,
-                placeholder: "/path/to/git/repo",
-                action: "choose-repo",
-                title: "Choose Git repository",
-                hint: "Select a local Git repository directory.",
-                required: true,
-              })}
-              <label>
-                Identity
-                <select name="alias" required ${identities.length === 0 ? "disabled" : ""}>
-                  <option value="">Select identity</option>
-                  ${identities
-                    .map(
-                      (identity) =>
-                        `<option value="${escapeHtml(identity.alias)}">${escapeHtml(identity.alias)}</option>`,
-                    )
-                    .join("")}
-                </select>
-              </label>
-              <div class="form-actions">
-                <button type="submit" class="primary" ${identities.length === 0 ? "disabled" : ""}>${editingBindingPath ? "Update Binding" : "Bind"}</button>
-              </div>
-            </form>
-            ${repoBindingRows(status.bindings || [])}
-          </section>
-        `;
-      }
-
-      function repoBindingRows(bindings) {
-        if (bindings.length === 0) {
-          return `<div class="empty"><p>No repository bindings configured. Bind a repository to keep its Git identity aligned automatically.</p></div>`;
-        }
-        return `
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Repository</th>
-                <th>Identity</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${bindings
-                .map(
-                  (binding) => `
-                    <tr>
-                      <td>${copyableValue(binding.path, "repo-path", "Copy repository path")}</td>
-                      <td>
-                        <strong>${escapeHtml(binding.alias)}</strong>
-                        ${
-                          binding.missingIdentity
-                            ? ""
-                            : `<div class="muted truncate" title="${escapeHtml(`${binding.name} · ${binding.email}`)}">${escapeHtml(binding.name)} · ${escapeHtml(binding.email)}</div>`
-                        }
-                      </td>
-                      <td>${binding.missingIdentity ? `<span class="badge warn">Identity missing</span>` : `<span class="badge good">Ready</span>`}</td>
-                      <td>
-                        <div class="actions">
-                          ${iconButton({ action: "edit-binding", icon: "edit", label: `Change ${binding.alias} binding`, alias: binding.alias, path: binding.path })}
-                          ${iconButton({ action: "remove-binding", icon: "trash", label: `Remove ${binding.alias} binding`, alias: binding.alias, path: binding.path, danger: true })}
-                        </div>
-                      </td>
-                    </tr>
-                  `,
-                )
-                .join("")}
-            </tbody>
-          </table>
-        `;
-      }
-
-      function identityDetectionPanel(detection = currentDetection) {
-        return `
-          <section class="panel">
-            <div class="section-heading">
-              <div>
-                <h2>Identity Detection</h2>
-                <p>Check which bgit identity applies to a repository or workspace path.</p>
-              </div>
-            </div>
-            <form id="identityDetectionForm" class="detection-form">
-              ${fieldWithChooser({
-                label: "Repository or workspace path",
-                name: "path",
-                value: selectedDetectPath,
-                placeholder: "/path/to/repo-or-workspace",
-                action: "choose-detect-path",
-                title: "Choose repository or workspace",
-                hint: "Select a path, then run detection.",
-                required: true,
-              })}
-              <div class="form-actions">
-                <button type="submit" class="primary"><span class="icon" aria-hidden="true">${iconSvg("search")}</span>Detect</button>
-              </div>
-            </form>
-            ${identityDetectionDetails(detection)}
-          </section>
-        `;
-      }
-
-      function identityDetectionDetails(detection) {
-        if (!detection) {
-          return `<p class="muted">Choose a path to see the effective identity and Git config state.</p>`;
-        }
-        if (!detection.alias) {
-          return `
-            <div class="warning-note">${escapeHtml(detection.message || "No identity detected for this path.")}</div>
-          `;
-        }
-        const sourceLabel = detection.source === "binding"
-          ? "Bound repository"
-          : detection.source === "workspace"
-            ? "Workspace"
-            : "Global active identity";
-        const matchBadge = detection.gitConfigChecked
-          ? detection.gitMatches
-            ? `<span class="badge good">Git config matches</span>`
-            : `<span class="badge warn">Git config needs sync</span>`
-          : `<span class="badge warn">Git config not checked</span>`;
-        return `
-          <div class="detection-grid">
-            <div class="detection-item">
-              <span>Detected Source</span>
-              <strong>${escapeHtml(sourceLabel)}</strong>
-              ${detection.sourcePath ? `<div class="muted">${escapeHtml(detection.sourcePath)}</div>` : ""}
-            </div>
-            <div class="detection-item">
-              <span>Identity</span>
-              <strong>${escapeHtml(detection.alias)}</strong>
-              <div class="muted">${escapeHtml(detection.email)}</div>
-            </div>
-            <div class="detection-item">
-              <span>Git Config</span>
-              ${matchBadge}
-              <div class="muted">${escapeHtml(detection.gitConfigScope || "unknown")}</div>
-              ${
-                detection.gitConfigChecked
-                  ? `<div class="muted">${escapeHtml(detection.gitName)} &lt;${escapeHtml(detection.gitEmail)}&gt;</div>`
-                  : ""
-              }
-            </div>
-            <div class="detection-item">
-              <span>Repository</span>
-              ${copyableValue(detection.repoRoot || detection.path, "", "Copy detected path")}
-            </div>
-          </div>
-          <div class="backup-actions" style="margin-top: 12px">
-            <button
-              type="button"
-              data-action="sync-detected-identity"
-              ${!detection.syncAvailable || detection.gitMatches ? "disabled" : ""}
-            ><span class="icon" aria-hidden="true">${iconSvg("sync")}</span>Sync Identity</button>
-            <span class="muted">${escapeHtml(detection.message || "")}</span>
-          </div>
         `;
       }
 
@@ -2096,33 +1892,6 @@
               <div>${escapeHtml(check.message)}</div>
               ${check.fix ? `<div class="check-fix">${escapeHtml(check.fix)}</div>` : ""}
             </div>
-          </div>
-        `;
-      }
-
-      function publicKeyBlock(identity) {
-        if (identity.sshPublicKeyStatus === "available" && identity.sshPublicKey) {
-          return `
-            <div class="public-key-card">
-              ${copyableValue(identity.sshPublicKey, "public-key-preview", `Copy public key for ${identity.alias}`)}
-              <div class="key-actions">
-                <span class="muted">Add this to GitHub SSH keys.</span>
-              </div>
-            </div>
-          `;
-        }
-        if (identity.sshKeyStatus === "available") {
-          return `
-            <div class="public-key-card">
-              <span class="badge warn">Public key missing</span>
-              <span class="muted">Expected public key file next to the private key.</span>
-            </div>
-          `;
-        }
-        return `
-          <div class="public-key-card">
-            <span class="badge warn">Not configured</span>
-            <span class="muted">Generate or set an SSH key to copy the GitHub public key.</span>
           </div>
         `;
       }
@@ -2220,48 +1989,6 @@
         `;
       }
 
-      function identityCards(identities) {
-        if (identities.length === 0) {
-          return `<section class="panel empty"><p>No identities configured. Add your first profile to start managing Git identities.</p></section>`;
-        }
-        return `
-          <div class="card-grid">
-            ${identities
-              .map(
-                (identity) => `
-                  <article class="identity-card ${identity.active ? "active" : ""}">
-                    <div class="card-actions">
-                      <div class="identity-cell">
-                        ${avatarBlock(identity)}
-                        <div class="identity-details">
-                          <strong class="truncate" title="${escapeHtml(identity.alias)}">${identity.active ? `<span class="active-dot" aria-hidden="true"></span>` : ""}${escapeHtml(identity.alias)}</strong>
-                          <span class="truncate" title="${escapeHtml(identity.name)}">${escapeHtml(identity.name)}</span>
-                          <span class="muted truncate" title="${escapeHtml(identity.email)}">${escapeHtml(identity.email)}</span>
-                        </div>
-                      </div>
-                      ${identity.active ? `<span class="badge active">Active</span>` : statusBadge(identity.sshKeyStatus)}
-                    </div>
-                    <div class="identity-meta">
-                      <div class="muted truncate" title="${escapeHtml(identity.githubUsername)}">GitHub: ${escapeHtml(identity.githubUsername)}</div>
-                      <div>${statusBadge(identity.sshKeyStatus)}</div>
-                    </div>
-                    <details class="compact-details">
-                      <summary>SSH public key</summary>
-                      <div style="margin-top: 10px">${publicKeyBlock(identity)}</div>
-                    </details>
-                    <div class="actions">
-                      ${iconButton({ action: "activate", icon: "use", label: `Use ${identity.alias}`, alias: identity.alias, disabled: identity.active })}
-                      ${iconButton({ action: "edit", icon: "edit", label: `Edit ${identity.alias}`, alias: identity.alias })}
-                      ${iconButton({ action: "delete", icon: "trash", label: `Delete ${identity.alias}`, alias: identity.alias, danger: true })}
-                    </div>
-                  </article>
-                `,
-              )
-              .join("")}
-          </div>
-        `;
-      }
-
       function dashboardPage(status, doctor) {
         const health = doctor
           ? doctor.errors > 0
@@ -2271,20 +1998,28 @@
               : "Healthy"
           : "Not checked";
         return `
-          ${pageHeading("Dashboard", "A quick view of identity, repository, backup, and health status.")}
+          ${pageHeading("Dashboard", "A quick view of your identities, repositories, and health.")}
+          ${
+            currentOnboarding && !currentOnboarding.pushProtection
+              ? `<div class="note warn repo-banner dashboard-banner">
+                  <span><strong>Push protection is off</strong>Pushes are not checked against the repository identity right now.</span>
+                  <button type="button" data-page-jump="settings">Open Settings</button>
+                </div>`
+              : ""
+          }
           <section class="summary">
             <div class="metric"><span>Identities</span><strong>${status.identityCount || 0}</strong></div>
-            <div class="metric"><span>Repository Bindings</span><strong>${status.bindingCount || 0}</strong></div>
-            <div class="metric"><span>Backup Status</span><strong>${lastExportPath || lastImportPath ? "Recent" : "Ready"}</strong></div>
+            <div class="metric"><span>Bound Repositories</span><strong>${status.bindingCount || 0}</strong></div>
+            <div class="metric"><span>Workspaces</span><strong>${status.workspaceCount || 0}</strong></div>
             <div class="metric"><span>Doctor</span><strong>${escapeHtml(health)}</strong></div>
           </section>
           <section class="panel">
             <h2>Quick Actions</h2>
             <div class="quick-launchpad">
+              <button type="button" data-repo-intent="clone"><span class="icon" aria-hidden="true">${iconSvg("download")}</span>Clone repository</button>
+              <button type="button" data-repo-intent="add"><span class="icon" aria-hidden="true">${iconSvg("plus")}</span>Add existing repository</button>
               <button type="button" data-page-jump="identities"><span class="icon" aria-hidden="true">${iconSvg("users")}</span>Identities</button>
-              <button type="button" data-page-jump="backup"><span class="icon" aria-hidden="true">${iconSvg("archive")}</span>Backup</button>
               <button type="button" data-page-jump="doctor"><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Doctor</button>
-              <button type="button" data-page-jump="bindings"><span class="icon" aria-hidden="true">${iconSvg("link")}</span>Bindings</button>
             </div>
           </section>
           ${activityPanel()}
@@ -2332,13 +2067,6 @@
         `;
       }
 
-      function bindingsPage(status) {
-        return `
-          ${pageHeading("Repository Bindings", "Map local repositories to the identity they must use.")}
-          ${repoBindingPanel(status)}
-        `;
-      }
-
       function backupPage() {
         return `
           ${pageHeading("Backup & Restore", "Export encrypted backups or import an existing .bgit archive.")}
@@ -2354,18 +2082,22 @@
       }
 
       function currentPageContent(status, doctor) {
+        // After removing bgit the Settings page shows what was restored.
+        if (!status.configured && currentPage === "settings" && window.settingsShowsRemoval?.()) {
+          return featurePages.settings.render(status, doctor);
+        }
         if (!status.configured) {
           return `
-            ${pageHeading("Setup", "bgit is not configured on this machine.", addIdentityButton())}
+            ${pageHeading("Setup", "bgit is not set up on this computer yet.", `<button type="button" class="primary" data-action="open-onboarding">Start setup</button>`)}
             ${backupPage()}
-            ${doctorPage(doctor)}
           `;
+        }
+        if (featurePages[currentPage]) {
+          return featurePages[currentPage].render(status, doctor);
         }
         switch (currentPage) {
           case "identities":
             return identitiesPage(status);
-          case "bindings":
-            return bindingsPage(status);
           case "backup":
             return backupPage(status);
           case "doctor":
@@ -2386,16 +2118,20 @@
         target.className = "";
         renderNavigation();
         renderTopbar(status, doctor);
-        target.innerHTML = `<div class="page-view">${currentPageContent(status, doctor)}</div>`;
+        // Pages that manage their own panes fill the window instead of scrolling.
+        document.body.classList.toggle("page-fill", Boolean(featurePages[currentPage]?.fill));
+        const enterClass = pageChanged || !hadRendered ? " page-enter" : "";
+        target.innerHTML = `<div class="page-view${enterClass}">${currentPageContent(status, doctor)}</div>`;
         lastRenderedPage = currentPage;
         bindForms();
         bindIdentityActions();
-        bindIdentityDetectionActions();
-        bindRepoBindingActions();
         bindBackupActions();
         bindCopyActions();
         bindDoctorActions();
         bindPageActions();
+        if (featurePages[currentPage]?.bind) {
+          featurePages[currentPage].bind(target);
+        }
         finishRender(target, hadRendered, previousScrollY);
       }
 
@@ -2404,15 +2140,12 @@
         if (!preserveScroll) {
           return;
         }
-        requestAnimationFrame(() => {
-          const shell = document.getElementById("contentShell");
-          if (shell) {
-            shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
-            return;
-          }
-          const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-          window.scrollTo({ top: Math.min(previousScrollY, maxScroll), left: 0, behavior: "auto" });
-        });
+        // Restored in the same frame as the re-draw, so the page never
+        // visibly jumps to the top and back.
+        const shell = document.getElementById("contentShell");
+        if (shell) {
+          shell.scrollTop = Math.min(previousScrollY, Math.max(0, shell.scrollHeight - shell.clientHeight));
+        }
       }
 
       function formPayload(form) {
@@ -2440,12 +2173,9 @@
           if (added) {
             addForm.reset();
             document.getElementById("addDialog").close();
-            notify({
-              title: "Add SSH key to GitHub",
-              message: `Open '${payload.alias}' in Identities, copy its SSH public key, and add it to your GitHub SSH keys.`,
-              tone: "success",
-              timeout: 0,
-            });
+            // Go straight to the key details so the next step, adding the key
+            // to GitHub, is one click away.
+            openViewDialog(payload.alias);
           }
         };
         document.querySelectorAll("[data-action='choose-add-ssh-key']").forEach((button) => {
@@ -2499,6 +2229,9 @@
       }
 
       function bindPageActions() {
+        document.querySelectorAll("[data-action='open-onboarding']").forEach((button) => {
+          button.addEventListener("click", () => openOnboarding("welcome"));
+        });
         document.querySelectorAll("[data-action='open-add-identity']").forEach((button) => {
           button.addEventListener("click", () => {
             document.getElementById("addDialog").showModal();
@@ -2507,6 +2240,13 @@
         document.querySelectorAll("[data-page-jump]").forEach((button) => {
           button.addEventListener("click", () => {
             transitionToPage(button.dataset.pageJump || "dashboard");
+          });
+        });
+        // Opens the Repositories page straight into its clone or add dialog.
+        document.querySelectorAll("[data-repo-intent]").forEach((button) => {
+          button.addEventListener("click", () => {
+            window.pendingRepositoryIntent = button.dataset.repoIntent;
+            transitionToPage("repositories");
           });
         });
       }
@@ -2653,208 +2393,6 @@
             await chooseImportPath(button);
           });
         });
-      }
-
-      function bindIdentityDetectionActions() {
-        const form = document.getElementById("identityDetectionForm");
-        if (form) {
-          form.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const path = String(new FormData(form).get("path") || "").trim();
-            selectedDetectPath = path;
-            await detectIdentityPath(path, form);
-          });
-        }
-
-        document.querySelectorAll("[data-action='choose-detect-path']").forEach((button) => {
-          button.addEventListener("click", async () => {
-            await chooseIdentityPath(button);
-          });
-        });
-
-        document.querySelectorAll("[data-action='sync-detected-identity']").forEach((button) => {
-          button.addEventListener("click", async () => {
-            await syncDetectedIdentity(button);
-          });
-        });
-      }
-
-      async function chooseIdentityPath(button) {
-        if (!api()) {
-          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
-          return;
-        }
-        const previousDisabled = button.disabled;
-        button.disabled = true;
-        try {
-          const path = await api().ChooseIdentityPath();
-          if (path) {
-            selectedDetectPath = path;
-            render(currentStatus, currentDoctor);
-          }
-        } catch (error) {
-          setMessage(actionableError(error), true, "Choose path failed");
-        } finally {
-          button.disabled = previousDisabled;
-        }
-      }
-
-      async function detectIdentityPath(path, disabledTarget) {
-        if (!api()) {
-          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
-          return false;
-        }
-        setMessage("");
-        setActionText("Detecting identity");
-        const elements = disabledTarget
-          ? Array.from(disabledTarget.querySelectorAll("button, input, select"))
-          : [];
-        const previousStates = elements.map((element) => ({ element, disabled: element.disabled }));
-        elements.forEach((element) => {
-          element.disabled = true;
-        });
-        try {
-          currentDetection = await api().DetectIdentity({ path });
-          render(currentStatus, currentDoctor);
-          const tone = currentDetection.alias
-            ? currentDetection.gitMatches
-              ? "success"
-              : "warn"
-            : "warn";
-          notify({
-            title: "Identity detected",
-            message: currentDetection.message || "Detection complete.",
-            tone,
-          });
-          return true;
-        } catch (error) {
-          setMessage(actionableError(error), true, "Detection failed");
-          return false;
-        } finally {
-          previousStates.forEach(({ element, disabled }) => {
-            element.disabled = disabled;
-          });
-          setActionText("");
-        }
-      }
-
-      async function syncDetectedIdentity(button) {
-        if (!currentDetection?.path) {
-          setMessage("Detect an identity before syncing.", true, "Detection required");
-          return;
-        }
-        const result = await runAction(
-          () => api().SyncDetectedIdentity({ path: currentDetection.path }),
-          button,
-          "Syncing detected identity",
-        );
-        if (result?.detected) {
-          currentDetection = result.detected;
-          if (result.status) {
-            render(result.status, currentDoctor);
-          } else {
-            render(currentStatus, currentDoctor);
-          }
-        }
-      }
-
-      function bindRepoBindingActions() {
-        const form = document.getElementById("repoBindingForm");
-        if (form) {
-          form.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const payload = repoBindingPayload(form);
-            selectedRepoPath = payload.path;
-            const actionText = editingBindingPath ? "Updating binding" : "Binding repository";
-            const previousEditPath = editingBindingPath;
-            if (previousEditPath) {
-              editingBindingPath = "";
-            }
-            const result = await runAction(() => api().BindRepository(payload), form, actionText);
-            if (!result && previousEditPath) {
-              editingBindingPath = previousEditPath;
-              render(currentStatus, currentDoctor);
-            }
-          });
-        }
-
-        document.querySelectorAll("[data-action='choose-repo']").forEach((button) => {
-          button.addEventListener("click", async () => {
-            await chooseRepositoryPath(button);
-          });
-        });
-
-        document.querySelectorAll("[data-action='edit-binding']").forEach((button) => {
-          button.addEventListener("click", () => {
-            selectedRepoPath = button.dataset.path || "";
-            editingBindingPath = selectedRepoPath;
-            render(currentStatus, currentDoctor);
-            const form = document.getElementById("repoBindingForm");
-            if (form) {
-              form.elements.path.value = selectedRepoPath;
-              form.elements.alias.value = button.dataset.alias || "";
-              form.elements.path.focus();
-            }
-          });
-        });
-
-        document.querySelectorAll("[data-action='cancel-binding-edit']").forEach((button) => {
-          button.addEventListener("click", () => {
-            editingBindingPath = "";
-            selectedRepoPath = "";
-            render(currentStatus, currentDoctor);
-          });
-        });
-
-        document.querySelectorAll("[data-action='remove-binding']").forEach((button) => {
-          button.addEventListener("click", async () => {
-            const path = button.dataset.path || "";
-            const alias = button.dataset.alias || "";
-            const confirmed = await confirmAction({
-              title: "Remove Repository Binding",
-              message: `Remove the binding between this repository and '${alias}'?`,
-              warning: "The repository will fall back to workspace identity or the global active identity.",
-              acceptLabel: "Remove",
-              danger: true,
-            });
-            if (!confirmed) {
-              return;
-            }
-            if (editingBindingPath === path) {
-              editingBindingPath = "";
-              selectedRepoPath = "";
-            }
-            await runAction(() => api().RemoveRepositoryBinding(path), button, "Removing repository binding");
-          });
-        });
-      }
-
-      function repoBindingPayload(form) {
-        const data = new FormData(form);
-        return {
-          path: String(data.get("path") || "").trim(),
-          alias: String(data.get("alias") || "").trim(),
-        };
-      }
-
-      async function chooseRepositoryPath(button) {
-        if (!api()) {
-          setMessage("Desktop backend is not available. Open this screen in the Wails app window.", true, "Backend unavailable");
-          return;
-        }
-        const previousDisabled = button.disabled;
-        button.disabled = true;
-        try {
-          const path = await api().ChooseRepositoryPath();
-          if (path) {
-            selectedRepoPath = path;
-            render(currentStatus, currentDoctor);
-          }
-        } catch (error) {
-          setMessage(actionableError(error), true, "Choose repository failed");
-        } finally {
-          button.disabled = previousDisabled;
-        }
       }
 
       async function chooseSSHPrivateKey(button, input) {
@@ -3059,6 +2597,11 @@
               </div>
             </div>
           </div>
+          <div class="dialog-tools">
+            <button id="viewOpenGitHub" type="button" ${copyAvailable ? "" : "disabled"}><span class="icon" aria-hidden="true">${iconSvg("github")}</span>Copy key and open GitHub</button>
+            <button id="viewTestConnection" type="button" ${identity.sshKeyStatus === "available" ? "" : "disabled"}><span class="icon" aria-hidden="true">${iconSvg("shield")}</span>Test connection</button>
+          </div>
+          <div id="viewConnectionResult" class="note" role="status" hidden></div>
         `;
         const copy = document.getElementById("viewCopyKey");
         if (copy) {
@@ -3066,7 +2609,42 @@
             await copyTextValue(identity.sshPublicKey, copy, `Copied SSH key for ${identity.alias}`);
           });
         }
+        document.getElementById("viewOpenGitHub").addEventListener("click", async (event) => {
+          await copyTextValue(identity.sshPublicKey, event.currentTarget, `Copied SSH key for ${identity.alias}. Paste it into GitHub.`);
+          try {
+            await api().OpenGitHubKeySettings();
+          } catch (error) {
+            setMessage(String(error), true, "Could not open GitHub");
+          }
+        });
+        document.getElementById("viewTestConnection").addEventListener("click", async (event) => {
+          await testIdentityConnection(identity.alias, event.currentTarget, document.getElementById("viewConnectionResult"));
+        });
         document.getElementById("viewDialog").showModal();
+      }
+
+      // Checks that GitHub accepts the identity's SSH key and shows the outcome
+      // in the given result box.
+      async function testIdentityConnection(alias, button, resultBox) {
+        const previousHTML = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner" aria-hidden="true"></span>Testing connection`;
+        try {
+          const result = await api().TestIdentityConnection(alias);
+          resultBox.hidden = false;
+          resultBox.className = `note ${result.passed ? "good" : "warn"}`;
+          resultBox.innerHTML = `<strong>${result.passed ? "Connected" : "Not connected"}</strong>${escapeHtml(result.message)}${result.fix && !result.passed ? ` ${escapeHtml(result.fix)}.` : ""}`;
+          addActivity(result.passed ? "GitHub connection works" : "GitHub connection failed", alias, result.passed ? "success" : "warn");
+          return result;
+        } catch (error) {
+          resultBox.hidden = false;
+          resultBox.className = "note error";
+          resultBox.textContent = String(error);
+          return null;
+        } finally {
+          button.disabled = false;
+          button.innerHTML = previousHTML;
+        }
       }
 
       function confirmAction({ title, message, warning = "", acceptLabel = "Continue", cancelLabel = "Cancel", danger = false }) {
@@ -3202,13 +2780,7 @@
       function actionableError(error) {
         const message = String(error);
         if (message.includes("not configured")) {
-          return `${message} Add your first identity or run bgit setup from the CLI.`;
-        }
-        if (message.includes("SSH")) {
-          return `${message} Check the SSH key path or run Doctor for details.`;
-        }
-        if (message.includes("git config") || message.includes("identity")) {
-          return `${message} Use bgit sync --fix or activate the expected identity.`;
+          return `${message}. Finish setup and add your first identity to continue.`;
         }
         return message;
       }
@@ -3223,8 +2795,17 @@
           if (!api()) {
             throw new Error("Desktop backend is not available. Open this screen in the Wails app window.");
           }
-          const [status, doctor] = await Promise.all([api().GetStatus(), api().GetDoctorStatus()]);
+          const [status, doctor, onboarding] = await Promise.all([
+            api().GetStatus(),
+            api().GetDoctorStatus(),
+            api().GetOnboardingState(),
+          ]);
+          currentOnboarding = onboarding;
           render(status, doctor);
+          // First run: the wizard covers the app until setup is finished.
+          if (typeof syncOnboarding === "function" && !window.settingsShowsRemoval?.()) {
+            syncOnboarding(onboarding, status);
+          }
         } catch (error) {
           target.textContent = String(error);
           notify({
@@ -3235,6 +2816,50 @@
           });
         }
       }
+
+      // The bgit CLI and Git share this app's data. When the window comes back
+      // into focus, pick up whatever changed outside the app, without
+      // re-drawing anything when nothing changed.
+      let lastFocusRefresh = 0;
+      async function refreshOnFocus() {
+        if (!api() || !currentStatus || activeActionText) {
+          return;
+        }
+        if (document.querySelector("dialog[open]") || !document.getElementById("onboarding").hidden) {
+          return;
+        }
+        const now = Date.now();
+        if (now - lastFocusRefresh < 4000) {
+          return;
+        }
+        lastFocusRefresh = now;
+        try {
+          const [status, onboarding] = await Promise.all([api().GetStatus(), api().GetOnboardingState()]);
+          const changed = JSON.stringify([status, onboarding]) !== JSON.stringify([currentStatus, currentOnboarding]);
+          if (changed) {
+            currentOnboarding = onboarding;
+            if (onboarding.needed) {
+              // For example bgit was removed with the CLI: start over.
+              await load();
+              return;
+            }
+            const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+            if (featurePages[currentPage]?.fill || typing) {
+              // Keep the page as it is; only the shared state and top bar move on.
+              currentStatus = status;
+              renderTopbar(status, currentDoctor);
+            } else {
+              render(status, currentDoctor);
+            }
+          }
+          if (featurePages[currentPage]?.focus) {
+            featurePages[currentPage].focus();
+          }
+        } catch (error) {
+          // A failed background refresh is not worth interrupting the user.
+        }
+      }
+      window.addEventListener("focus", refreshOnFocus);
 
       document.getElementById("cancelEdit").addEventListener("click", () => {
         document.getElementById("editDialog").close();
@@ -3255,8 +2880,24 @@
           document.getElementById("editDialog").close();
         }
       });
-
-      load();
+    </script>
+    <script src="js/onboarding.js"></script>
+    <script src="js/repositories.js"></script>
+    <script src="js/repository.js"></script>
+    <script src="js/workspaces.js"></script>
+    <script src="js/settings.js"></script>
+    <script>
+      // Started last so every feature module is registered before first render.
+      // A "#page=<id>" or "#repo=<path>" address opens that screen directly;
+      // the dev harness uses it to show one screen without clicking through.
+      load().then(() => {
+        const start = new URLSearchParams(window.location.hash.slice(1));
+        if (start.get("repo") && typeof openRepository === "function") {
+          openRepository(start.get("repo"));
+        } else if (start.get("page") && (featurePages[start.get("page")] || pages.some((page) => page.id === start.get("page")))) {
+          transitionToPage(start.get("page"));
+        }
+      });
     </script>
   </body>
 </html>

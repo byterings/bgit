@@ -233,7 +233,7 @@
 - Title: Cross Platform Packaging
 - Description: Add Linux, Windows, and macOS packaging support for desktop application
 - Priority: Medium
-- Status: pending
+- Status: done
 
 ---
 
@@ -242,7 +242,116 @@
 - Title: Release Stabilization
 - Description: Final cleanup, testing, bug fixes, documentation updates, and release preparation
 - Priority: High
-- Status: pending
+- Status: in progress
+
+---
+
+## Desktop-First Direction (R-022 onward)
+
+Goal: users can install the desktop app and manage identities, SSH keys, and repositories without using the CLI.
+
+- The CLI stays as it is. CLI behavior and output must not change.
+- The desktop app manages identities, keys, and repositories, and also covers everyday Git work (view changes, commit, push, pull, branches, history) so users do not need a terminal or a second Git client.
+- Shared logic is extracted into `/core` so the CLI and desktop app use the same implementation.
+
+---
+
+### R-022
+
+- Title: Core Setup and Check Extraction
+- Description: Move setup, managed pre-push hook installation, and push safety check logic from `cmd/` into `/core` so the desktop app can reuse it, without changing CLI behavior or output
+- Priority: High
+- Status: done
+
+---
+
+### R-023
+
+- Title: Desktop First-Run Onboarding
+- Description: Add a first-run wizard that checks Git, runs setup, adds the first identity, and generates its SSH key; let the desktop binary answer `check --from-hook` so the pre-push hook works without a separate CLI install
+- Priority: High
+- Status: done
+
+---
+
+### R-024
+
+- Title: Desktop Clone and Add Existing Repository
+- Description: Clone a GitHub repository with a chosen identity and destination folder, and add an existing local repository by binding it and fixing its remote in one step
+- Priority: High
+- Status: done
+
+---
+
+### R-025
+
+- Title: Desktop Workspaces
+- Description: Add a desktop page to view, register, and remove workspace folders and their identities using the existing core repo modules
+- Priority: Medium
+- Status: done
+
+---
+
+### R-026
+
+- Title: Desktop Repository Health
+- Description: Show all bound repositories with identity and remote status, and provide a one-click fix backed by the existing check and sync logic
+- Priority: Medium
+- Status: done
+
+---
+
+### R-027
+
+- Title: GitHub Key Helper and Connection Test
+- Description: Add an action to open GitHub SSH key settings with the public key copied, and a per-identity SSH connection test
+- Priority: Medium
+- Status: done
+
+---
+
+### R-028
+
+- Title: Desktop Uninstall and Cleanup
+- Description: Add a settings page to restore remotes, hooks, SSH config, and Git identity and remove bgit configuration, matching CLI uninstall behavior
+- Priority: Medium
+- Status: done
+
+---
+
+### R-029
+
+- Title: Desktop Installers and Signing
+- Description: Produce real installers for Linux, Windows, and macOS instead of raw binaries, and add code signing where available
+- Priority: High
+- Status: done
+
+---
+
+### R-030
+
+- Title: Core Git Operations
+- Description: Add a `/core/gitops` module that wraps the Git CLI for status, diff, stage, unstage, discard, commit, branches, history, fetch, pull, and push, returning structured results
+- Priority: High
+- Status: done
+
+---
+
+### R-031
+
+- Title: Desktop Changes and Commit
+- Description: Add a repository view that lists changed files, shows diffs, stages or discards files, and commits with the repository's bgit identity
+- Priority: High
+- Status: done
+
+---
+
+### R-032
+
+- Title: Desktop Sync, Branches, and History
+- Description: Add fetch, pull, and push with ahead/behind status, branch switching and creation, and a commit history view; pushes run the same safety check as the CLI hook
+- Priority: High
+- Status: done
 
 ## Release Milestones
 
@@ -311,9 +420,49 @@ Release after:
 
 ---
 
-### v1.0.0
+Note: v0.10.0, v0.11.0, and v0.12.0 were completed together and ship as a single v0.12.0 release.
+
+### v0.10.0
+
+Desktop app works without the CLI.
 
 Release after:
 
 - R-020
+- R-022
+- R-023
+- R-024
+
+---
+
+### v0.11.0
+
+Desktop app covers the remaining CLI workflows.
+
+Release after:
+
+- R-025
+- R-026
+- R-027
+- R-028
+
+---
+
+### v0.12.0
+
+Desktop app covers everyday Git work.
+
+Release after:
+
+- R-030
+- R-031
+- R-032
+
+---
+
+### v1.0.0
+
+Release after:
+
+- R-029
 - R-021

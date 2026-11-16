@@ -3,12 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
+	corecheck "github.com/byterings/bgit/core/check"
 	"github.com/byterings/bgit/core/config"
 	coreidentity "github.com/byterings/bgit/core/identity"
-	corerepo "github.com/byterings/bgit/core/repo"
-	"github.com/byterings/bgit/internal/git"
 	"github.com/byterings/bgit/internal/ui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -55,26 +53,16 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	}
 
 	remoteURL, _ := getRemoteURL("origin")
-	ownerResult := corerepo.ResolveRepoOwner(cfg, repoRoot, remoteURL)
-	ownerAlias, ownerSource := "", ""
-	var ownerUser *config.User
-	if ownerResult != nil && ownerResult.Owner != nil {
-		ownerAlias, ownerSource, ownerUser = ownerResult.Owner.Alias, ownerResult.Owner.Source, ownerResult.Owner.User
-	}
+	expectation := corecheck.ResolveExpected(cfg, repoRoot, remoteURL)
+	ownerAlias := expectation.OwnerAlias
 
-	if cfg.ActiveUser == "" && ownerAlias == "" {
+	if expectation.Alias == "" {
 		return fmt.Errorf("no active user set. Run: bgit use <alias>")
 	}
 
-	expectedAlias := ownerAlias
-	expectedSource := ownerSource
-	expectedUser := ownerUser
-	if expectedAlias == "" {
-		expectedAlias = cfg.ActiveUser
-		expectedSource = "active"
-		expectedUser = cfg.FindUserByAlias(expectedAlias)
-	}
-
+	expectedAlias := expectation.Alias
+	expectedSource := expectation.Source
+	expectedUser := expectation.User
 	if expectedUser == nil {
 		return fmt.Errorf("expected user '%s' not found in config", expectedAlias)
 	}
@@ -94,7 +82,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 
 	useActiveForValidation := false
 	if ownerAlias != "" && cfg.ActiveUser != "" && ownerAlias != cfg.ActiveUser {
-		repoIdentityMatches, err := gitConfigMatches(repoRoot, expectedUser)
+		repoIdentityMatches, err := corecheck.GitIdentityMatches(repoRoot, expectedUser)
 		if err != nil {
 			return fmt.Errorf("failed to read git config: %w", err)
 		}
@@ -105,7 +93,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 			}
 		} else {
 			if !isInteractiveSession() {
-				return checkGitConfigMatches(repoRoot, expectedUser, expectedAlias)
+				return corecheck.VerifyGitIdentity(repoRoot, expectedUser, expectedAlias)
 			}
 			confirmedMismatch, err := handleActiveOwnerMismatch(cfg.ActiveUser, ownerAlias)
 			if err != nil {
@@ -129,7 +117,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if err := checkGitConfigMatches(repoRoot, expectedUser, expectedAlias); err != nil {
+	if err := corecheck.VerifyGitIdentity(repoRoot, expectedUser, expectedAlias); err != nil {
 		return err
 	}
 
@@ -170,34 +158,6 @@ func handleActiveOwnerMismatch(activeAlias, ownerAlias string) (bool, error) {
 	return true, nil
 }
 
-func checkGitConfigMatches(repoRoot string, expectedUser *config.User, expectedAlias string) error {
-	gitName, gitEmail, err := git.GetUserForRepo(repoRoot)
-	if err != nil {
-		return fmt.Errorf("failed to read git config: %w", err)
-	}
-
-	if strings.TrimSpace(gitName) != expectedUser.Name || strings.TrimSpace(gitEmail) != expectedUser.Email {
-		return fmt.Errorf("git config mismatch for '%s'. Expected %s <%s>, got %s <%s>. Run: bgit sync --fix",
-			expectedAlias,
-			expectedUser.Name,
-			expectedUser.Email,
-			strings.TrimSpace(gitName),
-			strings.TrimSpace(gitEmail),
-		)
-	}
-
-	return nil
-}
-
-func gitConfigMatches(repoRoot string, expectedUser *config.User) (bool, error) {
-	gitName, gitEmail, err := git.GetUserForRepo(repoRoot)
-	if err != nil {
-		return false, err
-	}
-	return strings.TrimSpace(gitName) == expectedUser.Name &&
-		strings.TrimSpace(gitEmail) == expectedUser.Email, nil
-}
-
 func checkOriginRemoteMatches(expectedUser *config.User, expectedAlias string) error {
 	remoteURL, err := getRemoteURL("origin")
 	if err != nil {
@@ -207,7 +167,7 @@ func checkOriginRemoteMatches(expectedUser *config.User, expectedAlias string) e
 		return fmt.Errorf("origin remote is empty")
 	}
 
-	expectedURL, err := corerepo.ConvertToBgitURL(remoteURL, expectedUser.GitHubUsername)
+	expectedURL, err := corecheck.ExpectedRemoteURL(remoteURL, expectedUser)
 	if err != nil {
 		return fmt.Errorf("unsupported origin URL format: %w", err)
 	}

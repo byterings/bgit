@@ -8,10 +8,32 @@ bgit is a CLI tool that helps developers manage multiple Git identities (work, p
 
 ## Install
 
-### Linux / macOS
+### Linux
 
 ```bash
-curl -fsSL https://bgitcli.com/install.sh | bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-linux-amd64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
+```
+
+For Linux ARM devices, use `bgit-linux-arm64`.
+
+### macOS
+
+Intel Macs:
+
+```bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-amd64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
+```
+
+Apple Silicon Macs:
+
+```bash
+curl -L https://github.com/byterings/bgit/releases/latest/download/bgit-darwin-arm64 -o bgit
+chmod +x bgit
+sudo mv bgit /usr/local/bin/
 ```
 
 ### Windows
@@ -19,6 +41,22 @@ curl -fsSL https://bgitcli.com/install.sh | bash
 ```powershell
 irm https://raw.githubusercontent.com/byterings/bgit/main/install.ps1 | iex
 ```
+
+## Desktop App
+
+The desktop app does everything without a terminal: first-run setup, identities and SSH keys, cloning, repository health, and everyday Git work (changes, commit, pull, push, branches, history). It does not need the CLI.
+
+Download it from [GitHub Releases](https://github.com/byterings/bgit/releases/latest):
+
+- **Windows:** run `bgit-desktop-windows-amd64-installer.exe`
+- **macOS:** open `bgit-desktop-darwin-universal.dmg` and drag bgit to Applications
+- **Linux (Debian, Ubuntu):** `sudo apt install ./bgit-desktop-linux-amd64.deb`
+
+The first launch walks you through setup. Git must be installed.
+
+Until releases are code signed, Windows SmartScreen and macOS Gatekeeper warn before the first launch. On Windows choose "More info", then "Run anyway". On macOS open System Settings, Privacy & Security, and choose "Open Anyway".
+
+Before uninstalling the app, open Settings and choose "Remove bgit from this computer" so your repositories and Git configuration are restored.
 
 ## Quick Start
 

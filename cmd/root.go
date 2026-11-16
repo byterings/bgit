@@ -17,6 +17,11 @@ on one system without changing how you normally use git.`,
 	Version: version,
 }
 
+// Version returns the build version of this bgit binary.
+func Version() string {
+	return version
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=bgit
+GenericName=Git Identity Manager
+Comment=Manage multiple Git identities and repositories
+Exec=bgit-desktop
+Icon=bgit-desktop
+Terminal=false
+Categories=Development;RevisionControl;
+Keywords=git;github;identity;ssh;

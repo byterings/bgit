@@ -10,5 +10,12 @@
   "author": {
     "name": "ByteRings",
     "email": ""
+  },
+  "info": {
+    "companyName": "ByteRings",
+    "productName": "bgit",
+    "productVersion": "0.0.0",
+    "copyright": "Copyright ByteRings",
+    "comments": "Manage multiple Git identities and repositories"
   }
 }

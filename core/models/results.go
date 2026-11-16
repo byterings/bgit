@@ -53,6 +53,10 @@ type ConnectivityResult struct {
 	Username string
 	Fix      string
 	Message  string
+	// Authenticated is the GitHub login reported by GitHub, when known.
+	Authenticated string
+	// Detail is the last line of SSH output for failures, for diagnostics.
+	Detail string
 }
 
 // ConnectivityCheckResult wraps SSH connectivity checks.

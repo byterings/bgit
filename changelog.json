@@ -1,6 +1,73 @@
 {
   "releases": [
     {
+      "version": "0.12.0",
+      "date": "2026-11-12",
+      "phase": 10,
+      "summary": "The desktop app now works on its own: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.",
+      "features": [
+        {
+          "title": "Desktop first-run setup",
+          "description": "A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup"
+        },
+        {
+          "title": "Desktop repositories",
+          "description": "A Repositories page clones GitHub repositories with a chosen identity, adds existing local repositories, shows whether each one matches its identity, and fixes mismatches with one click"
+        },
+        {
+          "title": "Desktop Git workflow",
+          "description": "Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity"
+        },
+        {
+          "title": "CLI and desktop app share one setup",
+          "description": "The desktop app reads and writes the same configuration as the CLI. Opening it on a machine already set up with the CLI changes nothing, and changes made with either tool show up in the other"
+        },
+        {
+          "title": "Desktop workspaces",
+          "description": "Workspace folders can be added and removed in the app, and repositories found inside them are listed with the workspace identity"
+        },
+        {
+          "title": "GitHub key helper and connection test",
+          "description": "Identity details can copy the SSH key, open the GitHub key settings page, and test that GitHub accepts the key for the expected account"
+        },
+        {
+          "title": "Desktop settings and removal",
+          "description": "A Settings page shows and repairs push protection and can remove bgit from the computer, restoring repository remotes, SSH config, Git hooks, and the previous Git identity"
+        },
+        {
+          "title": "Desktop installers",
+          "description": "Releases include a Windows installer, a macOS disk image, and a Debian package for the desktop app, with optional code signing"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "Push protection without the CLI",
+          "description": "The desktop app can answer the pre-push check itself, so push protection works when only the desktop app is installed. If neither bgit nor the app can be found, the hook lets the push through with a notice instead of blocking it"
+        },
+        {
+          "title": "Hook repair after restore or app move",
+          "description": "The desktop app reinstalls the push check after a backup is restored on a new machine or after the app is moved or updated"
+        },
+        {
+          "title": "Remote alignment when adding a repository",
+          "description": "Adding or rebinding a repository in the desktop app now also rewrites its GitHub remote to the identity's SSH key, so the next push is not blocked"
+        },
+        {
+          "title": "No console windows on Windows",
+          "description": "Git and SSH commands started by the desktop app no longer open console windows"
+        },
+        {
+          "title": "macOS desktop release bundle",
+          "description": "The release workflow now builds the macOS app bundle; the previous step skipped packaging and could not produce it"
+        },
+        {
+          "title": "Desktop window on small screens",
+          "description": "The window opens maximised on small screens such as 1366x768, the repository view fills the window so its buttons stay reachable, and re-drawing a page no longer replays animations"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
       "version": "0.9.0",
       "date": "2026-06-17",
       "phase": 9,

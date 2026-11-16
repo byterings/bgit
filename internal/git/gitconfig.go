@@ -5,7 +5,14 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/byterings/bgit/internal/platform"
 )
+
+// gitCommand builds a git command with the platform process settings applied.
+func gitCommand(args ...string) *exec.Cmd {
+	return platform.PrepareCommand(exec.Command("git", args...))
+}
 
 // SetGlobalUser sets the global Git user name and email
 func SetGlobalUser(name, email string) error {
@@ -76,7 +83,7 @@ func GetUserForRepo(repoPath string) (name, email string, err error) {
 
 // runGitConfig runs git config --global to set a value
 func runGitConfig(key, value string) error {
-	cmd := exec.Command("git", "config", "--global", key, value)
+	cmd := gitCommand("config", "--global", key, value)
 	setStableCommandDir(cmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -86,7 +93,7 @@ func runGitConfig(key, value string) error {
 }
 
 func runGitConfigInRepo(repoPath, scope, key, value string) error {
-	cmd := exec.Command("git", "-C", repoPath, "config", scope, key, value)
+	cmd := gitCommand("-C", repoPath, "config", scope, key, value)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git config failed: %s: %w", string(output), err)
@@ -95,7 +102,7 @@ func runGitConfigInRepo(repoPath, scope, key, value string) error {
 }
 
 func unsetGitConfigInRepo(repoPath, key string) error {
-	cmd := exec.Command("git", "-C", repoPath, "config", "--local", "--unset", key)
+	cmd := gitCommand("-C", repoPath, "config", "--local", "--unset", key)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 5 {
@@ -111,7 +118,7 @@ func unsetGitConfigInRepo(repoPath, key string) error {
 
 // getGitConfig gets a git config value
 func getGitConfig(key string) (string, error) {
-	cmd := exec.Command("git", "config", "--global", "--get", key)
+	cmd := gitCommand("config", "--global", "--get", key)
 	setStableCommandDir(cmd)
 	output, err := cmd.Output()
 	if err != nil {
@@ -125,7 +132,7 @@ func getGitConfig(key string) (string, error) {
 }
 
 func getGitConfigInRepo(repoPath, key string) (string, error) {
-	cmd := exec.Command("git", "-C", repoPath, "config", "--get", key)
+	cmd := gitCommand("-C", repoPath, "config", "--get", key)
 	output, err := cmd.Output()
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok && exitError.ExitCode() == 1 {
@@ -138,7 +145,7 @@ func getGitConfigInRepo(repoPath, key string) (string, error) {
 
 // IsGitInstalled checks if git is installed
 func IsGitInstalled() bool {
-	cmd := exec.Command("git", "--version")
+	cmd := gitCommand("--version")
 	setStableCommandDir(cmd)
 	return cmd.Run() == nil
 }
@@ -152,4 +159,33 @@ func setStableCommandDir(cmd *exec.Cmd) {
 		}
 	}
 	cmd.Dir = string(os.PathSeparator)
+}
+
+// GlobalCommand builds a git command that does not depend on the process
+// working directory. Desktop processes can start with a missing or unrelated
+// working directory, so global Git commands always run from a stable one.
+func GlobalCommand(args ...string) *exec.Cmd {
+	cmd := gitCommand(args...)
+	setStableCommandDir(cmd)
+	return cmd
+}
+
+// GetRemoteURL returns the URL of a remote in the given repository.
+func GetRemoteURL(repoPath, remote string) (string, error) {
+	cmd := gitCommand("-C", repoPath, "remote", "get-url", remote)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+// SetRemoteURL updates the URL of a remote in the given repository.
+func SetRemoteURL(repoPath, remote, url string) error {
+	cmd := gitCommand("-C", repoPath, "remote", "set-url", remote, url)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git remote set-url failed: %s: %w", strings.TrimSpace(string(output)), err)
+	}
+	return nil
 }

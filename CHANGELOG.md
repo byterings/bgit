@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-12 (Phase 10)
+
+The desktop app now works on its own: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.
+
+### Added
+- **Desktop first-run setup** - A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup
+- **Desktop repositories** - A Repositories page clones GitHub repositories with a chosen identity, adds existing local repositories, shows whether each one matches its identity, and fixes mismatches with one click
+- **Desktop Git workflow** - Each repository has a view for changed files and diffs, commit, discard, branches, history, and fetch, pull, and push, always using the repository's bgit identity
+- **CLI and desktop app share one setup** - The desktop app reads and writes the same configuration as the CLI. Opening it on a machine already set up with the CLI changes nothing, and changes made with either tool show up in the other
+- **Desktop workspaces** - Workspace folders can be added and removed in the app, and repositories found inside them are listed with the workspace identity
+- **GitHub key helper and connection test** - Identity details can copy the SSH key, open the GitHub key settings page, and test that GitHub accepts the key for the expected account
+- **Desktop settings and removal** - A Settings page shows and repairs push protection and can remove bgit from the computer, restoring repository remotes, SSH config, Git hooks, and the previous Git identity
+- **Desktop installers** - Releases include a Windows installer, a macOS disk image, and a Debian package for the desktop app, with optional code signing
+
+### Fixed
+- **Push protection without the CLI** - The desktop app can answer the pre-push check itself, so push protection works when only the desktop app is installed. If neither bgit nor the app can be found, the hook lets the push through with a notice instead of blocking it
+- **Hook repair after restore or app move** - The desktop app reinstalls the push check after a backup is restored on a new machine or after the app is moved or updated
+- **Remote alignment when adding a repository** - Adding or rebinding a repository in the desktop app now also rewrites its GitHub remote to the identity's SSH key, so the next push is not blocked
+- **No console windows on Windows** - Git and SSH commands started by the desktop app no longer open console windows
+- **macOS desktop release bundle** - The release workflow now builds the macOS app bundle; the previous step skipped packaging and could not produce it
+- **Desktop window on small screens** - The window opens maximised on small screens such as 1366x768, the repository view fills the window so its buttons stay reachable, and re-drawing a page no longer replays animations
+
 ## [0.9.0] - 2026-06-17 (Phase 9)
 
 Milestone release completing desktop repository mapping, identity detection, UI polish, structured navigation, and repository-local Git identity cleanup across CLI and desktop flows.
@@ -183,3 +205,4 @@ Initial release with core identity management features.
 - **Configuration sync** - Validate and sync bgit configuration (`bgit sync`)
 - **Safe uninstall** - Safely uninstall bgit and restore all repositories (`bgit uninstall`)
 - **Cross-platform support** - Works on Linux, macOS, and Windows
+

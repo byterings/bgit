@@ -165,13 +165,31 @@ jobs:
         shell: bash
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      # NSIS ships on the GitHub Windows runner image but is not on PATH.
+      # Chocolatey is only a fallback because its community feed
+      # intermittently fails with 5xx errors.
       - name: Install NSIS
         shell: bash
         run: |
-          if ! command -v makensis >/dev/null 2>&1; then
-            choco install nsis -y --no-progress
-            echo "C:\\Program Files (x86)\\NSIS" >> "$GITHUB_PATH"
+          if command -v makensis >/dev/null 2>&1; then
+            exit 0
           fi
+          if [ -x "/c/Program Files (x86)/NSIS/makensis.exe" ]; then
+            echo "C:\\Program Files (x86)\\NSIS" >> "$GITHUB_PATH"
+            exit 0
+          fi
+          for attempt in 1 2 3; do
+            if choco install nsis -y --no-progress; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "choco install nsis failed after 3 attempts" >&2
+              exit 1
+            fi
+            echo "choco install nsis failed (attempt $attempt), retrying in 30s..."
+            sleep 30
+          done
+          echo "C:\\Program Files (x86)\\NSIS" >> "$GITHUB_PATH"
 
       - name: Set product version
         shell: bash

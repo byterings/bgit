@@ -414,6 +414,22 @@ export namespace main {
 	        this.fix = source["fix"];
 	    }
 	}
+	export class DeleteBranchRequest {
+	    path: string;
+	    name: string;
+	    force: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteBranchRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.name = source["name"];
+	        this.force = source["force"];
+	    }
+	}
 	export class DeleteIdentityRequest {
 	    alias: string;
 	    deleteKeys: boolean;
@@ -1118,6 +1134,22 @@ export namespace models {
 	        this.kind = source["kind"];
 	        this.staged = source["staged"];
 	        this.unstaged = source["unstaged"];
+	    }
+	}
+	export class GitRemote {
+	    name: string;
+	    fetchUrl: string;
+	    pushUrl: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GitRemote(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.fetchUrl = source["fetchUrl"];
+	        this.pushUrl = source["pushUrl"];
 	    }
 	}
 	export class GitStatus {

@@ -35,6 +35,8 @@ export function CommitChanges(arg1:main.CommitChangesRequest):Promise<main.GitAc
 
 export function CreateBranch(arg1:main.BranchRequest):Promise<main.GitActionResult>;
 
+export function DeleteBranch(arg1:main.DeleteBranchRequest):Promise<main.GitActionResult>;
+
 export function DeleteIdentity(arg1:main.DeleteIdentityRequest):Promise<main.IdentityActionResult>;
 
 export function DetectIdentity(arg1:main.IdentityDetectionRequest):Promise<main.IdentityDetectionResult>;
@@ -74,6 +76,8 @@ export function ImportBackup(arg1:main.BackupImportRequest):Promise<main.BackupA
 export function ListBranches(arg1:string):Promise<Array<models.GitBranch>>;
 
 export function ListIdentities():Promise<Array<main.IdentityView>>;
+
+export function ListRemotes(arg1:string):Promise<Array<models.GitRemote>>;
 
 export function ListRepositories():Promise<main.RepositoriesResult>;
 

@@ -1,0 +1,726 @@
+/* Shared components: badges, avatars, cards, menus, dialogs, toasts,
+   tooltips, empty and loading states, tabs, banners. */
+
+/* ---------- Badges and chips ---------- */
+.badge {
+  display: inline-flex;
+  flex: none;
+  gap: 5px;
+  align-items: center;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  padding: 0 8px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge.is-success {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+.badge.is-warning {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+.badge.is-danger {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+.badge.is-info {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+.badge.is-accent {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-3);
+}
+.dot.is-success {
+  background: var(--success);
+}
+.dot.is-warning {
+  background: var(--warning);
+}
+.dot.is-danger {
+  background: var(--danger);
+}
+.dot.is-accent {
+  background: var(--accent);
+}
+
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar.xs {
+  width: 18px;
+  height: 18px;
+  font-size: 8px;
+}
+.avatar.sm {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+}
+.avatar.lg {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+.avatar.xl {
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+/* Identity chip: avatar plus alias, used wherever an identity is referenced. */
+.chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  padding: 0 9px 0 3px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+}
+.chip.plain {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.chip.is-missing {
+  padding-left: 9px;
+  color: var(--warning-text);
+}
+
+/* ---------- Surfaces ---------- */
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.card-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+}
+.card-head h2 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.card-body {
+  padding: 16px;
+}
+.card-foot {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px;
+}
+.stack {
+  display: grid;
+  gap: 16px;
+}
+.stack-sm {
+  display: grid;
+  gap: 8px;
+}
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.spread {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.divider {
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--border);
+}
+
+/* Definition rows: label on the left, value on the right. */
+.props {
+  display: grid;
+  margin: 0;
+}
+.props > div {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 0;
+}
+.props dt {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.props dd {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+}
+
+/* ---------- Banners ---------- */
+.banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px 12px;
+  color: var(--text);
+}
+.banner > .icon {
+  margin-top: 1px;
+  align-self: flex-start;
+}
+.banner .banner-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+.banner .banner-text span {
+  color: var(--text-2);
+}
+.banner.is-warning {
+  border-color: transparent;
+  background: var(--warning-soft);
+}
+.banner.is-warning > .icon,
+.banner.is-warning strong {
+  color: var(--warning-text);
+}
+.banner.is-danger {
+  border-color: transparent;
+  background: var(--danger-soft);
+}
+.banner.is-danger > .icon,
+.banner.is-danger strong {
+  color: var(--danger-text);
+}
+.banner.is-success {
+  border-color: transparent;
+  background: var(--success-soft);
+}
+.banner.is-success > .icon,
+.banner.is-success strong {
+  color: var(--success-text);
+}
+.banner.is-info {
+  border-color: transparent;
+  background: var(--info-soft);
+}
+.banner.is-info > .icon,
+.banner.is-info strong {
+  color: var(--info-text);
+}
+
+/* ---------- Tabs ---------- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  align-items: stretch;
+}
+.tab {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 36px;
+  border: 0;
+  background: none;
+  padding: 0 12px;
+  color: var(--text-2);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 110ms ease;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.active {
+  color: var(--text);
+}
+.tab.active::before {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent);
+}
+.tab .count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  padding: 0 5px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+.tab.active .count {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+/* Segmented filter: a compact set of mutually exclusive choices. */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  padding: 2px;
+}
+.segmented button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  padding: 0 10px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.segmented button:hover {
+  color: var(--text);
+}
+.segmented button.active {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.segmented .n {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+/* ---------- Popovers and menus ---------- */
+.popover {
+  position: fixed;
+  z-index: 60;
+  min-width: 200px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  animation: pop-in 110ms ease-out;
+}
+.menu {
+  display: grid;
+  gap: 1px;
+  padding: 4px;
+}
+.menu-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-height: 28px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: none;
+  padding: 4px 8px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item:hover,
+.menu-item:focus-visible,
+.menu-item.active {
+  background: var(--surface-3);
+  outline: none;
+}
+.menu-item .icon {
+  color: var(--text-2);
+}
+.menu-item .menu-label {
+  flex: 1;
+  min-width: 0;
+}
+.menu-item .menu-hint {
+  color: var(--text-3);
+  font-size: 11px;
+}
+.menu-item.danger,
+.menu-item.danger .icon {
+  color: var(--danger-text);
+}
+.menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.menu-item:disabled:hover {
+  background: none;
+}
+.menu-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}
+.menu-heading {
+  padding: 6px 8px 2px;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.menu-note {
+  border-top: 1px solid var(--border);
+  padding: 8px 10px;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ---------- Dialogs ---------- */
+dialog.dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  padding: 0;
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+}
+dialog.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  animation: pop-in 130ms ease-out;
+}
+dialog.dialog.wide {
+  width: min(600px, calc(100vw - 32px));
+}
+dialog.dialog::backdrop {
+  background: var(--overlay);
+}
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dialog-head {
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px 0;
+}
+.dialog-head h2 {
+  font-size: 15px;
+}
+.dialog-body {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 4px;
+}
+.dialog-foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 20px 18px;
+}
+.dialog-foot .dialog-foot-note {
+  flex: 1;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.dialog-error {
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  padding: 8px 10px;
+  color: var(--danger-text);
+}
+
+/* ---------- Toasts ---------- */
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 80;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 10px 10px 10px 12px;
+  box-shadow: var(--shadow-pop);
+  animation: fade-in 140ms ease-out;
+  pointer-events: auto;
+}
+.toast > .icon {
+  margin-top: 1px;
+  color: var(--success-text);
+}
+.toast.is-warning > .icon {
+  color: var(--warning-text);
+}
+.toast.is-danger > .icon {
+  color: var(--danger-text);
+}
+.toast-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  user-select: text;
+}
+.toast-text span {
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Tooltips ---------- */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  z-index: 70;
+  width: max-content;
+  max-width: 260px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-s);
+  background: var(--surface-3);
+  padding: 3px 7px;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 90ms ease 0ms;
+  pointer-events: none;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transition-delay: 380ms;
+}
+/* After a click the tooltip stays away until the pointer leaves. */
+[data-tip].tip-off::after {
+  display: none;
+}
+[data-tip][data-tip-align="end"]::after {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+[data-tip][data-tip-align="start"]::after {
+  left: 0;
+  transform: none;
+}
+[data-tip][data-tip-pos="top"]::after {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* ---------- Empty and loading states ---------- */
+.empty {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+.empty .empty-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.empty h2 {
+  font-size: 14px;
+}
+.empty p {
+  max-width: 420px;
+}
+.empty .cluster {
+  justify-content: center;
+  margin-top: 10px;
+}
+.empty.compact {
+  padding: 24px 16px;
+}
+.skeleton {
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr 0.6fr;
+  gap: 16px;
+  align-items: center;
+  height: 48px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+}
+.skeleton-row .skeleton {
+  height: 10px;
+}
+.loading-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-2);
+}
+
+/* ---------- Status letters for changed files ---------- */
+.file-status {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+.file-status.added,
+.file-status.untracked {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+.file-status.deleted,
+.file-status.conflicted {
+  background: var(--danger-soft);
+  color: var(--danger-text);
+}
+.file-status.renamed,
+.file-status.copied {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+/* ---------- Splitters (resizable panes) ---------- */
+.splitter {
+  position: relative;
+  flex: none;
+  z-index: 2;
+  outline: none;
+  touch-action: none;
+}
+.splitter.x {
+  width: var(--splitter);
+  cursor: col-resize;
+}
+.splitter.y {
+  height: var(--splitter);
+  cursor: row-resize;
+}
+/* The visible line is thin; the grab area is the whole handle. */
+.splitter::before {
+  content: "";
+  position: absolute;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color 120ms ease;
+}
+.splitter.x::before {
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1.5px);
+  width: 3px;
+}
+.splitter.y::before {
+  right: 0;
+  left: 0;
+  top: calc(50% - 1.5px);
+  height: 3px;
+}
+.splitter:hover::before,
+.splitter.dragging::before,
+.splitter:focus-visible::before {
+  background: var(--accent);
+}
+body.resizing-x,
+body.resizing-x * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+body.resizing-y,
+body.resizing-y * {
+  cursor: row-resize !important;
+  user-select: none !important;
+}

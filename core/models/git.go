@@ -112,3 +112,10 @@ type GitSyncResult struct {
 	// SetUpstream is true when a push published the branch for the first time.
 	SetUpstream bool `json:"setUpstream"`
 }
+
+// GitRemote is one configured remote of a repository.
+type GitRemote struct {
+	Name     string `json:"name"`
+	FetchURL string `json:"fetchUrl"`
+	PushURL  string `json:"pushUrl"`
+}

@@ -952,7 +952,7 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 		return nil, false, section
 	}
 
-	section.Checks = append(section.Checks, doctorPass("Config file exists"))
+	section.Checks = append(section.Checks, doctorPass("Configuration file exists"))
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -960,11 +960,11 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 		return nil, true, section
 	}
 
-	section.Checks = append(section.Checks, doctorPass("Config file valid"))
+	section.Checks = append(section.Checks, doctorPass("Configuration file is valid"))
 	if len(cfg.Users) == 0 {
 		section.Checks = append(section.Checks, doctorWarn("No identities configured", "Add an identity on the Identities page"))
 	} else {
-		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("%d identity(s) configured", len(cfg.Users))))
+		section.Checks = append(section.Checks, doctorPass(countOf(len(cfg.Users), "identity", "identities")+" configured"))
 	}
 
 	if cfg.ActiveUser == "" {
@@ -972,7 +972,7 @@ func desktopConfigChecks() (*config.Config, bool, DoctorSection) {
 	} else if cfg.FindUserByAlias(cfg.ActiveUser) == nil {
 		section.Checks = append(section.Checks, doctorFail(fmt.Sprintf("Active identity '%s' not found in config", cfg.ActiveUser), ""))
 	} else {
-		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("Active identity: %s", cfg.ActiveUser)))
+		section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("Default identity: %s", cfg.ActiveUser)))
 	}
 
 	return cfg, true, section
@@ -1068,7 +1068,7 @@ func desktopSSHAgentChecks() DoctorSection {
 		section.Checks = append(section.Checks, doctorWarn("No keys loaded in SSH agent", "Run: ssh-add ~/.ssh/bgit_*"))
 		return section
 	}
-	section.Checks = append(section.Checks, doctorPass(fmt.Sprintf("%d key(s) loaded in SSH agent", len(strings.Split(trimmed, "\n")))))
+	section.Checks = append(section.Checks, doctorPass(countOf(len(strings.Split(trimmed, "\n")), "key", "keys")+" loaded in SSH agent"))
 	return section
 }
 

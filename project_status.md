@@ -80,6 +80,16 @@ Recent desktop UI polish update:
 - Panels, rows, controls, and toasts now use subtle transitions to reduce abrupt visual updates.
 - Review fixes added one consistent inline SVG icon set, copy buttons for long values, stronger active identity highlighting, generic copied feedback, and scroll-position preservation during dashboard updates.
 
+Desktop redesign (R-033), which replaces the sidebar layout described in the older notes below:
+
+- Navigation is a top bar: bgit mark, Dashboard, Repositories, Identities, Workspaces, Doctor, a repository search box, the push protection status, session activity, the default identity switcher, and Settings. There is no sidebar.
+- Dark theme by default, with Light and System choices in Settings. The choice is stored in the app's local storage, not in the bgit configuration.
+- An open repository has its own header (branch menu, sync status, Fetch, Pull, Push) and tabs: Changes (file list, diff with syntax colours, commit panel), History, Branches, Remotes, Identity.
+- Identities is a list with a detail view (Git configuration, GitHub connection, SSH key, repositories). Switching the default identity in the top bar states that bound repositories and workspaces keep their identity.
+- Doctor groups checks into areas and says why each area matters. Settings has General, Appearance, Push protection, Backup & Restore, and Advanced sections.
+- Refinement (R-034): in the Changes tab the file list and commit area share one sidebar whose width (and the commit area's height) can be dragged; the sidebar collapses to a narrow rail (Ctrl/Cmd+B) that keeps the selected-file count and a commit button. The header shows "Commits as <identity> · Bound/Workspace/From remote/Default", which opens a card explaining why that identity applies and how it relates to the default identity; the top-bar switcher is labelled "Default". Tabs that do not fit the window move into a "More" menu.
+- Not in the app because the backend has no support for them, and no placeholder controls were added: creating a new repository, merging branches from the app, adding or editing remotes, a commit graph, side-by-side diffs, staging individual lines, and editing an existing workspace.
+
 Recent desktop navigation update:
 
 - Desktop UI is organized into a sticky sidebar shell with dedicated Dashboard, Identities, Repository Bindings, Backup & Restore, and Doctor pages.
@@ -1301,6 +1311,170 @@ Validation:
 - The `.deb` script was run locally with a stand-in binary and the package metadata and contents were inspected.
 - The workflow passes `actionlint`.
 - Not verified: the workflow has not run on GitHub, so the Windows installer, the macOS disk image, and both signing paths are untested. No `.rpm` or AppImage is produced.
+
+---
+
+### R-033
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/index.html
+- desktop/frontend/dist/css/tokens.css
+- desktop/frontend/dist/css/base.css
+- desktop/frontend/dist/css/components.css
+- desktop/frontend/dist/css/shell.css
+- desktop/frontend/dist/css/pages.css
+- desktop/frontend/dist/js/ui.js
+- desktop/frontend/dist/js/core.js
+- desktop/frontend/dist/js/shell.js
+- desktop/frontend/dist/js/highlight.js
+- desktop/frontend/dist/js/dashboard.js
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/js/identities.js
+- desktop/frontend/dist/js/workspaces.js
+- desktop/frontend/dist/js/doctor.js
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/js/onboarding.js
+- desktop/frontend/dist/app.css (removed)
+- desktop/frontend/wailsjs/go/main/App.d.ts
+- desktop/frontend/wailsjs/go/main/App.js
+- desktop/frontend/wailsjs/go/models.ts
+- desktop/app.go
+- desktop/backend.go
+- desktop/gitclient.go
+- desktop/models.go
+- desktop/main.go
+- core/gitops/remotes.go
+- core/gitops/run.go
+- core/gitops/gitops_test.go
+- core/models/git.go
+- desktop/uitest/lib.js
+- desktop/uitest/client.test.js
+- desktop/uitest/dashboard.test.js
+- desktop/uitest/identities.test.js
+- desktop/uitest/layout.test.js
+- desktop/uitest/repos.test.js
+- desktop/uitest/settings.test.js
+- desktop/uitest/wizard.test.js
+- changelog.json
+- CHANGELOG.md
+- README.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- The desktop frontend was rewritten as one design system: colour, spacing, and type tokens in `css/tokens.css` (dark by default, light override), shared controls in `css/base.css` and `css/components.css`, and one file per screen under `js/`.
+- Navigation moved from a sidebar to a top bar with repository search (Ctrl/Cmd+K), push protection status, session activity, the default identity switcher, and Settings.
+- Repository workspace: header with branch menu and Fetch, Pull, Push; Changes tab with file list, syntax-coloured diff, and commit panel showing who the commit will be recorded as; History, Branches, Remotes, and Identity tabs.
+- Identity manager with list and detail view; Workspaces as cards listing their repositories; Doctor grouped into areas with the reason each matters; Settings split into sections; setup guide with a step indicator. All earlier flows are kept: clone, add existing, fix, change identity, remove, backup export and restore, push protection repair, removal.
+- Dialogs, menus, context menus, tooltips, notifications, empty states, and loading states are shared components. A dialog cannot be dismissed while its action is still running.
+- Keyboard: Ctrl/Cmd+K search, Ctrl/Cmd+1-5 navigation, Ctrl/Cmd+, settings, Ctrl/Cmd+Enter commit, / to filter the repository list, Esc to close.
+- Two small backend additions the new screens needed, both read from or delegated to Git: `ListRemotes` (Remotes tab) and `DeleteBranch` (Branches tab). Deleting a branch whose commits exist nowhere else is refused first and needs a second, explicit confirmation.
+- Doctor messages from the desktop backend now read "2 identities configured" instead of "2 identity(s) configured". CLI output is unchanged.
+- The window background is the dark theme colour, so the window does not flash white while loading.
+- UI tests were rewritten for the new layout and extended: seven scenarios cover setup, identities, the repository list, the repository workspace (commit, discard, push, history, branches, remotes, fetch, pull, conflict, fix and push), dashboard and Doctor, settings (workspaces, push protection, backup and restore, removal), and layout (window sizes, themes, shortcuts, outside changes).
+
+Why:
+
+- The earlier screens worked but were built one at a time and did not look or behave like one product. The redesign makes the app usable without Git or CLI knowledge while keeping everything it could already do.
+
+Validation:
+
+- `make test`, `make test-desktop`, `make test-integration`, `make test-coexistence`, and `make test-ui` (7 scenarios) pass.
+- `go vet` passes for Linux, Windows, and macOS targets of the desktop package.
+- No file under `cmd/` or `internal/` changed, and the CLI does not import `core/gitops`, so CLI behaviour and output are unchanged.
+- The built app was opened on a throwaway home on Linux (WebKitGTK 2.52) and the dashboard checked; the repository and identities screens were checked in the same web engine through the dev harness.
+- Not verified: Windows (WebView2) and macOS (WKWebView) rendering, and clicking through the built app window by hand; interaction is covered by the headless Chrome tests against the real backend.
+
+### R-034
+
+- Status: done
+
+Files Changed:
+
+- desktop/frontend/dist/css/tokens.css
+- desktop/frontend/dist/css/components.css
+- desktop/frontend/dist/css/shell.css
+- desktop/frontend/dist/css/pages.css
+- desktop/frontend/dist/js/ui.js
+- desktop/frontend/dist/js/core.js
+- desktop/frontend/dist/js/shell.js
+- desktop/frontend/dist/js/dashboard.js
+- desktop/frontend/dist/js/repositories.js
+- desktop/frontend/dist/js/repository.js
+- desktop/frontend/dist/js/settings.js
+- desktop/frontend/dist/js/workspaces.js
+- desktop/uitest/lib.js
+- desktop/uitest/layout.test.js
+- README.md
+- changelog.json
+- CHANGELOG.md
+- context.md
+- project_status.md
+- roadmap.md
+
+What Changed:
+
+- Repository workspace, Changes tab: the file list and the commit area are one sidebar, so the diff gets the rest of the width at every window size. A splitter sets the sidebar width and another sets the commit area height (drag, arrow keys, double-click to reset; remembered in local storage). The sidebar collapses to a rail (button or Ctrl/Cmd+B) that shows how many files are selected and opens the commit area at the summary.
+- File list: arrow keys move the selection and Space includes or leaves out a file; a file left out of the commit is shown struck through and dimmed. The commit area is flat (no box inside a box), with "Commit to <branch>", who the commit is recorded as, summary with a length counter, description, and the commit button.
+- Diff: the changed characters inside a replaced line are marked, long lines can be wrapped (remembered), the header steps to the previous or next file, binary files get their own message, and hunk headers and line numbers are easier to read. History has resizable commit list and file list columns.
+- Header: the sync state is always visible as a coloured status (up to date, n to push, n to pull, not published, no remote); Fetch, Pull, and Push keep their counts and become icon buttons in narrow windows; Pull is outlined when commits are waiting.
+- Identity: the header shows "Commits as <identity>" with where it comes from (Bound, Workspace, From remote, Default). Clicking it opens a card with the name and email on commits, the GitHub account, why this identity applies, whether the default identity applies here, any mismatch with a Fix button, and Change identity. The top-bar switcher is labelled "Default" and, inside a repository, marks that repository's identity. The Identity tab lists the default identity next to the repository's own. Workspaces explains the order bgit uses to pick an identity (bound repository, workspace, remote address, default), matching `core/check.ResolveExpected`.
+- Navigation: tabs that do not fit move into a "More" menu, which is marked when the open page or a warning is inside it.
+- Consistency: secondary and tertiary text meet 4.5:1 contrast on the app's surfaces in both themes; Settings and Workspaces use the full page width like the other screens; the backup explanation is an intro line instead of a separate card; the dashboard has a Health card (push protection and the last Doctor result).
+- States: a failed repository list load shows the error with "Try again" on the dashboard and the Repositories page; a repository that cannot be read offers "Try again"; a clean working tree with unpushed commits offers Push; loading lists share one skeleton.
+
+Why:
+
+- The redesign's direction was kept; this pass makes the most-used screen give the diff more room, makes the identity that applies to a repository impossible to confuse with the default identity, and keeps every control usable in smaller windows.
+
+Validation:
+
+- `make test`, `make test-desktop`, `make test-integration`, `make test-coexistence`, and `make test-ui` (7 scenarios) pass.
+- The layout scenario now checks 1366x768, 1280x720, 1024x768, and 960x640: the repository page fits without page scrolling, the commit button is in view, nothing scrolls sideways, no two controls in the top bar or repository header overlap, every main area is reachable, and every screen fits. It also checks the More menu at 860 wide, dragging and keyboard use of the splitters, collapsing the sidebar, keyboard file navigation, the wrap toggle, and the identity card.
+- The same geometry was measured in WebKitGTK 2.52 (the Linux app's engine) at 1366x768, 1024x768, 960x640, and 860x600: no overlaps, no sideways scrolling, the commit button inside the window, and More only at 860.
+- No backend or CLI file changed.
+- Not verified: Windows (WebView2) and macOS (WKWebView) rendering.
+
+### R-035
+
+- Status: done
+
+Files Changed:
+
+- README.md
+- .github/workflows/release.yml
+- version.txt
+- project_status.md
+- roadmap.md
+- bgit-website (separate repository): app/docs/page.tsx, app/lib/docs.ts, app/components/QuickInstallSection.tsx, scripts/fetch-release-data.js
+
+What Changed:
+
+- README: the Install section covers the desktop app and the CLI. A table links every download; each system has numbered steps for installing, the first-launch warning on unsigned releases (Windows SmartScreen, macOS Gatekeeper), updating, and uninstalling. Linux covers the `.deb` (Ubuntu 22.04+, Debian 12+) and other distributions (GTK 3 and WebKitGTK 4.1 plus the program file). It also covers installing Git first, the first launch, and removing bgit completely.
+- Release notes generated by the release workflow now carry the same short per-system instructions and link to the README guide.
+- Website: the Installation docs section starts with the desktop app (download cards, per-system steps, first launch) followed by the CLI; the homepage quick start has a "Prefer an app?" row with direct downloads; the uninstall FAQ covers the app; `llms.txt` lists the desktop downloads.
+- `version.txt` is 0.12.0, matching the newest changelog entry. It was still 0.9.0, so the release workflow would not have published a release with the desktop downloads, and the "latest" download links would not resolve.
+
+Why:
+
+- The desktop app had installers but only three lines of instructions, and none for other Linux distributions, updating, or the warnings shown for unsigned releases.
+
+Facts the instructions rely on:
+
+- Windows installer: Wails NSIS template, installs for all users (admin) into `C:\Program Files\ByteRings\bgit`, adds Start menu and desktop shortcuts, registers an uninstaller, and runs the WebView2 bootstrapper when WebView2 is missing.
+- System minimums come from Go 1.24 (Windows 10, macOS 11) and the `.deb` dependency on `libwebkit2gtk-4.1-0` (Ubuntu 22.04, Debian 12).
+
+Validation:
+
+- The website builds (`next build`, static export). The new sections were checked in Chrome at desktop and phone widths and in both site themes; download links point at `releases/latest/download/<file>` for the files the release workflow uploads.
+- The release workflow YAML parses.
+- Not verified: the download links resolve only after a release containing the desktop files is published (the latest published release is v0.9.0, which has none).
 
 ---
 

@@ -2,10 +2,18 @@
   "releases": [
     {
       "version": "0.12.0",
-      "date": "2026-11-12",
+      "date": "2026-11-13",
       "phase": 10,
-      "summary": "The desktop app now works on its own: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.",
+      "summary": "The desktop app now works on its own, with a redesigned interface: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.",
       "features": [
+        {
+          "title": "Redesigned desktop interface",
+          "description": "The desktop app has a new look built as one design system: top navigation with repository search, a dark theme by default with a light option, a three-part repository view (files, diff, commit) with History, Branches, Remotes, and Identity tabs, an identity manager, a diagnostic Doctor, and keyboard shortcuts"
+        },
+        {
+          "title": "Desktop interface refinements",
+          "description": "The repository view gives the diff more room with a resizable, collapsible file list and commit area, marks the changed part of each line, and always shows the sync state; the header says which identity commits in the repository and why; navigation fits smaller windows with a More menu"
+        },
         {
           "title": "Desktop first-run setup",
           "description": "A setup guide checks for Git, turns on push protection, adds the first identity with an SSH key, and helps add the key to GitHub, or restores everything from a .bgit backup"
@@ -37,6 +45,10 @@
         {
           "title": "Desktop installers",
           "description": "Releases include a Windows installer, a macOS disk image, and a Debian package for the desktop app, with optional code signing"
+        },
+        {
+          "title": "Remotes and branch deletion in the desktop app",
+          "description": "A repository shows its remotes and whether origin is routed through the right identity, and branches can be deleted, with a second confirmation before deleting a branch whose commits exist nowhere else"
         }
       ],
       "fixes": [

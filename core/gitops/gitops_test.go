@@ -676,3 +676,69 @@ func TestResolvedConflictCanBeCommitted(t *testing.T) {
 		t.Fatalf("push after merge failed: %v", err)
 	}
 }
+
+func TestListRemotes(t *testing.T) {
+	repo := newRepo(t)
+
+	remotes, err := ListRemotes(ctx, repo)
+	if err != nil || len(remotes) != 0 {
+		t.Fatalf("a repository without remotes: %+v err=%v", remotes, err)
+	}
+
+	testenv.Git(t, repo, "remote", "add", "origin", "git@github.com-work-gh:org/app.git")
+	testenv.Git(t, repo, "remote", "add", "upstream", "https://github.com/other/app.git")
+	testenv.Git(t, repo, "remote", "set-url", "--push", "upstream", "https://github.com/other/app-push.git")
+
+	remotes, err = ListRemotes(ctx, repo)
+	if err != nil || len(remotes) != 2 {
+		t.Fatalf("remotes: %+v err=%v", remotes, err)
+	}
+	if remotes[0].Name != "origin" || remotes[0].FetchURL != "git@github.com-work-gh:org/app.git" || remotes[0].PushURL != remotes[0].FetchURL {
+		t.Fatalf("origin: %+v", remotes[0])
+	}
+	if remotes[1].Name != "upstream" || remotes[1].FetchURL != "https://github.com/other/app.git" || remotes[1].PushURL != "https://github.com/other/app-push.git" {
+		t.Fatalf("upstream: %+v", remotes[1])
+	}
+}
+
+func TestDeleteBranch(t *testing.T) {
+	repo := newRepo(t)
+
+	// A branch with nothing new can be deleted without force.
+	testenv.Git(t, repo, "branch", "merged")
+	if err := DeleteBranch(ctx, repo, "merged", false); err != nil {
+		t.Fatalf("deleting a merged branch failed: %v", err)
+	}
+
+	// A branch with its own commit needs force, and says why.
+	if err := CreateBranch(ctx, repo, "feature"); err != nil {
+		t.Fatal(err)
+	}
+	testenv.WriteFile(t, repo, "feature.txt", "x\n")
+	commitAll(t, repo, "feature work")
+
+	if err := DeleteBranch(ctx, repo, "feature", false); err == nil {
+		t.Fatal("the current branch must not be deleted")
+	}
+	if err := SwitchBranch(ctx, repo, "main"); err != nil {
+		t.Fatal(err)
+	}
+	if err := DeleteBranch(ctx, repo, "feature", false); KindOf(err) != KindUnmerged {
+		t.Fatalf("expected an unmerged error, got kind=%q err=%v", KindOf(err), err)
+	}
+	if err := DeleteBranch(ctx, repo, "feature", true); err != nil {
+		t.Fatalf("forced delete failed: %v", err)
+	}
+
+	branches, _ := ListBranches(ctx, repo)
+	for _, branch := range branches {
+		if branch.Name == "feature" || branch.Name == "merged" {
+			t.Fatalf("branch %s still exists", branch.Name)
+		}
+	}
+	for _, bad := range []string{"", "-D", "missing"} {
+		if err := DeleteBranch(ctx, repo, bad, false); err == nil {
+			t.Errorf("deleting %q must fail", bad)
+		}
+	}
+}

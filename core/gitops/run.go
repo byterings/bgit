@@ -39,6 +39,7 @@ const (
 	KindNotFound   = "not_found"
 	KindNoUpstream = "no_upstream"
 	KindIdentity   = "identity"
+	KindUnmerged   = "unmerged"
 	KindTimeout    = "timeout"
 	KindUnknown    = "unknown"
 )
@@ -235,6 +236,12 @@ func classify(stdout, stderr string) *Error {
 	case strings.Contains(lower, "need to specify how to reconcile divergent branches"):
 		gitErr.Kind = KindConflict
 		gitErr.Message = "Your branch and the remote branch have both changed. Pull again to merge them."
+	case strings.Contains(lower, "is not fully merged"):
+		gitErr.Kind = KindUnmerged
+		gitErr.Message = "This branch has commits that are not on any other branch. Deleting it would lose them."
+	case strings.Contains(lower, "branch") && strings.Contains(lower, "not found"):
+		gitErr.Kind = KindNotFound
+		gitErr.Message = "That branch does not exist."
 	case strings.Contains(lower, "not a git repository"):
 		gitErr.Kind = KindNotFound
 		gitErr.Message = "This folder is not a Git repository."

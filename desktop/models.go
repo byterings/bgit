@@ -280,6 +280,13 @@ type BranchRequest struct {
 	Name string `json:"name"`
 }
 
+type DeleteBranchRequest struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
+	// Force deletes a branch whose commits are not on any other branch.
+	Force bool `json:"force"`
+}
+
 type HistoryRequest struct {
 	Path  string `json:"path"`
 	Limit int    `json:"limit"`

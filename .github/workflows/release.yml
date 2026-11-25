@@ -400,13 +400,14 @@ jobs:
 
           ### Desktop App
 
-          The desktop app works on its own; the CLI is not required.
+          The desktop app works on its own; the CLI is not required. Git must be installed. Full guide: https://github.com/byterings/bgit#install
 
-          - **Windows:** run \`bgit-desktop-windows-amd64-installer.exe\`
-          - **macOS:** open \`bgit-desktop-darwin-universal.dmg\` and drag bgit to Applications
-          - **Linux (Debian, Ubuntu):** \`sudo apt install ./bgit-desktop-linux-amd64.deb\`
+          - **Windows 10/11:** run \`bgit-desktop-windows-amd64-installer.exe\`. If "Windows protected your PC" appears, choose More info, then Run anyway. Without admin rights, use \`bgit-desktop-windows-amd64.exe\` (no installer).
+          - **macOS 11 or later (Intel and Apple Silicon):** open \`bgit-desktop-darwin-universal.dmg\` and drag bgit to Applications. If macOS says the app cannot be opened, choose Open Anyway in System Settings, Privacy & Security.
+          - **Ubuntu 22.04+, Debian 12+:** \`sudo apt install ./bgit-desktop-linux-amd64.deb\`
+          - **Other Linux:** install GTK 3 and WebKitGTK 4.1, then run \`bgit-desktop-linux-amd64\`.
 
-          Also attached: \`bgit-desktop-windows-amd64.exe\` (portable), \`bgit-desktop-darwin-universal.zip\`, and \`bgit-desktop-linux-amd64\` (binary only).
+          Also attached: \`bgit-desktop-darwin-universal.zip\` (the macOS app without a disk image).
 
           See \`changelog.json\` for full details.
           EOF

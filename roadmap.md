@@ -353,6 +353,29 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Priority: High
 - Status: done
 
+---
+
+### R-033
+
+- Title: Desktop UI/UX Redesign
+- Description: Redesign the desktop frontend as one coherent design system: top navigation instead of a sidebar, dark theme by default with a light theme, a three-part repository workspace (files, diff, commit) with History, Branches, Remotes, and Identity tabs, an identity manager, diagnostic Doctor, categorised Settings, and a redesigned setup guide. No change to CLI behaviour or to how Git, backups, or identities work
+- Priority: High
+- Status: done
+
+### R-034
+
+- Title: Desktop UI/UX Refinement
+- Description: Refine the redesigned desktop app without redesigning it: resizable and collapsible panes in the repository workspace, a diff that marks the changed part of each line and can wrap, clearer sync status, a "Commits as" identity control that explains where a repository's identity comes from and how it relates to the default identity, top navigation that overflows into a "More" menu in narrow windows, higher contrast for secondary text, fewer nested cards, retry actions on load errors, and window-size tests at 1366x768, 1280x720, 1024x768, and 960x640. No backend or CLI change
+- Priority: High
+- Status: done
+
+### R-035
+
+- Title: Desktop App Install Guide
+- Description: Explain how to install, update, and uninstall the desktop app on Windows, macOS, and Linux (Debian/Ubuntu package and other distributions), including first-launch warnings for unsigned releases, in the README, the GitHub release notes, and the website docs. Set version.txt to the release the changelog describes so the release workflow publishes the desktop downloads
+- Priority: High
+- Status: done
+
 ## Release Milestones
 
 - Note : once a milestone is reached, give a reminder to update the roadmap and release notes and to release a new version.
@@ -457,6 +480,9 @@ Release after:
 - R-030
 - R-031
 - R-032
+- R-033
+- R-034
+- R-035
 
 ---
 

@@ -118,10 +118,11 @@ jobs:
           GOAMD64: v1
           CGO_CFLAGS: -march=x86-64 -mtune=generic
           CGO_CXXFLAGS: -march=x86-64 -mtune=generic
+          CGO_LDFLAGS: -march=x86-64 -mtune=generic
         run: |
           cd desktop
           echo "Go toolchain settings:"
-          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS
+          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
           echo "C compiler:"
           cc --version | head -n 1
           echo "Linker:"
@@ -137,6 +138,8 @@ jobs:
           wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage \
             -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
             -o bgit-desktop-linux-amd64
+          echo "Built Go settings:"
+          go version -m build/bin/bgit-desktop-linux-amd64
 
       - name: Validate Linux desktop CPU baseline
         run: desktop/build/linux/validate-cpu-isa.sh desktop/build/bin/bgit-desktop-linux-amd64

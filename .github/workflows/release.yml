@@ -113,6 +113,11 @@ jobs:
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Build Linux desktop app
+        env:
+          # Keep Go and CGO output compatible with the baseline x86-64 ISA.
+          GOAMD64: v1
+          CGO_CFLAGS: -march=x86-64 -mtune=generic
+          CGO_CXXFLAGS: -march=x86-64 -mtune=generic
         run: |
           cd desktop
           wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage \

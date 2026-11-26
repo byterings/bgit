@@ -376,6 +376,15 @@ Goal: users can install the desktop app and manage identities, SSH keys, and rep
 - Priority: High
 - Status: done
 
+---
+
+### R-036
+
+- Title: Linux Desktop CPU Baseline Compatibility
+- Description: Build the Linux AMD64 desktop release for the x86-64 baseline so it can launch on older supported processors, while keeping other platform and CLI builds unchanged
+- Priority: High
+- Status: done
+
 ## Release Milestones
 
 - Note : once a milestone is reached, give a reminder to update the roadmap and release notes and to release a new version.

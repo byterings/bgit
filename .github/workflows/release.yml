@@ -57,9 +57,10 @@ jobs:
 
       - name: Build CLI binaries
         run: |
+
           VERSION=${{ needs.metadata.outputs.version }}
 
-          GOOS=linux GOARCH=amd64 GOAMD64=v1 go build \ -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \-o bgit-linux-amd64 .
+          GOOS=linux GOARCH=amd64 GOAMD64=v1 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-amd64 .
           GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
           GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
           GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .

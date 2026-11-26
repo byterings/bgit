@@ -82,7 +82,9 @@ jobs:
   build-desktop-linux:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'
-    runs-on: ubuntu-latest
+    # Pinned to the oldest supported distro so the binary links against an
+    # older glibc and keeps working on Ubuntu 22.04+ / Debian 12+.
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -116,7 +118,14 @@ jobs:
       - name: Build and validate Linux desktop release
         working-directory: desktop
         shell: bash
+        env:
+          # Force baseline x86-64 code for both Go and cgo (GTK/WebKit) parts.
+          GOAMD64: v1
+          CGO_CFLAGS: "-O2 -g -march=x86-64 -mtune=generic"
+          CGO_CXXFLAGS: "-O2 -g -march=x86-64 -mtune=generic"
         run: |
+          readelf --version | head -1
+          gcc --version | head -1
           bash scripts/validate-linux-release.sh "${{ needs.metadata.outputs.version }}"
 
       - name: Upload Linux desktop artifacts

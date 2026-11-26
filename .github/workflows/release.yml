@@ -120,6 +120,20 @@ jobs:
           CGO_CXXFLAGS: -march=x86-64 -mtune=generic
         run: |
           cd desktop
+          echo "Go toolchain settings:"
+          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS
+          echo "C compiler:"
+          cc --version | head -n 1
+          echo "Linker:"
+          ld --version | head -n 1
+          # Newer GNU linkers can identify which input object contributes an
+          # ISA requirement. Keep this diagnostic optional for older runners.
+          if ld --help 2>&1 | grep -q 'isa-level-report='; then
+            export CGO_LDFLAGS="${CGO_LDFLAGS:-} -Wl,-z,isa-level-report=all"
+            echo "Enabled linker ISA input reporting."
+          else
+            echo "Linker does not support per-input ISA reporting."
+          fi
           wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage \
             -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
             -o bgit-desktop-linux-amd64

@@ -135,8 +135,9 @@ Recent Linux desktop CPU compatibility update (R-036):
 
 - The Linux AMD64 desktop release explicitly sets Go's `GOAMD64=v1` and compiles CGO C/C++ sources with `-march=x86-64 -mtune=generic`, targeting the baseline x86-64 instruction set rather than the build runner's CPU.
 - These settings apply only to the Linux desktop workflow step; CLI, Windows, and macOS release builds are unchanged.
-- Release CI validates the built Linux executable and the executable extracted from the `.deb`; it fails unless each is a 64-bit x86-64 ELF with only the `x86-64-baseline` ISA requirement.
-- Local validation: the Linux desktop build succeeded with the baseline settings and `readelf -n` reported only `x86-64-baseline`. Launching on physical Ivy Bridge hardware was not available here. A previously installed release binary reported `x86-64-v2` and `x86-64-v3`, which explains its failure on an i5-3470; that is not evidence that the corrected release artifact has been verified on that machine.
+- Release CI validates the built Linux executable and the executable extracted from the `.deb`; it fails unless each is a 64-bit x86-64 ELF with only the `x86-64-baseline` ISA requirement. The current CI build failed this check and advertised v2 and v3 despite the Go/CGO baseline settings.
+- The Linux build step now logs Go/compiler/linker versions and enables GNU ld per-input ISA reporting when the installed linker supports it, to identify the object that contributes the higher ISA requirement.
+- Local validation: a Linux desktop build and its `.deb` passed the baseline check on this machine. This does not validate the failing GitHub Actions artifact or launch behavior on physical Ivy Bridge hardware; R-036 remains in progress until CI produces a compatible artifact and the target machine launch is confirmed.
 
 ---
 

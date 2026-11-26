@@ -79,7 +79,7 @@ jobs:
             bgit-windows-amd64.exe
             bgit-windows-arm64.exe
 
-    build-desktop-linux:
+  build-desktop-linux:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'
     runs-on: ubuntu-latest
@@ -126,7 +126,7 @@ jobs:
           path: |
             desktop/build/bin/bgit-desktop-linux-amd64
             desktop/build/bin/bgit-desktop-linux-amd64.deb
-            
+
   build-desktop-windows:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'

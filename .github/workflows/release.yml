@@ -136,6 +136,11 @@ jobs:
 
           echo "===== Compiler configuration ====="
           go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
+          echo "===== Linker ISA diagnostics ====="
+
+          export CGO_LDFLAGS="${CGO_LDFLAGS} -Wl,-z,isa-level-report=all"
+
+          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
 
           echo "===== Build ====="
           wails build \

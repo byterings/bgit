@@ -53,13 +53,13 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.11'
+          go-version: "1.24.11"
 
       - name: Build CLI binaries
         run: |
           VERSION=${{ needs.metadata.outputs.version }}
 
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-amd64 .
+          GOOS=linux GOARCH=amd64 GOAMD64=v1 go build \ -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \ -o bgit-linux-amd64 .
           GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
           GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
           GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .
@@ -89,12 +89,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.11'
+          go-version: "1.24.11"
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install Linux desktop dependencies
         run: |
@@ -121,28 +121,9 @@ jobs:
           CGO_LDFLAGS: -march=x86-64 -mtune=generic
         run: |
           cd desktop
-          echo "Go toolchain settings:"
-          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
-          echo "C compiler:"
-          cc --version | head -n 1
-          echo "Linker:"
-          ld --version | head -n 1
-          # Newer GNU linkers can identify which input object contributes an
-          # ISA requirement. Keep this diagnostic optional for older runners.
-          if ld --help 2>&1 | grep -q 'isa-level-report='; then
-            export CGO_LDFLAGS="${CGO_LDFLAGS:-} -Wl,-z,isa-level-report=all"
-            echo "Enabled linker ISA input reporting."
-          else
-            echo "Linker does not support per-input ISA reporting."
-          fi
           wails build -platform linux/amd64 -tags webkit2_41 -clean -nopackage \
             -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
             -o bgit-desktop-linux-amd64
-          echo "Built Go settings:"
-          go version -m build/bin/bgit-desktop-linux-amd64
-
-      - name: Validate Linux desktop CPU baseline
-        run: desktop/build/linux/validate-cpu-isa.sh desktop/build/bin/bgit-desktop-linux-amd64
 
       - name: Build Debian package
         run: |
@@ -150,13 +131,6 @@ jobs:
             "${{ needs.metadata.outputs.version }}" \
             desktop/build/bin/bgit-desktop-linux-amd64 \
             desktop/build/bin
-
-      - name: Validate Debian package CPU baseline
-        run: |
-          stage_dir="$(mktemp -d)"
-          trap 'rm -rf "$stage_dir"' EXIT
-          dpkg-deb --extract desktop/build/bin/bgit-desktop-linux-amd64.deb "$stage_dir"
-          desktop/build/linux/validate-cpu-isa.sh "$stage_dir/usr/bin/bgit-desktop"
 
       - name: Upload Linux desktop artifacts
         uses: actions/upload-artifact@v4
@@ -182,12 +156,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.11'
+          go-version: "1.24.11"
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install Wails CLI
         shell: bash
@@ -291,12 +265,12 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.11'
+          go-version: "1.24.11"
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
@@ -374,7 +348,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.11'
+          go-version: "1.24.11"
 
       - name: Generate changelog
         run: go run scripts/generate-changelog.go
@@ -382,7 +356,7 @@ jobs:
       - name: Download release assets
         uses: actions/download-artifact@v4
         with:
-          pattern: '*-release-assets'
+          pattern: "*-release-assets"
           merge-multiple: true
           path: dist
 

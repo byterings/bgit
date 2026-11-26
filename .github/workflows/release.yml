@@ -163,6 +163,30 @@ jobs:
             desktop/build/bin/bgit-desktop-linux-amd64 \
             desktop/build/bin
 
+      - name: Diagnose Linux binary ISA requirements
+        working-directory: desktop
+        shell: bash
+        run: |
+          echo "===== Toolchain ====="
+          go version
+          gcc --version | head -n 1
+          ld --version | head -n 1
+
+          echo "===== Build environment ====="
+          go env GOAMD64 GOARCH CGO_ENABLED
+          echo "CGO_CFLAGS=$CGO_CFLAGS"
+          echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
+          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
+
+          echo "===== Linker ISA report ====="
+          export CGO_LDFLAGS="${CGO_LDFLAGS} -Wl,-z,isa-level-report=all"
+
+          echo "===== Built executable ISA ====="
+          readelf -n build/bin/bgit-desktop-linux-amd64
+
+          echo "===== Go build metadata ====="
+          go version -m build/bin/bgit-desktop-linux-amd64
+
       - name: Validate Debian package CPU compatibility
         run: |
           mkdir -p /tmp/bgit-package-check

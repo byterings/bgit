@@ -156,12 +156,33 @@ jobs:
           echo "===== Build metadata ====="
           go version -m build/bin/bgit-desktop-linux-amd64
 
-      - name: Build Debian package
+      - name: Inspect Linux binary compatibility
+        working-directory: desktop
+        shell: bash
         run: |
-          desktop/build/linux/package-deb.sh \
-            "${{ needs.metadata.outputs.version }}" \
-            desktop/build/bin/bgit-desktop-linux-amd64 \
-            desktop/build/bin
+          BINARY="build/bin/bgit-desktop-linux-amd64"
+
+          echo "===== Compiler versions ====="
+          go version
+          gcc --version | head -n 1
+          ld --version | head -n 1
+
+          echo "===== Go architecture ====="
+          go env GOARCH GOAMD64 CGO_ENABLED
+
+          echo "===== Compiler flags ====="
+          echo "CGO_CFLAGS=$CGO_CFLAGS"
+          echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
+          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
+
+          echo "===== Binary ISA requirements ====="
+          readelf -n "$BINARY"
+
+          echo "===== ELF architecture ====="
+          file "$BINARY"
+
+          echo "===== Go build metadata ====="
+          go version -m "$BINARY"
 
       - name: Diagnose Linux binary ISA requirements
         working-directory: desktop
@@ -186,6 +207,13 @@ jobs:
 
           echo "===== Go build metadata ====="
           go version -m build/bin/bgit-desktop-linux-amd64
+
+      - name: Build Debian package
+        run: |
+          desktop/build/linux/package-deb.sh \
+            "${{ needs.metadata.outputs.version }}" \
+            desktop/build/bin/bgit-desktop-linux-amd64 \
+            desktop/build/bin
 
       - name: Validate Debian package CPU compatibility
         run: |

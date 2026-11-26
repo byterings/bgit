@@ -79,7 +79,7 @@ jobs:
             bgit-windows-amd64.exe
             bgit-windows-arm64.exe
 
-  build-desktop-linux:
+    build-desktop-linux:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'
     runs-on: ubuntu-latest
@@ -113,125 +113,11 @@ jobs:
       - name: Add Wails CLI to PATH
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Build Linux desktop app
-        working-directory: desktop
-        env:
-          GOOS: linux
-          GOARCH: amd64
-          GOAMD64: v1
-          CGO_ENABLED: 1
-          CGO_CFLAGS: "-march=x86-64 -mtune=generic"
-          CGO_CXXFLAGS: "-march=x86-64 -mtune=generic"
-          CGO_LDFLAGS: "-march=x86-64 -mtune=generic"
-        run: |
-          echo "===== Linker information ====="
-          ld --version | head -n 1
-
-          if ld --help 2>&1 | grep -q 'isa-level-report'; then
-            echo "Linker supports ISA-level reporting"
-            export CGO_LDFLAGS="$CGO_LDFLAGS -Wl,-z,isa-level-report=all"
-          else
-            echo "WARNING: Linker does not support ISA-level reporting"
-          fi
-
-          echo "===== Compiler configuration ====="
-          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
-          echo "===== Linker ISA diagnostics ====="
-
-          export CGO_LDFLAGS="${CGO_LDFLAGS} -Wl,-z,isa-level-report=all"
-
-          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
-
-          echo "===== Build ====="
-          wails build \
-            -platform linux/amd64 \
-            -tags webkit2_41 \
-            -clean \
-            -nopackage \
-            -o bgit-desktop-linux-amd64
-
-          echo "===== Final executable ISA ====="
-          readelf -n build/bin/bgit-desktop-linux-amd64
-
-          echo "===== Build metadata ====="
-          go version -m build/bin/bgit-desktop-linux-amd64
-
-      - name: Inspect Linux binary compatibility
+      - name: Build and validate Linux desktop release
         working-directory: desktop
         shell: bash
         run: |
-          BINARY="build/bin/bgit-desktop-linux-amd64"
-
-          echo "===== Compiler versions ====="
-          go version
-          gcc --version | head -n 1
-          ld --version | head -n 1
-
-          echo "===== Go architecture ====="
-          go env GOARCH GOAMD64 CGO_ENABLED
-
-          echo "===== Compiler flags ====="
-          echo "CGO_CFLAGS=$CGO_CFLAGS"
-          echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
-          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
-
-          echo "===== Binary ISA requirements ====="
-          readelf -n "$BINARY"
-
-          echo "===== ELF architecture ====="
-          file "$BINARY"
-
-          echo "===== Go build metadata ====="
-          go version -m "$BINARY"
-
-      - name: Diagnose Linux binary ISA requirements
-        working-directory: desktop
-        shell: bash
-        run: |
-          echo "===== Toolchain ====="
-          go version
-          gcc --version | head -n 1
-          ld --version | head -n 1
-
-          echo "===== Build environment ====="
-          go env GOAMD64 GOARCH CGO_ENABLED
-          echo "CGO_CFLAGS=$CGO_CFLAGS"
-          echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
-          echo "CGO_LDFLAGS=$CGO_LDFLAGS"
-
-          echo "===== Linker ISA report ====="
-          export CGO_LDFLAGS="${CGO_LDFLAGS} -Wl,-z,isa-level-report=all"
-
-          echo "===== Built executable ISA ====="
-          readelf -n build/bin/bgit-desktop-linux-amd64
-
-          echo "===== Go build metadata ====="
-          go version -m build/bin/bgit-desktop-linux-amd64
-
-      - name: Build Debian package
-        run: |
-          desktop/build/linux/package-deb.sh \
-            "${{ needs.metadata.outputs.version }}" \
-            desktop/build/bin/bgit-desktop-linux-amd64 \
-            desktop/build/bin
-
-      - name: Validate Debian package CPU compatibility
-        run: |
-          mkdir -p /tmp/bgit-package-check
-
-          dpkg-deb -x desktop/build/bin/bgit-desktop-linux-amd64.deb \
-            /tmp/bgit-package-check
-
-          readelf -n /tmp/bgit-package-check/usr/bin/bgit-desktop \
-            | grep -i "ISA needed"
-
-          if readelf -n /tmp/bgit-package-check/usr/bin/bgit-desktop \
-            | grep -q "x86-64-v[23]"; then
-            echo "ERROR: Debian package contains an incompatible executable"
-            exit 1
-          fi
-
-          echo "SUCCESS: Debian package meets x86-64 baseline"
+          bash scripts/validate-linux-release.sh "${{ needs.metadata.outputs.version }}"
 
       - name: Upload Linux desktop artifacts
         uses: actions/upload-artifact@v4
@@ -240,7 +126,7 @@ jobs:
           path: |
             desktop/build/bin/bgit-desktop-linux-amd64
             desktop/build/bin/bgit-desktop-linux-amd64.deb
-
+            
   build-desktop-windows:
     needs: metadata
     if: needs.metadata.outputs.exists == 'false'

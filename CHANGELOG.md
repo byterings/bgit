@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.3] - TBD (Phase 10)
+
+Improves Linux desktop compatibility on older AMD64 computers and makes the Linux desktop downloads work across the same broad CPU baseline.
+
+### Added
+- **Linux desktop support for older CPUs** - The Linux AMD64 desktop app is built for the baseline x86-64 instruction set, so older Intel and AMD processors can run it. The Debian package and standalone download both use this compatible binary
+
+### Fixed
+- **More reliable Linux desktop installation on older systems** - The desktop binary no longer requires newer CPU instruction sets than the x86-64 baseline, avoiding the CPU ISA level error during launch after installation
+
+## [0.12.2] - 2026-11-26 (Phase 10)
+
+A desktop app icon refresh and a more reliable Windows installer build.
+
+### Added
+- **Refreshed desktop app icon** - Updated the desktop app and Linux package icons with the current bgit artwork
+
+### Fixed
+- **More reliable Windows installer builds** - The release workflow now checks for the runner's preinstalled NSIS before installing it, retries transient Chocolatey failures, and reports a clear error if installation still fails
+
+## [0.12.1] - 2026-11-25 (Phase 10)
+
+A redesigned desktop experience with repository remotes and branch management, plus clearer installation instructions across platforms.
+
+### Added
+- **Redesigned desktop interface** - Reworked the desktop app around top navigation, a dark theme with a light option, a dedicated repository workspace, clearer identity details, and responsive layouts
+- **Repository remote and branch controls** - Repository views now list remotes and show whether origin is routed through the expected identity; branches can be deleted with extra confirmation when commits are not published elsewhere
+- **Desktop installation guide** - README instructions now explain desktop installation, updates, and removal for Windows, macOS, Debian/Ubuntu, and other Linux distributions
+
 ## [0.12.0] - 2026-11-13 (Phase 10)
 
 The desktop app now works on its own, with a redesigned interface: first-run setup, repositories with clone and one-click fixes, workspaces, everyday Git work, and installers for Windows, macOS, and Linux. The CLI is unchanged.

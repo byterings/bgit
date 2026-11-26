@@ -124,12 +124,22 @@ jobs:
             -ldflags "-X github.com/byterings/bgit/cmd.version=${{ needs.metadata.outputs.version }}" \
             -o bgit-desktop-linux-amd64
 
+      - name: Validate Linux desktop CPU baseline
+        run: desktop/build/linux/validate-cpu-isa.sh desktop/build/bin/bgit-desktop-linux-amd64
+
       - name: Build Debian package
         run: |
           desktop/build/linux/package-deb.sh \
             "${{ needs.metadata.outputs.version }}" \
             desktop/build/bin/bgit-desktop-linux-amd64 \
             desktop/build/bin
+
+      - name: Validate Debian package CPU baseline
+        run: |
+          stage_dir="$(mktemp -d)"
+          trap 'rm -rf "$stage_dir"' EXIT
+          dpkg-deb --extract desktop/build/bin/bgit-desktop-linux-amd64.deb "$stage_dir"
+          desktop/build/linux/validate-cpu-isa.sh "$stage_dir/usr/bin/bgit-desktop"
 
       - name: Upload Linux desktop artifacts
         uses: actions/upload-artifact@v4

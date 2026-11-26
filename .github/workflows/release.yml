@@ -55,16 +55,39 @@ jobs:
         with:
           go-version: "1.24.11"
 
-      - name: Build CLI binaries
+            - name: Build CLI binaries
         run: |
           VERSION=${{ needs.metadata.outputs.version }}
 
-          GOOS=linux GOARCH=amd64 GOAMD64=v1 go build \ -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \ -o bgit-linux-amd64 .
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-linux-arm64 .
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-amd64 .
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-darwin-arm64 .
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-amd64.exe .
-          GOOS=windows GOARCH=arm64 go build -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" -o bgit-windows-arm64.exe .
+          # Linux AMD64: x86-64 baseline compatibility
+          GOOS=linux GOARCH=amd64 GOAMD64=v1 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-linux-amd64 .
+
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-linux-arm64 .
+
+          # macOS Intel
+          GOOS=darwin GOARCH=amd64 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-darwin-amd64 .
+
+          # macOS Apple Silicon
+          GOOS=darwin GOARCH=arm64 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-darwin-arm64 .
+
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-windows-amd64.exe .
+
+          # Windows ARM64
+          GOOS=windows GOARCH=arm64 go build \
+            -ldflags "-X github.com/byterings/bgit/cmd.version=$VERSION" \
+            -o bgit-windows-arm64.exe .
 
       - name: Upload CLI release assets
         uses: actions/upload-artifact@v4

@@ -114,36 +114,36 @@ jobs:
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Build Linux desktop app
-          working-directory: desktop
-          env:
-            GOOS: linux
-            GOARCH: amd64
-            GOAMD64: v1
-            CGO_ENABLED: 1
-            CGO_CFLAGS: -march=x86-64 -mtune=generic
-            CGO_CXXFLAGS: -march=x86-64 -mtune=generic
-            CGO_LDFLAGS: -march=x86-64 -mtune=generic
-          run: |
-            echo "===== Compiler configuration ====="
-            go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
+        working-directory: desktop
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          GOAMD64: v1
+          CGO_ENABLED: 1
+          CGO_CFLAGS: -march=x86-64 -mtune=generic
+          CGO_CXXFLAGS: -march=x86-64 -mtune=generic
+          CGO_LDFLAGS: -march=x86-64 -mtune=generic
+        run: |
+          echo "===== Compiler configuration ====="
+          go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
 
-            echo "===== Build ====="
-            wails build \
-              -platform linux/amd64 \
-              -tags webkit2_41 \
-              -clean \
-              -nopackage \
-              -o bgit-desktop-linux-amd64
+          echo "===== Build ====="
+          wails build \
+            -platform linux/amd64 \
+            -tags webkit2_41 \
+            -clean \
+            -nopackage \
+            -o bgit-desktop-linux-amd64
 
-            echo "===== Verify executable ====="
-            readelf -n build/bin/bgit-desktop-linux-amd64 | grep -i "ISA needed"
+          echo "===== Verify executable ====="
+          readelf -n build/bin/bgit-desktop-linux-amd64 | grep -i "ISA needed"
 
-            if readelf -n build/bin/bgit-desktop-linux-amd64 | grep -q "x86-64-v[23]"; then
-              echo "ERROR: Binary requires a CPU newer than x86-64 baseline"
-              exit 1
-            fi
+          if readelf -n build/bin/bgit-desktop-linux-amd64 | grep -q "x86-64-v[23]"; then
+            echo "ERROR: Binary requires a CPU newer than x86-64 baseline"
+            exit 1
+          fi
 
-            echo "SUCCESS: Binary meets x86-64 baseline"
+          echo "SUCCESS: Binary meets x86-64 baseline"
 
       - name: Build Debian package
         run: |
@@ -151,7 +151,7 @@ jobs:
             "${{ needs.metadata.outputs.version }}" \
             desktop/build/bin/bgit-desktop-linux-amd64 \
             desktop/build/bin
-      
+
       - name: Validate Debian package CPU compatibility
         run: |
           mkdir -p /tmp/bgit-package-check

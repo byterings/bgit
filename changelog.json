@@ -1,6 +1,66 @@
 {
   "releases": [
     {
+      "version": "0.12.3",
+      "date": "",
+      "phase": 10,
+      "summary": "Improves Linux desktop compatibility on older AMD64 computers and makes the Linux desktop downloads work across the same broad CPU baseline.",
+      "features": [
+        {
+          "title": "Linux desktop support for older CPUs",
+          "description": "The Linux AMD64 desktop app is built for the baseline x86-64 instruction set, so older Intel and AMD processors can run it. The Debian package and standalone download both use this compatible binary"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "More reliable Linux desktop installation on older systems",
+          "description": "The desktop binary no longer requires newer CPU instruction sets than the x86-64 baseline, avoiding the CPU ISA level error during launch after installation"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
+      "version": "0.12.2",
+      "date": "2026-11-26",
+      "phase": 10,
+      "summary": "A desktop app icon refresh and a more reliable Windows installer build.",
+      "features": [
+        {
+          "title": "Refreshed desktop app icon",
+          "description": "Updated the desktop app and Linux package icons with the current bgit artwork"
+        }
+      ],
+      "fixes": [
+        {
+          "title": "More reliable Windows installer builds",
+          "description": "The release workflow now checks for the runner's preinstalled NSIS before installing it, retries transient Chocolatey failures, and reports a clear error if installation still fails"
+        }
+      ],
+      "breaking_changes": []
+    },
+    {
+      "version": "0.12.1",
+      "date": "2026-11-25",
+      "phase": 10,
+      "summary": "A redesigned desktop experience with repository remotes and branch management, plus clearer installation instructions across platforms.",
+      "features": [
+        {
+          "title": "Redesigned desktop interface",
+          "description": "Reworked the desktop app around top navigation, a dark theme with a light option, a dedicated repository workspace, clearer identity details, and responsive layouts"
+        },
+        {
+          "title": "Repository remote and branch controls",
+          "description": "Repository views now list remotes and show whether origin is routed through the expected identity; branches can be deleted with extra confirmation when commits are not published elsewhere"
+        },
+        {
+          "title": "Desktop installation guide",
+          "description": "README instructions now explain desktop installation, updates, and removal for Windows, macOS, Debian/Ubuntu, and other Linux distributions"
+        }
+      ],
+      "fixes": [],
+      "breaking_changes": []
+    },
+    {
       "version": "0.12.0",
       "date": "2026-11-13",
       "phase": 10,

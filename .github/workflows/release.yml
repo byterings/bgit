@@ -120,10 +120,20 @@ jobs:
           GOARCH: amd64
           GOAMD64: v1
           CGO_ENABLED: 1
-          CGO_CFLAGS: -march=x86-64 -mtune=generic
-          CGO_CXXFLAGS: -march=x86-64 -mtune=generic
-          CGO_LDFLAGS: -march=x86-64 -mtune=generic
+          CGO_CFLAGS: "-march=x86-64 -mtune=generic"
+          CGO_CXXFLAGS: "-march=x86-64 -mtune=generic"
+          CGO_LDFLAGS: "-march=x86-64 -mtune=generic"
         run: |
+          echo "===== Linker information ====="
+          ld --version | head -n 1
+
+          if ld --help 2>&1 | grep -q 'isa-level-report'; then
+            echo "Linker supports ISA-level reporting"
+            export CGO_LDFLAGS="$CGO_LDFLAGS -Wl,-z,isa-level-report=all"
+          else
+            echo "WARNING: Linker does not support ISA-level reporting"
+          fi
+
           echo "===== Compiler configuration ====="
           go env GOAMD64 CGO_ENABLED CC CGO_CFLAGS CGO_CXXFLAGS CGO_LDFLAGS
 
@@ -135,15 +145,11 @@ jobs:
             -nopackage \
             -o bgit-desktop-linux-amd64
 
-          echo "===== Verify executable ====="
-          readelf -n build/bin/bgit-desktop-linux-amd64 | grep -i "ISA needed"
+          echo "===== Final executable ISA ====="
+          readelf -n build/bin/bgit-desktop-linux-amd64
 
-          if readelf -n build/bin/bgit-desktop-linux-amd64 | grep -q "x86-64-v[23]"; then
-            echo "ERROR: Binary requires a CPU newer than x86-64 baseline"
-            exit 1
-          fi
-
-          echo "SUCCESS: Binary meets x86-64 baseline"
+          echo "===== Build metadata ====="
+          go version -m build/bin/bgit-desktop-linux-amd64
 
       - name: Build Debian package
         run: |

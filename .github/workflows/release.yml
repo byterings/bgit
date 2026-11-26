@@ -117,6 +117,7 @@ jobs:
         env:
           # Keep Go and CGO output compatible with the baseline x86-64 ISA.
           GOAMD64: v1
+          CGO_ENABLED: 1
           CGO_CFLAGS: -march=x86-64 -mtune=generic
           CGO_CXXFLAGS: -march=x86-64 -mtune=generic
           CGO_LDFLAGS: -march=x86-64 -mtune=generic

@@ -131,6 +131,12 @@ Recent desktop packaging update:
 - Release notes now use the same CLI installation commands as the site documentation and list the released desktop artifacts explicitly.
 - README installation instructions now match the site installation steps for Linux, macOS, and Windows.
 
+Recent Linux desktop CPU compatibility update (R-036):
+
+- The Linux AMD64 desktop release explicitly sets Go's `GOAMD64=v1` and compiles CGO C/C++ sources with `-march=x86-64 -mtune=generic`, targeting the baseline x86-64 instruction set rather than the build runner's CPU.
+- These settings apply only to the Linux desktop workflow step; CLI, Windows, and macOS release builds are unchanged.
+- Validation: the Linux desktop build succeeded with these settings. `readelf -n` reports `x86 ISA needed: x86-64-baseline`; `file` identifies a 64-bit x86-64 ELF, and `git diff --check` passes. Launching on physical Ivy Bridge hardware was not available here.
+
 ---
 
 ## Roadmap Alignment
